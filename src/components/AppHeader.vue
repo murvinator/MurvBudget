@@ -1,23 +1,8 @@
 <template>
+  <!-- Fixed nav bar strip only — always 44px + safe area, solid background -->
   <div class="header">
-    <!-- Nav bar row: always 44px, holds the small centered title -->
-    <div class="nav-bar">
-      <span class="title-small" :style="{ opacity: progress }">Budget</span>
-    </div>
-
-    <!-- Large title row: collapses in height AND fades as you scroll -->
-    <div class="large-title-row" :style="largeTitleRowStyle">
-      <h1
-        class="title-large"
-        :style="{
-          opacity: 1 - progress,
-          transform: `translateY(${-progress * 6}px)`
-        }"
-      >Budget</h1>
-    </div>
-
-    <!-- Separator hairline: fades in as large title disappears -->
-    <div class="header-separator" :style="{ opacity: progress }"></div>
+    <span class="title-small" :style="{ opacity: titleOpacity }">Budget</span>
+    <div class="header-separator" :style="{ opacity: titleOpacity }"></div>
   </div>
 </template>
 
@@ -25,19 +10,15 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const scrollY = ref(0)
-const THRESHOLD = 60
 
-// 0 = top, 1 = scrolled
-const progress = computed(() => Math.min(scrollY.value / THRESHOLD, 1))
-
-// Large title row: 34px font + 4px top + 14px bottom ≈ 52px total
-// Collapses to 0 as progress → 1
-const largeTitleRowStyle = computed(() => ({
-  overflow: 'hidden',
-  height: `${(1 - progress.value) * 52}px`,
-  paddingLeft: '20px',
-  paddingRight: '20px',
-}))
+// The large title fully disappears behind the nav bar at ~74px of scroll
+// (36px gap between header bottom and title top, + ~38px title height).
+// Snap the small title in quickly over just 12px so it feels like a crossfade, not an overlap.
+const titleOpacity = computed(() => {
+  const start = 68
+  const end = 80
+  return Math.min(Math.max((scrollY.value - start) / (end - start), 0), 1)
+})
 
 function onScroll() {
   scrollY.value = window.scrollY
@@ -60,24 +41,18 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   z-index: 9999;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  height: calc(44px + var(--safe-area-top));
   padding-top: var(--safe-area-top);
-  /* No fixed height — shrinks naturally as large-title-row collapses */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   .header {
-    background: rgba(0, 0, 0, 0.85);
+    background: #000000;
   }
-}
-
-.nav-bar {
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .title-small {
@@ -85,24 +60,6 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.2px;
-  pointer-events: none;
-}
-
-.large-title-row {
-  /* height and padding driven by inline style */
-  display: flex;
-  align-items: flex-end;
-}
-
-.title-large {
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.5px;
-  line-height: 1.1;
-  will-change: opacity, transform;
-  pointer-events: none;
-  margin-bottom: 4px;
 }
 
 .header-separator {

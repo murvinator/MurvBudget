@@ -22,6 +22,8 @@
 
     <div class="container">
       <div class="content">
+        <!-- Large title scrolls with content, naturally disappears behind the fixed nav bar -->
+        <h1 v-if="currentView !== 'settings'" class="page-large-title">Budget</h1>
         <component :is="currentViewComponent" @navigate="showView" />
       </div>
     </div>
