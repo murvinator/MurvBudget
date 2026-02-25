@@ -26,8 +26,18 @@ body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  height: 100%;
+  width: 100%;
+  /* min-width: 320px;
+  min-height: 100vh; */
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Förhindrar att hela sidan studsar */
+  background-color: #F2F2F7; /* Matchar appens bakgrund */
+  overscroll-behavior: none;
 }
 
 h1 {

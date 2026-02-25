@@ -5,7 +5,7 @@ import TabBar from "@/components/layout/TabBar.vue";
 
 <template>
   <div id="app">
-    <Header />
+    <Header title="MurvBudget">
     <main class="main-view">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
@@ -13,6 +13,7 @@ import TabBar from "@/components/layout/TabBar.vue";
         </transition>
       </router-view>
     </main>
+    </Header>
     <TabBar />
   </div>
 </template>
