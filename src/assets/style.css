@@ -36,7 +36,7 @@
 
     --safe-area-top: env(safe-area-inset-top);
     --safe-area-bottom: env(safe-area-inset-bottom);
-    --tab-bar-bottom: 10px;
+    --tab-bar-bottom: 24px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -64,7 +64,8 @@ body {
     color: var(--text-primary);
     font-size: 17px;
     line-height: 1.47;
-    padding-top: calc(110px + var(--safe-area-top));
+    /* 44px nav bar + ~50px large title + safe area */
+    padding-top: calc(100px + var(--safe-area-top));
     padding-bottom: calc(80px + var(--safe-area-bottom));
     overflow-x: hidden;
     overscroll-behavior-x: none;
@@ -89,71 +90,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ================================= */
-/* MAIN HEADER */
-/* ================================= */
-
-.header {
-    background: rgba(255, 255, 255, 1);
-    padding: calc(20px + var(--safe-area-top)) 20px 24px;
-    border-bottom: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 9999;
-    overflow: hidden;
-    text-align: left;
-    overscroll-behavior: none;
-    transition: padding 0.2s ease;
-}
-
-@media (prefers-color-scheme: dark) {
-    .header { background: rgba(0, 0, 0, 1); }
-}
-
-.header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
-    padding-left: 10px;
-    transition: justify-content 0.2s ease, padding-left 0.2s ease;
-}
-
-.header h1 {
-    font-size: 45px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    letter-spacing: -0.5px;
-    transition: font-size 0.2s ease;
-}
-
-.header.small {
-    padding: 8px 16px 10px;
-}
-
-.header.small .header-content {
-    justify-content: center;
-    padding-left: 0;
-}
-
-.header.small h1 {
-    font-size: 20px;
-    font-weight: 700;
-    animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-@media (prefers-color-scheme: dark) {
-    .header::after { background: linear-gradient(180deg, rgba(0,0,0,0.22), rgba(0,0,0,0.18)); }
-}
-@media (prefers-color-scheme: light) {
-    .header::after { background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.65)); }
-}
+/* Header styles are scoped inside AppHeader.vue */
 
 /* ================================= */
 /* LIQUID GLASS */
@@ -787,7 +724,7 @@ body {
 
 .settings-header {
     position: sticky;
-    top: 47px;
+    top: calc(44px + var(--safe-area-top));
     z-index: 99;
     background: var(--bg-primary);
     backdrop-filter: blur(20px);
