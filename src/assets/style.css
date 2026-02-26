@@ -420,10 +420,39 @@ body {
     width: 24px;
     height: 24px;
     cursor: pointer;
-    accent-color: var(--system-green);
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 50%;
+    border: 2px solid var(--system-gray3);
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
     transition: all 0.2s ease;
 }
+
+.checkbox:checked {
+    background: var(--system-green);
+    border-color: var(--system-green);
+}
+
+.checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 9px;
+    border: 2px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+}
+
 .checkbox:hover { transform: scale(1.1); }
+
+@media (prefers-color-scheme: dark) {
+    .checkbox { border-color: rgba(255, 255, 255, 0.3); }
+}
 
 /* Inline editing */
 .expense-item-wrapper { position: relative; }
@@ -462,6 +491,28 @@ body {
     color: var(--text-primary);
     transition: all 0.2s ease;
 }
+
+.settings-content .edit-input-group select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 16px;
+    padding-right: 32px;
+}
+
+
+.settings-content .input-group select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 16px;
+    padding-right: 32px;
+}
+
 .edit-input-group input:focus,
 .edit-input-group select:focus {
     outline: none;
@@ -554,8 +605,6 @@ body {
 .summary-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06); }
 .summary-card h4 { font-size: 18px; font-weight: 600; letter-spacing: 0.2px; opacity: 0.9; margin-bottom: 10px; }
 .summary-card .amount { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
-.summary-card:nth-child(2) { background: linear-gradient(135deg, var(--system-orange), var(--system-pink)); }
-.summary-card:nth-child(3) { background: linear-gradient(135deg, var(--system-green), var(--system-teal)); }
 
 /* ================================= */
 /* CHART */
@@ -792,6 +841,13 @@ body {
 .reset-btn:hover { opacity: 1; }
 .reset-btn:active { transform: scale(0.95); opacity: 0.5; }
 
+.expense-date {
+    font-size: 16px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-left: 12px;
+}
+
 /* ================================= */
 /* SETTINGS VIEW */
 /* ================================= */
@@ -837,7 +893,7 @@ body {
 .settings-root {
     max-width: 900px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 20px 0;
 }
 
 .settings-section {
@@ -860,6 +916,7 @@ body {
 }
 
 .settings-content { padding: 0; }
+.settings-content .category-list { margin-bottom: 0; box-shadow: none; border-radius: 0; }
 
 .settings-content .input-group {
     display: flex;
@@ -896,6 +953,16 @@ body {
     box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
+.settings-content .input-group select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 16px;
+    padding-right: 32px;
+}
+
 .settings-content button {
     padding: 8px 16px;
     border-radius: 80px;
@@ -925,6 +992,10 @@ body {
 .settings-content .expense-item .expense-info { flex: 1; }
 .settings-content .expense-item .expense-name { font-weight: 500; font-size: 15px; }
 .settings-content .expense-item .expense-amount { font-weight: 600; font-size: 15px; color: var(--text-secondary); margin: 0 12px 0 0; }
+
+/* Swipe-to-delete slot structure (no .expense-item wrapper) */
+.settings-content .expense-name { font-weight: 500; font-size: 15px; }
+.settings-content .expense-amount { font-weight: 600; font-size: 15px; color: var(--text-secondary); margin-right: 4px; }
 
 .settings-content .delete-btn,
 .settings-content .expense-item .delete-btn,
@@ -966,7 +1037,6 @@ body {
 }
 
 @media (max-width: 480px) {
-    .settings-root { padding-left: 14px; padding-right: 14px; }
     .settings-header { padding-left: 12px; padding-right: 12px; }
 }
 

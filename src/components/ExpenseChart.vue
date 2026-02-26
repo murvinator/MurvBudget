@@ -93,7 +93,7 @@ function buildChart() {
             position: 'bottom',
             onClick: () => {},
             labels: {
-              padding: 12,
+              padding: 25,
               usePointStyle: true,
               pointStyle: 'circle',
               font: { size: 13 },

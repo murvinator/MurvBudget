@@ -24,15 +24,26 @@
             <span class="overview-toggle-label">Sammanfattning</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showSummaryCards" @change="store.setOverviewSetting('showSummaryCards', $event.target.checked)">
           </div>
+          <div v-if="store.overviewSettings.showSummaryCards" class="chart-type-section">
+            <div class="chart-type-label">Färgtema</div>
+            <div class="chart-type-segment">
+              <button
+                v-for="p in colorPresets"
+                :key="p.value"
+                :class="['segment-btn', 'preset-btn', { active: activePreset === p.value }]"
+                @click="setPreset(p.value)"
+              >
+                <div class="preset-dots">
+                  <span v-for="c in p.colors" :key="c" class="preset-dot" :style="{ background: GRADIENTS[c] }"></span>
+                </div>
+                <span>{{ p.label }}</span>
+              </button>
+            </div>
+          </div>
           <div class="overview-toggle-row">
             <span class="overview-toggle-label">Diagram</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showChart" @change="store.setOverviewSetting('showChart', $event.target.checked)">
           </div>
-          <div class="overview-toggle-row">
-            <span class="overview-toggle-label">Skulder</span>
-            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showDebts" @change="store.setOverviewSetting('showDebts', $event.target.checked)">
-          </div>
-
           <div v-if="store.overviewSettings.showChart" class="chart-type-section">
             <div class="chart-type-label">Diagramtyp</div>
             <div class="chart-type-segment">
@@ -43,6 +54,10 @@
                 @click="store.setOverviewSetting('chartType', opt.value)"
               >{{ opt.label }}</button>
             </div>
+          </div>
+          <div class="overview-toggle-row">
+            <span class="overview-toggle-label">Skulder</span>
+            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showDebts" @change="store.setOverviewSetting('showDebts', $event.target.checked)">
           </div>
         </div>
       </div>
@@ -59,17 +74,16 @@
             <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp">
             <button @click="addIncome">Lägg till</button>
           </div>
-          <div
+          <SwipeToDelete
             v-for="(income, idx) in store.income"
             :key="idx"
-            class="expense-item"
+            @delete="deleteIncome(idx)"
           >
-            <div class="expense-info">
+            <template #fixed>
               <div class="expense-name">{{ income.name }}</div>
-            </div>
+            </template>
             <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
-            <button class="delete-btn" @click="deleteIncome(idx)">Ta bort</button>
-          </div>
+          </SwipeToDelete>
         </div>
       </div>
 
@@ -84,12 +98,18 @@
             <input type="text" v-model="newExpenseName" placeholder="Namn">
             <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
           </div>
-          <div class="input-group" style="padding: 0px 18px 22px 20px" >
-            <h6>Kategori:</h6>
-            <select v-model="newExpenseCategory">
-              <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
-            </select>
-            <button @click="addExpense" >Lägg till</button>
+          <div class="input-group input-group--labeled">
+            <div class="field-with-label">
+              <span class="field-label">Kategori</span>
+              <select v-model="newExpenseCategory">
+                <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
+            </div>
+            <div class="field-with-label field-with-label--narrow">
+              <span class="field-label">Dag</span>
+              <input type="number" v-model.number="newExpenseDate" placeholder="1–31" min="1" max="31">
+            </div>
+            <button class="add-expense-bottom-btn" @click="addExpense">Lägg till</button>
           </div>
 
           <!-- Expenses grouped by category -->
@@ -104,17 +124,16 @@
                   :key="expense.globalIndex"
                   class="expense-item-wrapper"
                 >
-                  <div
-                    class="expense-item editable-expense"
-                    :class="{ editing: editingExpense === expense.globalIndex }"
-                    @click="toggleEditExpense(expense.globalIndex)"
-                  >
-                    <div class="expense-info">
-                      <div class="expense-name">{{ expense.name }}</div>
-                    </div>
+                  <SwipeToDelete @delete="deleteExpense(expense.globalIndex)">
+                    <template #fixed>
+                      <div
+                        class="expense-name"
+                        :class="{ editing: editingExpense === expense.globalIndex }"
+                        @click="toggleEditExpense(expense.globalIndex)"
+                      >{{ expense.name }}<span v-if="expense.date" class="expense-date"> {{ expense.date }}</span></div>
+                    </template>
                     <div class="expense-amount">{{ fmt(expense.amount) }} kr</div>
-                    <button class="delete-btn" @click.stop="deleteExpense(expense.globalIndex)">Ta bort</button>
-                  </div>
+                  </SwipeToDelete>
 
                   <div v-show="editingExpense === expense.globalIndex" class="expense-edit-form">
                     <div class="edit-form-content">
@@ -131,6 +150,10 @@
                         <select v-model="editForm.category">
                           <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
                         </select>
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Dag (valfritt)</label>
+                        <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
                       </div>
                       <div class="edit-actions">
                         <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
@@ -156,14 +179,15 @@
             <input type="text" v-model="newCategoryName" placeholder="Ny kategori">
             <button @click="addCategory">Lägg till</button>
           </div>
-          <div
+          <SwipeToDelete
             v-for="(cat, idx) in store.categories"
             :key="cat"
-            class="category-item"
+            @delete="deleteCategory(idx)"
           >
-            <span>{{ cat }}</span>
-            <button class="delete-btn" @click="deleteCategory(idx)">Ta bort</button>
-          </div>
+            <template #fixed>
+              <span class="expense-name">{{ cat }}</span>
+            </template>
+          </SwipeToDelete>
         </div>
       </div>
 
@@ -185,13 +209,26 @@
           <div
             v-for="(debt, idx) in store.debts"
             :key="debt.id"
-            class="expense-item"
+            class="expense-item-wrapper"
           >
-            <div class="expense-info">
-              <div class="expense-name">{{ debt.name }}</div>
+            <SwipeToDelete @delete="deleteDebt(idx)">
+              <template #fixed>
+                <div class="expense-name" @click="toggleEditDebt(idx)">{{ debt.name }}</div>
+              </template>
+              <div class="expense-amount">{{ fmt(debt.amount) }} kr</div>
+            </SwipeToDelete>
+            <div v-show="editingDebt === idx" class="expense-edit-form">
+              <div class="edit-form-content">
+                <div class="edit-input-group">
+                  <label>Belopp</label>
+                  <input type="number" v-model.number="editDebtAmount">
+                </div>
+                <div class="edit-actions">
+                  <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
+                  <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
+                </div>
+              </div>
             </div>
-            <div class="expense-amount">{{ fmt(debt.amount) }} kr</div>
-            <button class="delete-btn" @click="deleteDebt(idx)">Ta bort</button>
           </div>
         </div>
       </div>
@@ -237,6 +274,7 @@
 <script setup>
 import { ref, reactive, computed, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
+import SwipeToDelete from '../components/SwipeToDelete.vue'
 
 const store = useBudgetStore()
 const goBack = inject('goBack')
@@ -250,6 +288,31 @@ const chartTypeOptions = [
   { value: 'bar', label: 'Stapel' },
   { value: 'stackedBar', label: 'Staplad' },
 ]
+
+const GRADIENTS = {
+  'blue-purple': 'linear-gradient(135deg, #007AFF, #AF52DE)',
+  'orange-pink': 'linear-gradient(135deg, #FF9500, #FF2D92)',
+  'green-teal':  'linear-gradient(135deg, #34C759, #5AC8FA)',
+  'red-orange':  'linear-gradient(135deg, #FF3B30, #FF9500)',
+  'indigo-blue': 'linear-gradient(135deg, #5856D6, #007AFF)',
+  'pink-red':    'linear-gradient(135deg, #FF2D92, #FF3B30)',
+}
+
+const colorPresets = [
+  { value: 'colorful', label: 'Färgglad', colors: ['blue-purple', 'orange-pink', 'green-teal'] },
+  { value: 'mono',     label: 'Enkel',    colors: ['blue-purple', 'blue-purple', 'blue-purple'] },
+  { value: 'stylish',  label: 'Stilren',  colors: ['indigo-blue', 'pink-red', 'red-orange'] },
+]
+
+const activePreset = computed(() => {
+  const current = JSON.stringify(store.overviewSettings.cardColors || [])
+  return colorPresets.find((p) => JSON.stringify(p.colors) === current)?.value ?? null
+})
+
+function setPreset(value) {
+  const preset = colorPresets.find((p) => p.value === value)
+  if (preset) store.setOverviewSetting('cardColors', [...preset.colors])
+}
 
 function loadCollapsed() {
   try {
@@ -278,6 +341,7 @@ const newCategoryName = ref('')
 const newExpenseName = ref('')
 const newExpenseAmount = ref(null)
 const newExpenseCategory = ref(store.categories[0] || '')
+const newExpenseDate = ref(null)
 const newIncomeName = ref('')
 const newIncomeAmount = ref(null)
 const newDebtName = ref('')
@@ -287,12 +351,13 @@ const statusMsg = ref('')
 
 // Expense editing state
 const editingExpense = ref(null)
-const editForm = reactive({ name: '', amount: null, category: '' })
+const editForm = reactive({ name: '', amount: null, category: '', date: null })
 
 function expensesByCategory(cat) {
   return store.expenses
     .map((e, i) => ({ ...e, globalIndex: i }))
     .filter((e) => e.category === cat)
+    .sort((a, b) => b.amount - a.amount)
 }
 
 function toggleEditExpense(globalIndex) {
@@ -305,6 +370,7 @@ function toggleEditExpense(globalIndex) {
   editForm.name = e.name
   editForm.amount = e.amount
   editForm.category = e.category
+  editForm.date = e.date || null
 }
 
 function saveExpenseEdit(globalIndex) {
@@ -312,7 +378,7 @@ function saveExpenseEdit(globalIndex) {
     alert('Vänligen fyll i giltigt namn och belopp.')
     return
   }
-  store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category)
+  store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category, editForm.date)
   editingExpense.value = null
 }
 
@@ -350,9 +416,10 @@ function addExpense() {
   const amount = newExpenseAmount.value
   const category = newExpenseCategory.value
   if (!name || !amount || amount <= 0 || !category) return
-  store.addExpense(name, amount, category)
+  store.addExpense(name, amount, category, newExpenseDate.value)
   newExpenseName.value = ''
   newExpenseAmount.value = null
+  newExpenseDate.value = null
 }
 
 function deleteExpense(idx) {
@@ -389,6 +456,21 @@ function deleteDebt(idx) {
   if (confirm('Är du säker på att du vill ta bort denna skuld?')) {
     store.deleteDebt(idx)
   }
+}
+
+const editingDebt = ref(null)
+const editDebtAmount = ref(null)
+
+function toggleEditDebt(idx) {
+  if (editingDebt.value === idx) { editingDebt.value = null; return }
+  editingDebt.value = idx
+  editDebtAmount.value = store.debts[idx].amount
+}
+
+function saveDebtEdit(idx) {
+  if (!editDebtAmount.value || editDebtAmount.value <= 0) return
+  store.saveEditDebt(idx, editDebtAmount.value)
+  editingDebt.value = null
 }
 
 function triggerImport() {
@@ -530,6 +612,30 @@ function fmt(n) {
   }
 }
 
+/* Preset buttons (color theme + chart type share segment-btn, preset-btn adds column layout) */
+.preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 6px;
+  min-height: unset;
+  white-space: nowrap;
+}
+
+.preset-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.preset-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  display: block;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 /* Chart type pill chips */
 .chart-type-section {
   padding: 14px 16px 16px;
@@ -582,6 +688,36 @@ function fmt(n) {
   .segment-btn.active {
     box-shadow: 0 2px 10px rgba(0, 122, 255, 0.55);
   }
+}
+
+/* Labeled field layout for add-expense form */
+.input-group--labeled {
+  align-items: flex-end;
+  flex-wrap: nowrap;
+}
+
+.field-with-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.field-with-label--narrow {
+  flex: 0 0 72px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.add-expense-bottom-btn {
+  align-self: flex-end;
 }
 
 /* Support button */

@@ -42,7 +42,7 @@
             @click="togglePaid(expense.index)"
           >
             <div class="expense-info">
-              <div class="expense-name">{{ expense.name }}</div>
+              <div class="expense-name">{{ expense.name }}<span v-if="expense.date" class="expense-date">{{ expense.date }}</span></div>
             </div>
             <div class="expense-amount">{{ fmt(expense.amount) }} kr</div>
             <input

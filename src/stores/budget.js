@@ -26,6 +26,7 @@ export const useBudgetStore = defineStore('budget', {
       showChart: true,
       showDebts: true,
       chartType: 'pie',
+      cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
     },
   }),
 
@@ -61,14 +62,18 @@ export const useBudgetStore = defineStore('budget', {
     },
 
     // ── Expenses ─────────────────────────────────────────────────────────────
-    addExpense(name, amount, category) {
-      this.expenses.push({ name, amount: parseInt(amount), category })
+    addExpense(name, amount, category, date = null) {
+      const item = { name, amount: parseInt(amount), category }
+      if (date) item.date = parseInt(date)
+      this.expenses.push(item)
     },
     deleteExpense(index) {
       this.expenses.splice(index, 1)
     },
-    saveEditExpense(index, name, amount, category) {
-      this.expenses[index] = { name, amount: parseInt(amount), category }
+    saveEditExpense(index, name, amount, category, date = null) {
+      const item = { name, amount: parseInt(amount), category }
+      if (date) item.date = parseInt(date)
+      this.expenses[index] = item
     },
 
     // ── Categories ───────────────────────────────────────────────────────────
@@ -113,6 +118,9 @@ export const useBudgetStore = defineStore('budget', {
     deleteDebt(index) {
       const removed = this.debts.splice(index, 1)[0]
       if (removed?.id) delete this.debtPayments[removed.id]
+    },
+    saveEditDebt(index, amount) {
+      if (this.debts[index]) this.debts[index].amount = parseInt(amount)
     },
 
     // ── Debt Payments ────────────────────────────────────────────────────────
@@ -281,7 +289,7 @@ export const useBudgetStore = defineStore('budget', {
         }
       }
       // Ensure overviewSettings exists with all required keys
-      const defaultOverview = { showSummaryCards: true, showVariableMini: true, showChart: true, showDebts: true, chartType: 'pie' }
+      const defaultOverview = { showSummaryCards: true, showVariableMini: true, showChart: true, showDebts: true, chartType: 'pie', cardColors: ['blue-purple', 'orange-pink', 'green-teal'] }
       if (!this.overviewSettings) {
         this.overviewSettings = defaultOverview
       } else {
