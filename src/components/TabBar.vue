@@ -15,12 +15,6 @@
         <button
           type="button"
           class="tab-btn"
-          :class="{ active: currentView === 'budget' }"
-          @click="emit('navigate', 'budget')"
-        >Rörliga</button>
-        <button
-          type="button"
-          class="tab-btn"
           :class="{ active: currentView === 'monthly' }"
           @click="emit('navigate', 'monthly')"
         >Checklista</button>
@@ -60,3 +54,10 @@ function onSettingsClick() {
   }
 }
 </script>
+
+<style scoped>
+/* Remove glass distortion from the circular button — keeps the border crisp */
+.nav-action-btn :deep(.liquidGlass-effect) {
+  filter: none;
+}
+</style>

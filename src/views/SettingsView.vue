@@ -14,55 +14,39 @@
 
     <div class="settings-root">
 
-      <!-- Rörliga utgifter -->
+      <!-- Inkomster -->
       <div class="settings-section">
-        <h3>Rörliga utgifter</h3>
-        <div class="settings-content">
+        <div class="section-toggle" @click="toggleSection('income')">
+          <h3>Inkomster</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['income'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div v-show="!collapsedSections['income']" class="settings-content">
           <div class="input-group">
-            <input type="text" v-model="newVarName" placeholder="Namn">
-            <input type="number" v-model.number="newVarBudget" placeholder="Belopp">
-            <button @click="addVarExpense">Lägg till</button>
+            <input type="text" v-model="newIncomeName" placeholder="Namn">
+            <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp">
+            <button @click="addIncome">Lägg till</button>
           </div>
-          <template v-if="store.variableExpenses.length === 0">
-            <p style="padding: 12px 16px;">Inga varierande utgifter ännu</p>
-          </template>
           <div
-            v-for="(e, idx) in store.variableExpenses"
-            :key="e.name"
+            v-for="(income, idx) in store.income"
+            :key="idx"
             class="expense-item"
           >
             <div class="expense-info">
-              <div class="expense-name">{{ e.name }}</div>
+              <div class="expense-name">{{ income.name }}</div>
             </div>
-            <div class="expense-amount">{{ fmt(e.budget) }} kr</div>
-            <button class="delete-btn" @click="deleteVarExpense(idx)">Ta bort</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Kategorier -->
-      <div class="settings-section">
-        <h3>Kategorier</h3>
-        <div class="settings-content">
-          <div class="input-group">
-            <input type="text" v-model="newCategoryName" placeholder="Ny kategori">
-            <button @click="addCategory">Lägg till</button>
-          </div>
-          <div
-            v-for="(cat, idx) in store.categories"
-            :key="cat"
-            class="category-item"
-          >
-            <span>{{ cat }}</span>
-            <button class="delete-btn" @click="deleteCategory(idx)">Ta bort</button>
+            <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
+            <button class="delete-btn" @click="deleteIncome(idx)">Ta bort</button>
           </div>
         </div>
       </div>
 
       <!-- Fasta utgifter -->
       <div class="settings-section">
-        <h3>Fasta utgifter</h3>
-        <div class="settings-content">
+        <div class="section-toggle" @click="toggleSection('expenses')">
+          <h3>Fasta utgifter</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['expenses'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div v-show="!collapsedSections['expenses']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newExpenseName" placeholder="Namn">
             <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
@@ -127,33 +111,35 @@
         </div>
       </div>
 
-      <!-- Inkomster -->
+      <!-- Kategorier -->
       <div class="settings-section">
-        <h3>Inkomster</h3>
-        <div class="settings-content">
+        <div class="section-toggle" @click="toggleSection('categories')">
+          <h3>Kategorier</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['categories'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div v-show="!collapsedSections['categories']" class="settings-content">
           <div class="input-group">
-            <input type="text" v-model="newIncomeName" placeholder="Namn">
-            <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp">
-            <button @click="addIncome">Lägg till</button>
+            <input type="text" v-model="newCategoryName" placeholder="Ny kategori">
+            <button @click="addCategory">Lägg till</button>
           </div>
           <div
-            v-for="(income, idx) in store.income"
-            :key="idx"
-            class="expense-item"
+            v-for="(cat, idx) in store.categories"
+            :key="cat"
+            class="category-item"
           >
-            <div class="expense-info">
-              <div class="expense-name">{{ income.name }}</div>
-            </div>
-            <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
-            <button class="delete-btn" @click="deleteIncome(idx)">Ta bort</button>
+            <span>{{ cat }}</span>
+            <button class="delete-btn" @click="deleteCategory(idx)">Ta bort</button>
           </div>
         </div>
       </div>
 
       <!-- Skulder -->
       <div class="settings-section">
-        <h3>Skulder</h3>
-        <div class="settings-content">
+        <div class="section-toggle" @click="toggleSection('debts')">
+          <h3>Skulder</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['debts'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div v-show="!collapsedSections['debts']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newDebtName" placeholder="Namn">
             <input type="number" v-model.number="newDebtAmount" placeholder="Belopp">
@@ -178,8 +164,11 @@
 
       <!-- Data -->
       <div class="settings-section">
-        <h3>Data</h3>
-        <div class="settings-content">
+        <div class="section-toggle" @click="toggleSection('data')">
+          <h3>Data</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['data'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div v-show="!collapsedSections['data']" class="settings-content">
           <div class="export-import" style="padding: 12px 16px;">
             <button @click="store.exportData()">Exportera Data</button>
             <button @click="triggerImport">Importera Data</button>
@@ -212,6 +201,11 @@ import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
 const goBack = inject('goBack')
+
+const collapsedSections = reactive({})
+function toggleSection(key) {
+  collapsedSections[key] = !collapsedSections[key]
+}
 
 // New item form state
 const newVarName = ref('')
@@ -376,3 +370,33 @@ function fmt(n) {
   return (n || 0).toLocaleString('sv-SE')
 }
 </script>
+
+<style scoped>
+.section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--separator);
+}
+
+/* Override the global .settings-section h3 border since section-toggle now owns it */
+.section-toggle h3 {
+  border-bottom: none;
+  flex: 1;
+}
+
+.chevron {
+  width: 18px;
+  height: 18px;
+  margin-right: 16px;
+  color: var(--text-tertiary);
+  transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+}
+
+.chevron.collapsed {
+  transform: rotate(-90deg);
+}
+</style>
