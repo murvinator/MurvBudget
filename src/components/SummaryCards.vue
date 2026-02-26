@@ -31,6 +31,7 @@ const displayExpenses = ref(0)
 const displayRemaining = ref(0)
 
 const GRADIENTS = {
+  'blue':        'linear-gradient(135deg, #007AFF, #007AFF)',
   'blue-purple': 'linear-gradient(135deg, #007AFF, #AF52DE)',
   'orange-pink': 'linear-gradient(135deg, #FF9500, #FF2D92)',
   'green-teal':  'linear-gradient(135deg, #34C759, #5AC8FA)',
@@ -44,6 +45,14 @@ const DEFAULT_COLORS = ['blue-purple', 'orange-pink', 'green-teal']
 function cardStyle(index) {
   const colors = store.overviewSettings?.cardColors || DEFAULT_COLORS
   const key = colors[index] || DEFAULT_COLORS[index]
+  if (key === 'neutral') {
+    return {
+      background: 'var(--card-bg)',
+      color: 'var(--text-primary)',
+      border: '1px solid var(--separator)',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    }
+  }
   return { background: GRADIENTS[key] || GRADIENTS['blue-purple'] }
 }
 
