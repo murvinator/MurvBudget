@@ -84,11 +84,12 @@
             <input type="text" v-model="newExpenseName" placeholder="Namn">
             <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
           </div>
-          <div class="input-group">
+          <div class="input-group" style="padding: 0px 18px 22px 20px" >
+            <h6>Kategori:</h6>
             <select v-model="newExpenseCategory">
               <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
-            <button @click="addExpense">Lägg till</button>
+            <button @click="addExpense" >Lägg till</button>
           </div>
 
           <!-- Expenses grouped by category -->
@@ -212,6 +213,7 @@
               class="file-input"
               accept=".json"
               @change="importFile"
+              style="display: none"
             >
           </div>
           <div v-if="statusMsg" style="margin-top:10px; font-size:14px; padding: 0 16px 12px;">{{ statusMsg }}</div>
@@ -482,92 +484,103 @@ function fmt(n) {
   color: var(--text-primary);
 }
 
-/* iOS-style toggle switch */
+/* iOS 26 toggle — wider, flatter, near-transparent off-state with border */
 .ios-toggle {
   position: relative;
-  width: 51px;
-  height: 31px;
+  width: 65px;
+  height: 27px;
   flex-shrink: 0;
   -webkit-appearance: none;
   appearance: none;
-  background: var(--separator);
-  border-radius: 16px;
+  background: rgba(120, 120, 128, 0.1);
+  border: 1px solid rgba(120, 120, 128, 0.3);
+  border-radius: 999px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-color 0.25s;
   outline: none;
 }
 
 .ios-toggle:checked {
   background: var(--system-green);
+  border-color: transparent;
 }
 
 .ios-toggle::after {
   content: '';
   position: absolute;
-  width: 27px;
-  height: 27px;
+  width: 36px;
+  height: 23px;
   background: #ffffff;
-  border-radius: 50%;
-  top: 2px;
+  border-radius: 999px;
+  top: 1px;
   left: 2px;
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), 0 0.5px 2px rgba(0, 0, 0, 0.12);
 }
 
 .ios-toggle:checked::after {
-  transform: translateX(20px);
+  transform: translateX(24px);
 }
 
-/* Chart type segmented control */
+@media (prefers-color-scheme: dark) {
+  .ios-toggle {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+/* Chart type pill chips */
 .chart-type-section {
-  padding: 14px 16px 8px;
+  padding: 14px 16px 16px;
 }
 
 .chart-type-label {
   font-size: 13px;
   color: var(--text-tertiary);
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
 
 .chart-type-segment {
   display: flex;
-  background: var(--bg-secondary);
-  border-radius: 9px;
-  padding: 2px;
-  gap: 2px;
+  flex-wrap: nowrap;
+  gap: 8px;
 }
 
 .segment-btn {
   flex: 1;
-  padding: 7px 4px;
-  border: none;
+  padding: 10px 8px;
+  border: 1.5px solid var(--separator);
   background: transparent;
-  border-radius: 7px;
-  font-size: 13px;
+  border-radius: 999px;
+  font-size: 14px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  text-align: center;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
 
 .segment-btn.active {
-  background: var(--card-bg);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  background: var(--system-blue);
+  border-color: var(--system-blue);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 122, 255, 0.4);
 }
 
 @media (prefers-color-scheme: dark) {
-  .chart-type-segment {
-    background: rgba(255, 255, 255, 0.08);
+  .segment-btn {
+    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--text-secondary);
   }
 
   .segment-btn.active {
-    background: rgba(255, 255, 255, 0.18);
-    box-shadow: none;
+    box-shadow: 0 2px 10px rgba(0, 122, 255, 0.55);
   }
 }
 
@@ -578,11 +591,11 @@ function fmt(n) {
   justify-content: center;
   gap: 8px;
   width: calc(100% - 32px);
-  margin: 8px 16px 32px;
-  padding: 14px 20px;
+  margin: 8px 22px 32px;
+  padding: 12px 22px;
   background: rgba(255, 45, 85, 0.1);
   border: none;
-  border-radius: 14px;
+  border-radius: 999px;
   color: #FF2D55;
   font-size: 16px;
   font-weight: 600;
