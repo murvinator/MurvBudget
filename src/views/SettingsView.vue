@@ -25,6 +25,17 @@
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showSummaryCards" @change="store.setOverviewSetting('showSummaryCards', $event.target.checked)">
           </div>
           <div v-if="store.overviewSettings.showSummaryCards" class="chart-type-section">
+            <div class="chart-type-label">Storlek</div>
+            <div class="chart-type-segment">
+              <button
+                v-for="opt in summaryStyleOptions"
+                :key="opt.value"
+                :class="['segment-btn', { active: store.overviewSettings.summaryStyle === opt.value }]"
+                @click="store.setOverviewSetting('summaryStyle', opt.value)"
+              >{{ opt.label }}</button>
+            </div>
+          </div>
+          <div v-if="store.overviewSettings.showSummaryCards" class="chart-type-section">
             <div class="chart-type-label">Färgtema</div>
             <div class="chart-type-segment">
               <button
@@ -90,7 +101,7 @@
       <!-- Fasta utgifter -->
       <div class="settings-section">
         <div class="section-toggle" @click="toggleSection('expenses')">
-          <h3>Fasta utgifter</h3>
+          <h3>Utgifter</h3>
           <svg class="chevron" :class="{ collapsed: collapsedSections['expenses'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div v-show="!collapsedSections['expenses']" class="settings-content">
@@ -289,7 +300,15 @@ const chartTypeOptions = [
   { value: 'stackedBar', label: 'Staplad' },
 ]
 
+const summaryStyleOptions = [
+  { value: 'compact',  label: 'Kompakt' },
+  { value: 'medium',   label: 'Medium' },
+  { value: 'default',  label: 'Standard' },
+  { value: 'large',    label: 'Stor' },
+]
+
 const GRADIENTS = {
+  'blue': 'linear-gradient(135deg, #007AFF, #007AFF)',
   'blue-purple': 'linear-gradient(135deg, #007AFF, #AF52DE)',
   'orange-pink': 'linear-gradient(135deg, #FF9500, #FF2D92)',
   'green-teal':  'linear-gradient(135deg, #34C759, #5AC8FA)',
@@ -300,7 +319,7 @@ const GRADIENTS = {
 
 const colorPresets = [
   { value: 'colorful', label: 'Färgglad', colors: ['blue-purple', 'orange-pink', 'green-teal'] },
-  { value: 'mono',     label: 'Enkel',    colors: ['blue-purple', 'blue-purple', 'blue-purple'] },
+  { value: 'mono',     label: 'Enkel',    colors: ['blue', 'blue', 'blue'] },
   { value: 'stylish',  label: 'Stilren',  colors: ['indigo-blue', 'pink-red', 'red-orange'] },
 ]
 

@@ -43,15 +43,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-}
-
-@media (prefers-color-scheme: dark) {
-  .header {
-    background: rgba(0, 0, 0, 0.75);
-  }
+  background: var(--bg-primary);
 }
 
 .title-small {

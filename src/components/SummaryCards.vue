@@ -1,11 +1,11 @@
 <template>
-  <div class="summary-cards">
+  <div :class="['summary-cards', sizeClass]">
     <div class="summary-card" :style="cardStyle(0)">
       <h4>Inkomst</h4>
       <div class="amount">{{ fmt(displayIncome) }} kr</div>
     </div>
     <div class="summary-card" :style="cardStyle(1)">
-      <h4>Fasta utgifter</h4>
+      <h4>Utgifter</h4>
       <div class="amount">{{ fmt(displayExpenses) }} kr</div>
     </div>
     <div class="summary-card" :style="cardStyle(2)">
@@ -16,10 +16,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
+
+const sizeClass = computed(() => {
+  const s = store.overviewSettings?.summaryStyle || 'default'
+  return s !== 'default' ? `summary-cards--${s}` : ''
+})
 
 const displayIncome = ref(0)
 const displayExpenses = ref(0)
