@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Sticky header with back button -->
     <div class="settings-header">
       <div class="settings-header-left">
         <button class="back-btn" @click="goBack()" title="Tillbaka">
@@ -196,15 +195,33 @@
 </template>
 
 <script setup>
-import { ref, reactive, inject, computed } from 'vue'
+import { ref, reactive, computed, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
 const goBack = inject('goBack')
 
-const collapsedSections = reactive({})
+const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
+const SECTIONS = ['income', 'expenses', 'categories', 'debts', 'data']
+
+function loadCollapsed() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '{}')
+    const state = {}
+    for (const s of SECTIONS) state[s] = saved[s] !== false
+    return state
+  } catch {
+    return Object.fromEntries(SECTIONS.map((s) => [s, true]))
+  }
+}
+
+const collapsedSections = reactive(loadCollapsed())
+
 function toggleSection(key) {
   collapsedSections[key] = !collapsedSections[key]
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedSections }))
+  } catch {}
 }
 
 // New item form state
@@ -390,8 +407,8 @@ function fmt(n) {
 .chevron {
   width: 18px;
   height: 18px;
-  margin-right: 16px;
-  color: var(--text-tertiary);
+  margin-right: 20px;
+  color: var(--system-blue);
   transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   flex-shrink: 0;
 }

@@ -46,12 +46,7 @@ const props = defineProps({
 const emit = defineEmits(['navigate'])
 
 function onSettingsClick() {
-  if (props.currentView === 'settings') {
-    // handled by SettingsView's back button; just emit navigate to trigger goBack via settings
-    emit('navigate', 'settings')
-  } else {
-    emit('navigate', 'settings')
-  }
+  emit('navigate', 'settings')
 }
 </script>
 

@@ -722,30 +722,26 @@ body {
 .month-controls { display: flex; justify-content: center; margin-bottom: 24px; margin-top: 45px; }
 
 .reset-btn {
-    padding: 22px 40px;
-    background: linear-gradient(135deg, var(--system-blue), var(--system-purple));
-    color: white;
-    border: none;
+    padding: 10px 24px;
+    background: transparent;
+    color: var(--system-red);
+    border: 1px solid var(--system-red);
     border-radius: 999px;
     cursor: pointer;
-    font-size: 17px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 500;
+    opacity: 0.75;
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
-.reset-btn:hover { transform: translateY(-1px); }
-.reset-btn:active { transform: scale(0.95); }
+.reset-btn:hover { opacity: 1; }
+.reset-btn:active { transform: scale(0.95); opacity: 0.5; }
 
 /* ================================= */
 /* SETTINGS VIEW */
 /* ================================= */
 
 .settings-header {
-    position: sticky;
-    top: calc(44px + var(--safe-area-top) - 1px);
-    z-index: 99;
     background: var(--bg-primary);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     padding: 20px 16px;
     display: flex;
     align-items: center;
