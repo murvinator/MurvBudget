@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="settings-view-root">
     <div class="settings-header">
       <div class="settings-header-left">
         <button class="back-btn" @click="goBack()" title="Tillbaka">
@@ -24,19 +24,26 @@
             <span class="overview-toggle-label">Sammanfattning</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showSummaryCards" @change="store.setOverviewSetting('showSummaryCards', $event.target.checked)">
           </div>
-          <div class="overview-toggle-row">
-            <span class="overview-toggle-label">Rörliga</span>
-            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showVariableMini" @change="store.setOverviewSetting('showVariableMini', $event.target.checked)">
+          <div v-if="store.overviewSettings.showSummaryCards" class="chart-type-section">
+            <div class="chart-type-label">Färgtema</div>
+            <div class="chart-type-segment">
+              <button
+                v-for="p in colorPresets"
+                :key="p.value"
+                :class="['segment-btn', 'preset-btn', { active: activePreset === p.value }]"
+                @click="setPreset(p.value)"
+              >
+                <div class="preset-dots">
+                  <span v-for="c in p.colors" :key="c" class="preset-dot" :style="{ background: GRADIENTS[c] }"></span>
+                </div>
+                <span>{{ p.label }}</span>
+              </button>
+            </div>
           </div>
           <div class="overview-toggle-row">
             <span class="overview-toggle-label">Diagram</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showChart" @change="store.setOverviewSetting('showChart', $event.target.checked)">
           </div>
-          <div class="overview-toggle-row">
-            <span class="overview-toggle-label">Skulder</span>
-            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showDebts" @change="store.setOverviewSetting('showDebts', $event.target.checked)">
-          </div>
-
           <div v-if="store.overviewSettings.showChart" class="chart-type-section">
             <div class="chart-type-label">Diagramtyp</div>
             <div class="chart-type-segment">
@@ -47,6 +54,10 @@
                 @click="store.setOverviewSetting('chartType', opt.value)"
               >{{ opt.label }}</button>
             </div>
+          </div>
+          <div class="overview-toggle-row">
+            <span class="overview-toggle-label">Skulder</span>
+            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showDebts" @change="store.setOverviewSetting('showDebts', $event.target.checked)">
           </div>
         </div>
       </div>
@@ -63,17 +74,16 @@
             <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp">
             <button @click="addIncome">Lägg till</button>
           </div>
-          <div
+          <SwipeToDelete
             v-for="(income, idx) in store.income"
             :key="idx"
-            class="expense-item"
+            @delete="deleteIncome(idx)"
           >
-            <div class="expense-info">
+            <template #fixed>
               <div class="expense-name">{{ income.name }}</div>
-            </div>
+            </template>
             <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
-            <button class="delete-btn" @click="deleteIncome(idx)">Ta bort</button>
-          </div>
+          </SwipeToDelete>
         </div>
       </div>
 
@@ -88,11 +98,18 @@
             <input type="text" v-model="newExpenseName" placeholder="Namn">
             <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
           </div>
-          <div class="input-group">
-            <select v-model="newExpenseCategory">
-              <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
-            </select>
-            <button @click="addExpense">Lägg till</button>
+          <div class="input-group input-group--labeled">
+            <div class="field-with-label">
+              <span class="field-label">Kategori</span>
+              <select v-model="newExpenseCategory">
+                <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
+            </div>
+            <div class="field-with-label field-with-label--narrow">
+              <span class="field-label">Dag</span>
+              <input type="number" v-model.number="newExpenseDate" placeholder="1–31" min="1" max="31">
+            </div>
+            <button class="add-expense-bottom-btn" @click="addExpense">Lägg till</button>
           </div>
 
           <!-- Expenses grouped by category -->
@@ -107,17 +124,16 @@
                   :key="expense.globalIndex"
                   class="expense-item-wrapper"
                 >
-                  <div
-                    class="expense-item editable-expense"
-                    :class="{ editing: editingExpense === expense.globalIndex }"
-                    @click="toggleEditExpense(expense.globalIndex)"
-                  >
-                    <div class="expense-info">
-                      <div class="expense-name">{{ expense.name }}</div>
-                    </div>
+                  <SwipeToDelete @delete="deleteExpense(expense.globalIndex)">
+                    <template #fixed>
+                      <div
+                        class="expense-name"
+                        :class="{ editing: editingExpense === expense.globalIndex }"
+                        @click="toggleEditExpense(expense.globalIndex)"
+                      >{{ expense.name }}<span v-if="expense.date" class="expense-date"> {{ expense.date }}</span></div>
+                    </template>
                     <div class="expense-amount">{{ fmt(expense.amount) }} kr</div>
-                    <button class="delete-btn" @click.stop="deleteExpense(expense.globalIndex)">Ta bort</button>
-                  </div>
+                  </SwipeToDelete>
 
                   <div v-show="editingExpense === expense.globalIndex" class="expense-edit-form">
                     <div class="edit-form-content">
@@ -134,6 +150,10 @@
                         <select v-model="editForm.category">
                           <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
                         </select>
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Dag (valfritt)</label>
+                        <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
                       </div>
                       <div class="edit-actions">
                         <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
@@ -159,14 +179,15 @@
             <input type="text" v-model="newCategoryName" placeholder="Ny kategori">
             <button @click="addCategory">Lägg till</button>
           </div>
-          <div
+          <SwipeToDelete
             v-for="(cat, idx) in store.categories"
             :key="cat"
-            class="category-item"
+            @delete="deleteCategory(idx)"
           >
-            <span>{{ cat }}</span>
-            <button class="delete-btn" @click="deleteCategory(idx)">Ta bort</button>
-          </div>
+            <template #fixed>
+              <span class="expense-name">{{ cat }}</span>
+            </template>
+          </SwipeToDelete>
         </div>
       </div>
 
@@ -188,13 +209,26 @@
           <div
             v-for="(debt, idx) in store.debts"
             :key="debt.id"
-            class="expense-item"
+            class="expense-item-wrapper"
           >
-            <div class="expense-info">
-              <div class="expense-name">{{ debt.name }}</div>
+            <SwipeToDelete @delete="deleteDebt(idx)">
+              <template #fixed>
+                <div class="expense-name" @click="toggleEditDebt(idx)">{{ debt.name }}</div>
+              </template>
+              <div class="expense-amount">{{ fmt(debt.amount) }} kr</div>
+            </SwipeToDelete>
+            <div v-show="editingDebt === idx" class="expense-edit-form">
+              <div class="edit-form-content">
+                <div class="edit-input-group">
+                  <label>Belopp</label>
+                  <input type="number" v-model.number="editDebtAmount">
+                </div>
+                <div class="edit-actions">
+                  <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
+                  <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
+                </div>
+              </div>
             </div>
-            <div class="expense-amount">{{ fmt(debt.amount) }} kr</div>
-            <button class="delete-btn" @click="deleteDebt(idx)">Ta bort</button>
           </div>
         </div>
       </div>
@@ -216,6 +250,7 @@
               class="file-input"
               accept=".json"
               @change="importFile"
+              style="display: none"
             >
           </div>
           <div v-if="statusMsg" style="margin-top:10px; font-size:14px; padding: 0 16px 12px;">{{ statusMsg }}</div>
@@ -225,9 +260,13 @@
       <div class="settings-footer">
         <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget</a>
       </div>
-      <div class="swish-footer">
-        <button class="swish-btn" @click="swish">Swisha en gåva</button>
-      </div>
+
+      <button class="support-btn" @click="swish">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="support-icon">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <span>Support this project</span>
+      </button>
     </div>
   </div>
 </template>
@@ -235,6 +274,7 @@
 <script setup>
 import { ref, reactive, computed, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
+import SwipeToDelete from '../components/SwipeToDelete.vue'
 
 const store = useBudgetStore()
 const goBack = inject('goBack')
@@ -247,8 +287,32 @@ const chartTypeOptions = [
   { value: 'doughnut', label: 'Munk' },
   { value: 'bar', label: 'Stapel' },
   { value: 'stackedBar', label: 'Staplad' },
-  { value: 'polarArea', label: 'Polar' },
 ]
+
+const GRADIENTS = {
+  'blue-purple': 'linear-gradient(135deg, #007AFF, #AF52DE)',
+  'orange-pink': 'linear-gradient(135deg, #FF9500, #FF2D92)',
+  'green-teal':  'linear-gradient(135deg, #34C759, #5AC8FA)',
+  'red-orange':  'linear-gradient(135deg, #FF3B30, #FF9500)',
+  'indigo-blue': 'linear-gradient(135deg, #5856D6, #007AFF)',
+  'pink-red':    'linear-gradient(135deg, #FF2D92, #FF3B30)',
+}
+
+const colorPresets = [
+  { value: 'colorful', label: 'Färgglad', colors: ['blue-purple', 'orange-pink', 'green-teal'] },
+  { value: 'mono',     label: 'Enkel',    colors: ['blue-purple', 'blue-purple', 'blue-purple'] },
+  { value: 'stylish',  label: 'Stilren',  colors: ['indigo-blue', 'pink-red', 'red-orange'] },
+]
+
+const activePreset = computed(() => {
+  const current = JSON.stringify(store.overviewSettings.cardColors || [])
+  return colorPresets.find((p) => JSON.stringify(p.colors) === current)?.value ?? null
+})
+
+function setPreset(value) {
+  const preset = colorPresets.find((p) => p.value === value)
+  if (preset) store.setOverviewSetting('cardColors', [...preset.colors])
+}
 
 function loadCollapsed() {
   try {
@@ -277,6 +341,7 @@ const newCategoryName = ref('')
 const newExpenseName = ref('')
 const newExpenseAmount = ref(null)
 const newExpenseCategory = ref(store.categories[0] || '')
+const newExpenseDate = ref(null)
 const newIncomeName = ref('')
 const newIncomeAmount = ref(null)
 const newDebtName = ref('')
@@ -286,12 +351,13 @@ const statusMsg = ref('')
 
 // Expense editing state
 const editingExpense = ref(null)
-const editForm = reactive({ name: '', amount: null, category: '' })
+const editForm = reactive({ name: '', amount: null, category: '', date: null })
 
 function expensesByCategory(cat) {
   return store.expenses
     .map((e, i) => ({ ...e, globalIndex: i }))
     .filter((e) => e.category === cat)
+    .sort((a, b) => b.amount - a.amount)
 }
 
 function toggleEditExpense(globalIndex) {
@@ -304,6 +370,7 @@ function toggleEditExpense(globalIndex) {
   editForm.name = e.name
   editForm.amount = e.amount
   editForm.category = e.category
+  editForm.date = e.date || null
 }
 
 function saveExpenseEdit(globalIndex) {
@@ -311,7 +378,7 @@ function saveExpenseEdit(globalIndex) {
     alert('Vänligen fyll i giltigt namn och belopp.')
     return
   }
-  store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category)
+  store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category, editForm.date)
   editingExpense.value = null
 }
 
@@ -349,9 +416,10 @@ function addExpense() {
   const amount = newExpenseAmount.value
   const category = newExpenseCategory.value
   if (!name || !amount || amount <= 0 || !category) return
-  store.addExpense(name, amount, category)
+  store.addExpense(name, amount, category, newExpenseDate.value)
   newExpenseName.value = ''
   newExpenseAmount.value = null
+  newExpenseDate.value = null
 }
 
 function deleteExpense(idx) {
@@ -390,6 +458,21 @@ function deleteDebt(idx) {
   }
 }
 
+const editingDebt = ref(null)
+const editDebtAmount = ref(null)
+
+function toggleEditDebt(idx) {
+  if (editingDebt.value === idx) { editingDebt.value = null; return }
+  editingDebt.value = idx
+  editDebtAmount.value = store.debts[idx].amount
+}
+
+function saveDebtEdit(idx) {
+  if (!editDebtAmount.value || editDebtAmount.value <= 0) return
+  store.saveEditDebt(idx, editDebtAmount.value)
+  editingDebt.value = null
+}
+
 function triggerImport() {
   importFileRef.value?.click()
 }
@@ -425,6 +508,7 @@ async function loadTestData() {
   }
 }
 
+
 function swish() {
   window.location.href = 'https://app.swish.nu/1/p/sw/?sw=46701484473&amt=10.0&msg=Cool%20app&edit=amt,msg'
 }
@@ -435,6 +519,11 @@ function fmt(n) {
 </script>
 
 <style scoped>
+/* Pull the settings view up to cancel the body's nav-bar padding (no AppHeader here) */
+.settings-view-root {
+  margin-top: -60px;
+}
+
 .section-toggle {
   display: flex;
   align-items: center;
@@ -477,81 +566,193 @@ function fmt(n) {
   color: var(--text-primary);
 }
 
-/* iOS-style toggle switch */
+/* iOS 26 toggle — wider, flatter, near-transparent off-state with border */
 .ios-toggle {
   position: relative;
-  width: 51px;
-  height: 31px;
+  width: 65px;
+  height: 27px;
   flex-shrink: 0;
   -webkit-appearance: none;
   appearance: none;
-  background: var(--separator);
-  border-radius: 16px;
+  background: rgba(120, 120, 128, 0.1);
+  border: 1px solid rgba(120, 120, 128, 0.3);
+  border-radius: 999px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-color 0.25s;
   outline: none;
 }
 
 .ios-toggle:checked {
   background: var(--system-green);
+  border-color: transparent;
 }
 
 .ios-toggle::after {
   content: '';
   position: absolute;
-  width: 27px;
-  height: 27px;
+  width: 36px;
+  height: 23px;
   background: #ffffff;
-  border-radius: 50%;
-  top: 2px;
+  border-radius: 999px;
+  top: 1px;
   left: 2px;
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), 0 0.5px 2px rgba(0, 0, 0, 0.12);
 }
 
 .ios-toggle:checked::after {
-  transform: translateX(20px);
+  transform: translateX(24px);
 }
 
-/* Chart type segmented control */
+@media (prefers-color-scheme: dark) {
+  .ios-toggle {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+/* Preset buttons (color theme + chart type share segment-btn, preset-btn adds column layout) */
+.preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 6px;
+  min-height: unset;
+  white-space: nowrap;
+}
+
+.preset-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.preset-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  display: block;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Chart type pill chips */
 .chart-type-section {
-  padding: 14px 16px 8px;
+  padding: 14px 16px 16px;
 }
 
 .chart-type-label {
   font-size: 13px;
   color: var(--text-tertiary);
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
 
 .chart-type-segment {
   display: flex;
-  background: var(--bg-secondary);
-  border-radius: 9px;
-  padding: 2px;
-  gap: 2px;
+  flex-wrap: nowrap;
+  gap: 8px;
 }
 
 .segment-btn {
   flex: 1;
-  padding: 7px 4px;
-  border: none;
+  padding: 10px 8px;
+  border: 1.5px solid var(--separator);
   background: transparent;
-  border-radius: 7px;
-  font-size: 13px;
+  border-radius: 999px;
+  font-size: 14px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  text-align: center;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
 
 .segment-btn.active {
-  background: var(--card-bg);
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  background: var(--system-blue);
+  border-color: var(--system-blue);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 122, 255, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  .segment-btn {
+    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--text-secondary);
+  }
+
+  .segment-btn.active {
+    box-shadow: 0 2px 10px rgba(0, 122, 255, 0.55);
+  }
+}
+
+/* Labeled field layout for add-expense form */
+.input-group--labeled {
+  align-items: flex-end;
+  flex-wrap: nowrap;
+}
+
+.field-with-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.field-with-label--narrow {
+  flex: 0 0 72px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.add-expense-bottom-btn {
+  align-self: flex-end;
+}
+
+/* Support button */
+.support-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  margin: 8px 22px 32px;
+  padding: 12px 22px;
+  background: rgba(255, 45, 85, 0.1);
+  border: none;
+  border-radius: 999px;
+  color: #FF2D55;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+
+.support-btn:active {
+  opacity: 0.6;
+}
+
+.support-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .support-btn {
+    background: rgba(255, 45, 85, 0.15);
+  }
 }
 </style>

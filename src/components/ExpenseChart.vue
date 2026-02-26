@@ -1,5 +1,5 @@
 <template>
-  <div class="chart-component">
+  <div class="chart-component" :style="isLinearChart ? { minHeight: '380px' } : {}">
     <canvas ref="canvasRef"></canvas>
   </div>
 </template>
@@ -16,33 +16,18 @@ let darkModeQuery = null
 
 const chartData = computed(() => {
   const expenses = store.expenses
-  const variableExpenses = store.variableExpenses
-  const variableExpenseTransactions = store.variableExpenseTransactions
-  const monthKey = store.currentMonthKey
-
-  const totalVariableBudget = variableExpenses.reduce((sum, e) => sum + e.budget, 0)
-
-  let totalVariableSpent = 0
-  if (variableExpenseTransactions[monthKey]) {
-    Object.values(variableExpenseTransactions[monthKey]).forEach((cat) => {
-      totalVariableSpent += cat.reduce((sum, t) => sum + t.amount, 0)
-    })
-  }
-
-  const amountForChart = Math.max(totalVariableBudget, totalVariableSpent)
-
-  const chartExpenses = expenses.map((e) => ({ ...e }))
-  if (amountForChart > 0) {
-    chartExpenses.push({ name: 'Rörliga', amount: amountForChart, category: 'Rörligt' })
-  }
-
-  return chartExpenses
+  return expenses.map((e) => ({ ...e }))
 })
 
 const COLORS = [
   '#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE',
   '#5AC8FA', '#FFCC00', '#FF6482', '#30B0C7', '#32D74B',
 ]
+
+const isLinearChart = computed(() => {
+  const t = store.overviewSettings?.chartType || 'pie'
+  return t === 'bar' || t === 'stackedBar'
+})
 
 function getTextColor() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? '#ffffff' : '#000000'
@@ -76,7 +61,8 @@ function buildChart() {
   const main = prepareData()
   if (!main) return
 
-  const chartType = store.overviewSettings?.chartType || 'pie'
+  const rawType = store.overviewSettings?.chartType || 'pie'
+  const chartType = rawType === 'polarArea' ? 'pie' : rawType
   const textColor = getTextColor()
   const labels = main.map((e) => e.name)
   const amounts = main.map((e) => e.amount)
@@ -105,8 +91,9 @@ function buildChart() {
         plugins: {
           legend: {
             position: 'bottom',
+            onClick: () => {},
             labels: {
-              padding: 12,
+              padding: 25,
               usePointStyle: true,
               pointStyle: 'circle',
               font: { size: 13 },
@@ -116,6 +103,7 @@ function buildChart() {
                   text: `${e.name}: ${((e.amount / grandTotal) * 100).toFixed(0)}%`,
                   fillStyle: COLORS[i % COLORS.length],
                   strokeStyle: COLORS[i % COLORS.length],
+                  fontColor: textColor,
                   pointStyle: 'circle',
                   hidden: false,
                   index: i,
@@ -154,7 +142,7 @@ function buildChart() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: { display: false, onClick: () => {} },
           tooltip: {
             callbacks: {
               label(context) {
@@ -178,20 +166,18 @@ function buildChart() {
     return
   }
 
-  // pie, doughnut, polarArea
-  const isPolarArea = chartType === 'polarArea'
-  const type = isPolarArea ? 'polarArea' : 'doughnut'
-  const cutout = chartType === 'pie' ? '0%' : chartType === 'doughnut' ? '60%' : undefined
+  // pie or doughnut
+  const cutout = chartType === 'doughnut' ? '60%' : '0%'
 
   chartInstance = new Chart(canvasRef.value, {
-    type,
+    type: 'doughnut',
     data: {
       labels,
       datasets: [{
         data: amounts,
         backgroundColor: bgColors,
         borderWidth: 0,
-        spacing: isPolarArea ? 0 : 1,
+        spacing: 1,
       }],
     },
     options: {
@@ -201,6 +187,7 @@ function buildChart() {
         title: { display: false },
         legend: {
           position: 'right',
+          onClick: () => {},
           labels: {
             padding: 20,
             usePointStyle: true,
@@ -217,6 +204,7 @@ function buildChart() {
                   text: `${label}: ${pct}%`,
                   fillStyle: d.datasets[0].backgroundColor[i],
                   strokeStyle: d.datasets[0].backgroundColor[i],
+                  fontColor: textColor,
                   pointStyle: 'circle',
                   hidden: false,
                   index: i,

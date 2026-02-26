@@ -18,7 +18,7 @@
       </filter>
     </svg>
 
-    <AppHeader :current-view="currentView" />
+    <AppHeader v-if="currentView !== 'settings'" :current-view="currentView" />
 
     <div class="container">
       <div class="content">
