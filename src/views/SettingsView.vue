@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="settings-view-root">
     <div class="settings-header">
       <div class="settings-header-left">
         <button class="back-btn" @click="goBack()" title="Tillbaka">
@@ -23,10 +23,6 @@
           <div class="overview-toggle-row">
             <span class="overview-toggle-label">Sammanfattning</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showSummaryCards" @change="store.setOverviewSetting('showSummaryCards', $event.target.checked)">
-          </div>
-          <div class="overview-toggle-row">
-            <span class="overview-toggle-label">Rörliga</span>
-            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showVariableMini" @change="store.setOverviewSetting('showVariableMini', $event.target.checked)">
           </div>
           <div class="overview-toggle-row">
             <span class="overview-toggle-label">Diagram</span>
@@ -439,6 +435,11 @@ function fmt(n) {
 </script>
 
 <style scoped>
+/* Pull the settings view up to cancel the body's nav-bar padding (no AppHeader here) */
+.settings-view-root {
+  margin-top: -60px;
+}
+
 .section-toggle {
   display: flex;
   align-items: center;

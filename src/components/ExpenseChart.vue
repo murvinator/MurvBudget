@@ -16,27 +16,7 @@ let darkModeQuery = null
 
 const chartData = computed(() => {
   const expenses = store.expenses
-  const variableExpenses = store.variableExpenses
-  const variableExpenseTransactions = store.variableExpenseTransactions
-  const monthKey = store.currentMonthKey
-
-  const totalVariableBudget = variableExpenses.reduce((sum, e) => sum + e.budget, 0)
-
-  let totalVariableSpent = 0
-  if (variableExpenseTransactions[monthKey]) {
-    Object.values(variableExpenseTransactions[monthKey]).forEach((cat) => {
-      totalVariableSpent += cat.reduce((sum, t) => sum + t.amount, 0)
-    })
-  }
-
-  const amountForChart = Math.max(totalVariableBudget, totalVariableSpent)
-
-  const chartExpenses = expenses.map((e) => ({ ...e }))
-  if (amountForChart > 0) {
-    chartExpenses.push({ name: 'Rörliga', amount: amountForChart, category: 'Rörligt' })
-  }
-
-  return chartExpenses
+  return expenses.map((e) => ({ ...e }))
 })
 
 const COLORS = [

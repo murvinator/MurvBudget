@@ -1,33 +1,16 @@
 <template>
-  <!-- Fixed nav bar strip only — always 44px + safe area, solid background -->
+  <!-- Fixed nav bar strip — always 44px + safe area -->
   <div class="header">
-    <button v-if="currentView === 'settings'" class="header-back-btn" @click="goBack" :style="{ opacity: titleOpacity, pointerEvents: titleOpacity > 0 ? 'auto' : 'none' }">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polyline points="15 18 9 12 15 6"></polyline>
-      </svg>
-      <span>Tillbaka</span>
-    </button>
-    <span class="title-small" :style="{ opacity: titleOpacity }">
-      {{ currentView === 'settings' ? 'Inställningar' : 'Budget' }}
-    </span>
+    <span class="title-small" :style="{ opacity: titleOpacity }">Budget</span>
     <div class="header-separator" :style="{ opacity: titleOpacity }"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
-
-const props = defineProps({
-  currentView: String,
-})
-
-const goBack = inject('goBack')
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const scrollY = ref(0)
 
-// The large title fully disappears behind the nav bar at ~74px of scroll
-// (36px gap between header bottom and title top, + ~38px title height).
-// Snap the small title in quickly over just 12px so it feels like a crossfade, not an overlap.
 const titleOpacity = computed(() => {
   const start = 68
   const end = 80
@@ -60,12 +43,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
 }
 
 @media (prefers-color-scheme: dark) {
   .header {
-    background: #000000;
+    background: rgba(0, 0, 0, 0.75);
   }
 }
 
@@ -83,27 +68,5 @@ onUnmounted(() => {
   right: 0;
   height: 0.5px;
   background: var(--separator);
-}
-
-.header-back-btn {
-  position: absolute;
-  left: 4px;
-  display: flex;
-  align-items: center;
-  gap: 0px;
-  background: none;
-  border: none;
-  color: var(--system-blue);
-  font-size: 17px;
-  font-weight: 400;
-  cursor: pointer;
-  padding: 0 8px;
-  height: 44px;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.header-back-btn svg {
-  width: 28px;
-  height: 28px;
 }
 </style>
