@@ -746,6 +746,7 @@ function fmt(n) {
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.4px;
+  padding-left: 7px;
 }
 
 .add-expense-bottom-btn {

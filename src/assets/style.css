@@ -544,12 +544,28 @@ body {
 /* CATEGORY COMPONENTS */
 /* ================================= */
 
-.category-header { background: transparent; margin-bottom: 2px; }
+.checklist-section {
+    background: var(--card-bg);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+    border: 1px solid var(--separator);
+}
+
+.category-header {
+    background: transparent;
+}
+
+.category-header.category-header--expanded {
+    border-bottom: 0.5px solid var(--separator);
+}
+
 .category-header h3 {
-    padding: 16px 20px;
+    padding: 14px 20px;
     font-size: 17px;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     background: transparent;
     margin: 0;
     text-transform: capitalize;
@@ -557,13 +573,13 @@ body {
 
 .category-list {
     background: var(--card-bg);
-    border-radius: 16px;
-    margin-bottom: 24px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.category-list:hover { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06); }
+/* Reset category header styles inside settings */
+.settings-content .category-header.category-header--expanded {
+    border-bottom: none;
+}
 .category-total { border-top: 1px solid var(--separator); font-weight: 600; }
 .category-total .expense-name { color: var(--text-secondary); }
 .category-total .expense-amount { color: var(--text-primary); }
