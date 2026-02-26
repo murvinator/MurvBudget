@@ -73,7 +73,7 @@
       </template>
     </template>
 
-    <div class="month-controls">
+    <div v-if="!allCollapsed" class="month-controls">
       <button class="reset-btn" @click="resetMonth">Återställ checkboxar</button>
     </div>
   </div>
@@ -158,6 +158,12 @@ const grandPaid = computed(() =>
 
 const grandRemaining = computed(() => grandTotal.value - grandPaid.value)
 
+const allCollapsed = computed(() =>
+  store.categories
+    .filter((cat) => categoryExpenses(cat).length > 0)
+    .every((cat) => collapsedCategories[cat])
+)
+
 function resetMonth() {
   if (confirm('Vill du återställa alla checkboxar?')) {
     store.resetCurrentMonth()
@@ -220,5 +226,10 @@ function fmt(n) {
 
 .chevron.collapsed {
   transform: rotate(-90deg);
+}
+
+/* Ensure reset button is always above the tab bar on small screens */
+.month-controls {
+  margin-bottom: 60px;
 }
 </style>

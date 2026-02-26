@@ -225,9 +225,13 @@
       <div class="settings-footer">
         <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget</a>
       </div>
-      <div class="swish-footer">
-        <button class="swish-btn" @click="swish">Swisha en gåva</button>
-      </div>
+
+      <button class="support-btn" @click="swish">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="support-icon">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <span>Support this project</span>
+      </button>
     </div>
   </div>
 </template>
@@ -247,7 +251,6 @@ const chartTypeOptions = [
   { value: 'doughnut', label: 'Munk' },
   { value: 'bar', label: 'Stapel' },
   { value: 'stackedBar', label: 'Staplad' },
-  { value: 'polarArea', label: 'Polar' },
 ]
 
 function loadCollapsed() {
@@ -425,6 +428,7 @@ async function loadTestData() {
   }
 }
 
+
 function swish() {
   window.location.href = 'https://app.swish.nu/1/p/sw/?sw=46701484473&amt=10.0&msg=Cool%20app&edit=amt,msg'
 }
@@ -553,5 +557,52 @@ function fmt(n) {
   background: var(--card-bg);
   color: var(--text-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  .chart-type-segment {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .segment-btn.active {
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: none;
+  }
+}
+
+/* Support button */
+.support-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  margin: 8px 16px 32px;
+  padding: 14px 20px;
+  background: rgba(255, 45, 85, 0.1);
+  border: none;
+  border-radius: 14px;
+  color: #FF2D55;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+
+.support-btn:active {
+  opacity: 0.6;
+}
+
+.support-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .support-btn {
+    background: rgba(255, 45, 85, 0.15);
+  }
 }
 </style>
