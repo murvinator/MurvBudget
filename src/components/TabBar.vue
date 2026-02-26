@@ -60,3 +60,10 @@ function onSettingsClick() {
   }
 }
 </script>
+
+<style scoped>
+/* Remove glass distortion from the circular button — keeps the border crisp */
+.nav-action-btn :deep(.liquidGlass-effect) {
+  filter: none;
+}
+</style>

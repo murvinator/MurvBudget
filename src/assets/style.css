@@ -244,6 +244,7 @@ body {
     .tab-bar .nav-action-btn { border: 1px solid rgba(255,255,255,0.06); }
     .tab-btn.active { background: var(--system-gray5); }
     .nav-action-btn { border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+    .nav-action-btn.active { border: 1px solid var(--system-blue); }
 }
 
 /* ================================= */

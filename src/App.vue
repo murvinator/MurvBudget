@@ -18,7 +18,7 @@
       </filter>
     </svg>
 
-    <AppHeader />
+    <AppHeader :current-view="currentView" />
 
     <div class="container">
       <div class="content">
