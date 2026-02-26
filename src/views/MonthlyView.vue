@@ -85,10 +85,28 @@ import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
 
-const collapsedCategories = reactive({})
+const COLLAPSED_KEY = 'murvbudget-monthly-collapsed'
+
+function loadCollapsed() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '{}')
+    const state = {}
+    for (const cat of store.categories) {
+      state[cat] = saved[cat] !== false
+    }
+    return state
+  } catch {
+    return Object.fromEntries(store.categories.map((c) => [c, true]))
+  }
+}
+
+const collapsedCategories = reactive(loadCollapsed())
 
 function toggleCategory(category) {
   collapsedCategories[category] = !collapsedCategories[category]
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
+  } catch {}
 }
 
 function categoryExpenses(category) {

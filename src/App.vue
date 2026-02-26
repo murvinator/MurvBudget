@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, provide } from 'vue'
 import { useBudgetStore } from './stores/budget'
 import AppHeader from './components/AppHeader.vue'
 import TabBar from './components/TabBar.vue'
@@ -61,7 +61,9 @@ const currentViewComponent = computed(() => {
 })
 
 function showView(name) {
-  if (name !== 'settings') lastView.value = currentView.value
+  if (currentView.value !== 'settings') {
+    lastView.value = currentView.value
+  }
   currentView.value = name
   window.scrollTo(0, 0)
 }
@@ -71,8 +73,6 @@ function goBack() {
   window.scrollTo(0, 0)
 }
 
-// Provide goBack to settings view via provide/inject
-import { provide } from 'vue'
 provide('goBack', goBack)
 
 onMounted(() => {

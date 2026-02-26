@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Sticky header with back button -->
     <div class="settings-header">
       <div class="settings-header-left">
         <button class="back-btn" @click="goBack()" title="Tillbaka">
@@ -13,6 +12,44 @@
     </div>
 
     <div class="settings-root">
+
+      <!-- Översiktsinställningar -->
+      <div class="settings-section">
+        <div class="section-toggle" @click="toggleSection('overview')">
+          <h3>Översikt</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['overview'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div v-show="!collapsedSections['overview']" class="settings-content">
+          <div class="overview-toggle-row">
+            <span class="overview-toggle-label">Sammanfattning</span>
+            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showSummaryCards" @change="store.setOverviewSetting('showSummaryCards', $event.target.checked)">
+          </div>
+          <div class="overview-toggle-row">
+            <span class="overview-toggle-label">Rörliga</span>
+            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showVariableMini" @change="store.setOverviewSetting('showVariableMini', $event.target.checked)">
+          </div>
+          <div class="overview-toggle-row">
+            <span class="overview-toggle-label">Diagram</span>
+            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showChart" @change="store.setOverviewSetting('showChart', $event.target.checked)">
+          </div>
+          <div class="overview-toggle-row">
+            <span class="overview-toggle-label">Skulder</span>
+            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showDebts" @change="store.setOverviewSetting('showDebts', $event.target.checked)">
+          </div>
+
+          <div v-if="store.overviewSettings.showChart" class="chart-type-section">
+            <div class="chart-type-label">Diagramtyp</div>
+            <div class="chart-type-segment">
+              <button
+                v-for="opt in chartTypeOptions"
+                :key="opt.value"
+                :class="['segment-btn', { active: store.overviewSettings.chartType === opt.value }]"
+                @click="store.setOverviewSetting('chartType', opt.value)"
+              >{{ opt.label }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Inkomster -->
       <div class="settings-section">
@@ -196,15 +233,41 @@
 </template>
 
 <script setup>
-import { ref, reactive, inject, computed } from 'vue'
+import { ref, reactive, computed, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
 const goBack = inject('goBack')
 
-const collapsedSections = reactive({})
+const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
+const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'data']
+
+const chartTypeOptions = [
+  { value: 'pie', label: 'Tårta' },
+  { value: 'doughnut', label: 'Munk' },
+  { value: 'bar', label: 'Stapel' },
+  { value: 'stackedBar', label: 'Staplad' },
+  { value: 'polarArea', label: 'Polar' },
+]
+
+function loadCollapsed() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '{}')
+    const state = {}
+    for (const s of SECTIONS) state[s] = saved[s] !== false
+    return state
+  } catch {
+    return Object.fromEntries(SECTIONS.map((s) => [s, true]))
+  }
+}
+
+const collapsedSections = reactive(loadCollapsed())
+
 function toggleSection(key) {
   collapsedSections[key] = !collapsedSections[key]
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedSections }))
+  } catch {}
 }
 
 // New item form state
@@ -390,13 +453,105 @@ function fmt(n) {
 .chevron {
   width: 18px;
   height: 18px;
-  margin-right: 16px;
-  color: var(--text-tertiary);
+  margin-right: 20px;
+  color: var(--system-blue);
   transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   flex-shrink: 0;
 }
 
 .chevron.collapsed {
   transform: rotate(-90deg);
+}
+
+/* Overview toggle rows */
+.overview-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 0.5px solid var(--separator);
+}
+
+.overview-toggle-label {
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+/* iOS-style toggle switch */
+.ios-toggle {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  flex-shrink: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--separator);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  outline: none;
+}
+
+.ios-toggle:checked {
+  background: var(--system-green);
+}
+
+.ios-toggle::after {
+  content: '';
+  position: absolute;
+  width: 27px;
+  height: 27px;
+  background: #ffffff;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.ios-toggle:checked::after {
+  transform: translateX(20px);
+}
+
+/* Chart type segmented control */
+.chart-type-section {
+  padding: 14px 16px 8px;
+}
+
+.chart-type-label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.chart-type-segment {
+  display: flex;
+  background: var(--bg-secondary);
+  border-radius: 9px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.segment-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.segment-btn.active {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 </style>

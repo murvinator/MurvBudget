@@ -20,6 +20,13 @@ export const useBudgetStore = defineStore('budget', {
     debtPayments: {},
     variableExpenses: [],
     variableExpenseTransactions: {},
+    overviewSettings: {
+      showSummaryCards: true,
+      showVariableMini: true,
+      showChart: true,
+      showDebts: true,
+      chartType: 'pie',
+    },
   }),
 
   getters: {
@@ -40,6 +47,11 @@ export const useBudgetStore = defineStore('budget', {
   },
 
   actions: {
+    // ── Overview Settings ────────────────────────────────────────────────────
+    setOverviewSetting(key, value) {
+      this.overviewSettings[key] = value
+    },
+
     // ── Income ──────────────────────────────────────────────────────────────
     addIncome(name, amount) {
       this.income.push({ name, amount: parseInt(amount) })
@@ -268,6 +280,16 @@ export const useBudgetStore = defineStore('budget', {
           this.debtPayments = migrated
         }
       }
+      // Ensure overviewSettings exists with all required keys
+      const defaultOverview = { showSummaryCards: true, showVariableMini: true, showChart: true, showDebts: true, chartType: 'pie' }
+      if (!this.overviewSettings) {
+        this.overviewSettings = defaultOverview
+      } else {
+        for (const [k, v] of Object.entries(defaultOverview)) {
+          if (this.overviewSettings[k] === undefined) this.overviewSettings[k] = v
+        }
+      }
+
       // Remove Skulder category from categories list
       this.categories = this.categories.filter((c) => c !== 'Skulder')
       // Migrate expenses with category Skulder into debts
