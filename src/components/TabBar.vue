@@ -15,12 +15,6 @@
         <button
           type="button"
           class="tab-btn"
-          :class="{ active: currentView === 'budget' }"
-          @click="emit('navigate', 'budget')"
-        >Rörliga</button>
-        <button
-          type="button"
-          class="tab-btn"
           :class="{ active: currentView === 'monthly' }"
           @click="emit('navigate', 'monthly')"
         >Checklista</button>
