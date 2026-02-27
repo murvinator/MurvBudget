@@ -26,7 +26,7 @@
       <div class="content">
         <!-- Large title scrolls with content, naturally disappears behind the fixed nav bar -->
         <h1 v-if="currentView !== 'settings'" class="page-large-title">{{ viewTitle }}</h1>
-        <component :is="currentViewComponent" @navigate="showView" />
+        <component :is="currentViewComponent" ref="activeViewRef" @navigate="showView" />
       </div>
     </div>
 
@@ -51,6 +51,7 @@ import SettingsView from './views/SettingsView.vue'
 
 const store = useBudgetStore()
 const confirmSheetRef = ref(null)
+const activeViewRef = ref(null)
 
 const splashDone = ref(sessionStorage.getItem('splashShown') === '1')
 if (!splashDone.value) sessionStorage.setItem('splashShown', '1')
@@ -76,6 +77,14 @@ const viewTitle = computed(() => {
 })
 
 function showView(name) {
+  if (name === currentView.value) {
+    if (name === 'settings') {
+      activeViewRef.value?.toggleAllSections?.()
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    return
+  }
   if (currentView.value !== 'settings') {
     lastView.value = currentView.value
   }
@@ -92,6 +101,7 @@ provide('goBack', goBack)
 provide('confirm', (msg) => confirmSheetRef.value?.show(msg))
 
 onMounted(() => {
+  history.scrollRestoration = 'manual'
   store.migrateData()
 })
 </script>

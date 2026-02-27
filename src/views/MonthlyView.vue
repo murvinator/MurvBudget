@@ -46,7 +46,7 @@
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </div>
-        <div v-show="!collapsedCategories[category]" class="category-list">
+        <CollapseTransition><div v-if="!collapsedCategories[category]" class="category-list">
           <div
             v-for="expense in categoryExpenses(category)"
             :key="expense.index"
@@ -92,7 +92,7 @@
             </div>
             <div class="expense-amount" style="font-weight: 600">{{ fmt(categoryTotal(category)) }} kr</div>
           </div>
-        </div>
+        </div></CollapseTransition>
         </div><!-- /.checklist-section -->
       </template>
     </template>
@@ -106,6 +106,7 @@
 <script setup>
 import { computed, reactive } from 'vue'
 import { useBudgetStore } from '../stores/budget'
+import CollapseTransition from '../components/CollapseTransition.vue'
 
 const store = useBudgetStore()
 

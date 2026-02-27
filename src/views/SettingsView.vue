@@ -19,7 +19,7 @@
           <h3>Översikt</h3>
           <svg class="chevron" :class="{ collapsed: collapsedSections['overview'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div v-show="!collapsedSections['overview']" class="settings-content">
+        <CollapseTransition><div v-if="!collapsedSections['overview']" class="settings-content">
           <div
             v-for="(widget, idx) in store.overviewSettings.widgetOrder"
             :key="widget.id"
@@ -70,7 +70,7 @@
             </div>
 
             <!-- Sub-settings for summary widget -->
-            <div v-show="expandedWidgets[widget.id] && widget.id === 'summary'" class="widget-sub-settings">
+            <CollapseTransition><div v-if="expandedWidgets[widget.id] && widget.id === 'summary'" class="widget-sub-settings">
               <div class="chart-type-section">
                 <div class="chart-type-label">Storlek</div>
                 <div class="chart-type-segment">
@@ -98,10 +98,10 @@
                   </button>
                 </div>
               </div>
-            </div>
+            </div></CollapseTransition>
 
             <!-- Sub-settings for chart widget -->
-            <div v-show="expandedWidgets[widget.id] && widget.id === 'chart'" class="widget-sub-settings">
+            <CollapseTransition><div v-if="expandedWidgets[widget.id] && widget.id === 'chart'" class="widget-sub-settings">
               <div class="chart-type-section chart-type-section--last">
                 <div class="chart-type-label">Diagramtyp</div>
                 <div class="chart-type-segment">
@@ -113,9 +113,9 @@
                   >{{ opt.label }}</button>
                 </div>
               </div>
-            </div>
+            </div></CollapseTransition>
           </div>
-        </div>
+        </div></CollapseTransition>
       </div>
 
       <!-- Inkomster -->
@@ -124,7 +124,7 @@
           <h3>Inkomster</h3>
           <svg class="chevron" :class="{ collapsed: collapsedSections['income'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div v-show="!collapsedSections['income']" class="settings-content">
+        <CollapseTransition><div v-if="!collapsedSections['income']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newIncomeName" placeholder="Namn">
             <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp">
@@ -140,7 +140,7 @@
             </template>
             <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
           </SwipeToDelete>
-        </div>
+        </div></CollapseTransition>
       </div>
 
       <!-- Fasta utgifter -->
@@ -149,7 +149,7 @@
           <h3>Utgifter</h3>
           <svg class="chevron" :class="{ collapsed: collapsedSections['expenses'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div v-show="!collapsedSections['expenses']" class="settings-content">
+        <CollapseTransition><div v-if="!collapsedSections['expenses']" class="settings-content">
           <div v-if="store.categories.length === 0" class="no-categories-notice">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -240,7 +240,7 @@
               </div>
             </template>
           </template>
-        </div>
+        </div></CollapseTransition>
       </div>
 
       <!-- Kategorier -->
@@ -249,7 +249,7 @@
           <h3>Kategorier</h3>
           <svg class="chevron" :class="{ collapsed: collapsedSections['categories'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div v-show="!collapsedSections['categories']" class="settings-content">
+        <CollapseTransition><div v-if="!collapsedSections['categories']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newCategoryName" placeholder="Ny kategori">
             <button @click="addCategory">Lägg till</button>
@@ -263,7 +263,7 @@
               <span class="expense-name">{{ cat }}</span>
             </template>
           </SwipeToDelete>
-        </div>
+        </div></CollapseTransition>
       </div>
 
       <!-- Skulder -->
@@ -272,7 +272,7 @@
           <h3>Skulder</h3>
           <svg class="chevron" :class="{ collapsed: collapsedSections['debts'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div v-show="!collapsedSections['debts']" class="settings-content">
+        <CollapseTransition><div v-if="!collapsedSections['debts']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newDebtName" placeholder="Namn">
             <input type="number" v-model.number="newDebtAmount" placeholder="Belopp">
@@ -302,7 +302,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </div></CollapseTransition>
       </div>
 
       <!-- Data -->
@@ -311,7 +311,7 @@
           <h3>Data</h3>
           <svg class="chevron" :class="{ collapsed: collapsedSections['data'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div v-show="!collapsedSections['data']" class="settings-content">
+        <CollapseTransition><div v-if="!collapsedSections['data']" class="settings-content">
           <div class="export-import" style="padding: 12px 16px;">
             <button @click="exportData">Exportera Data</button>
             <button @click="triggerImport">Importera Data</button>
@@ -326,7 +326,7 @@
             >
           </div>
           <div v-if="statusMsg" style="margin-top:10px; font-size:14px; padding: 0 16px 12px;">{{ statusMsg }}</div>
-        </div>
+        </div></CollapseTransition>
       </div>
 
       <div class="settings-footer">
@@ -347,6 +347,7 @@
 import { ref, reactive, computed, inject, watch } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 import SwipeToDelete from '../components/SwipeToDelete.vue'
+import CollapseTransition from '../components/CollapseTransition.vue'
 
 const store = useBudgetStore()
 const goBack = inject('goBack')
@@ -492,6 +493,16 @@ function toggleSection(key) {
     sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedSections }))
   } catch {}
 }
+
+function toggleAllSections() {
+  const anyOpen = SECTIONS.some(s => !collapsedSections[s])
+  for (const s of SECTIONS) collapsedSections[s] = anyOpen
+  try {
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedSections }))
+  } catch {}
+}
+
+defineExpose({ toggleAllSections })
 
 // New item form state
 const newCategoryName = ref('')
