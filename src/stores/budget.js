@@ -303,6 +303,7 @@ export const useBudgetStore = defineStore('budget', {
 
     // ── Cloud Sync ───────────────────────────────────────────────────────────
     async syncToCloud() {
+      if (!supabase) return
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const now = new Date().toISOString()
@@ -315,6 +316,7 @@ export const useBudgetStore = defineStore('budget', {
     },
 
     async loadFromCloud() {
+      if (!supabase) return null
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return null
       const { data, error } = await supabase

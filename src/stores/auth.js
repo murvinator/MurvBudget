@@ -15,6 +15,8 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async init() {
+      if (!supabase) return
+
       const { data: { session } } = await supabase.auth.getSession()
       this.user = session?.user ?? null
 
@@ -24,6 +26,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async signUp(email, password) {
+      if (!supabase) { this.error = 'Molnsynk ej konfigurerad.'; return null }
       this.loading = true
       this.error = null
       try {
@@ -37,6 +40,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async signIn(email, password) {
+      if (!supabase) { this.error = 'Molnsynk ej konfigurerad.'; return null }
       this.loading = true
       this.error = null
       try {
@@ -50,12 +54,13 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async signOut() {
-      await supabase.auth.signOut()
+      if (supabase) await supabase.auth.signOut()
       this.user = null
       this.lastSynced = null
     },
 
     async deleteCloudData() {
+      if (!supabase) return false
       this.loading = true
       this.error = null
       try {
@@ -72,6 +77,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async deleteAccount() {
+      if (!supabase) return false
       this.loading = true
       this.error = null
       try {
@@ -96,6 +102,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async resetPassword(email) {
+      if (!supabase) { this.error = 'Molnsynk ej konfigurerad.'; return false }
       this.loading = true
       this.error = null
       try {
