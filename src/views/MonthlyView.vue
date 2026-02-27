@@ -104,11 +104,12 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, watch, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 import CollapseTransition from '../components/CollapseTransition.vue'
 
 const store = useBudgetStore()
+const confirm = inject('confirm')
 
 const COLLAPSED_KEY = 'murvbudget-monthly-collapsed'
 
@@ -126,6 +127,12 @@ function loadCollapsed() {
 }
 
 const collapsedCategories = reactive(loadCollapsed())
+
+watch(() => store.categories, (cats) => {
+  for (const cat of cats) {
+    if (collapsedCategories[cat] === undefined) collapsedCategories[cat] = true
+  }
+}, { deep: true })
 
 function toggleCategory(category) {
   collapsedCategories[category] = !collapsedCategories[category]
@@ -213,14 +220,13 @@ function toggleAll() {
   } catch {}
 }
 
-function resetMonth() {
-  if (confirm('Vill du återställa alla checkboxar?')) {
-    store.resetCurrentMonth()
-  }
+async function resetMonth() {
+  const ok = await confirm('Vill du återställa alla checkboxar?', { label: 'Återställ', style: 'destructive' })
+  if (ok) store.resetCurrentMonth()
 }
 
 function fmt(n) {
-  return n.toLocaleString('sv-SE')
+  return (n || 0).toLocaleString('sv-SE')
 }
 </script>
 

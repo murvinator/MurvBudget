@@ -1,6 +1,7 @@
 <template>
   <div>
     <SplashScreen v-if="!splashDone" @done="splashDone = true" />
+    <OnboardingScreen v-if="splashDone && showOnboarding" @done="showOnboarding = false" />
 
     <!-- Liquid Glass SVG filter (hidden) -->
     <svg style="display:none">
@@ -20,9 +21,9 @@
       </filter>
     </svg>
 
-    <AppHeader v-if="currentView !== 'settings'" :current-view="currentView" />
+    <AppHeader v-if="currentView !== 'settings' && !showOnboarding" :current-view="currentView" />
 
-    <div class="container">
+    <div v-show="!showOnboarding" class="container">
       <div class="content">
         <!-- Large title scrolls with content, naturally disappears behind the fixed nav bar -->
         <h1 v-if="currentView !== 'settings'" class="page-large-title">{{ viewTitle }}</h1>
@@ -30,7 +31,7 @@
       </div>
     </div>
 
-    <TabBar :current-view="currentView" @navigate="showView" />
+    <TabBar v-show="!showOnboarding" :current-view="currentView" @navigate="showView" />
 
     <DebtPaymentModal />
     <ConfirmSheet ref="confirmSheetRef" />
@@ -38,18 +39,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, provide } from 'vue'
+import { ref, computed, watch, onMounted, provide } from 'vue'
 import { useBudgetStore } from './stores/budget'
+import { useAuthStore } from './stores/auth'
 import AppHeader from './components/AppHeader.vue'
 import TabBar from './components/TabBar.vue'
 import DebtPaymentModal from './components/DebtPaymentModal.vue'
 import ConfirmSheet from './components/ConfirmSheet.vue'
 import SplashScreen from './components/SplashScreen.vue'
+import OnboardingScreen from './components/OnboardingScreen.vue'
 import OverviewView from './views/OverviewView.vue'
 import MonthlyView from './views/MonthlyView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 const store = useBudgetStore()
+const authStore = useAuthStore()
 const confirmSheetRef = ref(null)
 const activeViewRef = ref(null)
 
@@ -97,11 +101,77 @@ function goBack() {
   window.scrollTo(0, 0)
 }
 
+const localDataTs = ref(localStorage.getItem('murvbudget-local-updated-at'))
+
+const ONBOARDING_KEY = 'murvbudget-onboarding'
+
+function computeShowOnboarding() {
+  if (authStore.isLoggedIn) return false
+  const stored = localStorage.getItem(ONBOARDING_KEY)
+  if (stored === 'never') return false
+  // Existing user with data — skip silently and mark done
+  const hasData = store.income.length > 0 || store.expenses.length > 0 || store.categories.length > 0
+  if (hasData && !stored) {
+    localStorage.setItem(ONBOARDING_KEY, 'never')
+    return false
+  }
+  // Shown recently — respect the 14-day cooldown
+  if (stored) {
+    const daysSince = (Date.now() - new Date(stored).getTime()) / (1000 * 60 * 60 * 24)
+    if (daysSince < 14) return false
+  }
+  return true
+}
+
+// Computed synchronously at setup time — prevents any flicker
+const showOnboarding = ref(computeShowOnboarding())
+
 provide('goBack', goBack)
-provide('confirm', (msg) => confirmSheetRef.value?.show(msg))
+provide('confirm', (msg, opts) => confirmSheetRef.value?.show(msg, opts))
+provide('localDataTs', localDataTs)
+
+function hasStoreData() {
+  return store.income.length > 0 || store.expenses.length > 0 ||
+    store.categories.length > 0 || store.debts.length > 0 ||
+    store.variableExpenses.length > 0
+}
 
 onMounted(() => {
   history.scrollRestoration = 'manual'
   store.migrateData()
+  authStore.init()
+
+  // Also hide if auth resolves to logged-in asynchronously (Supabase session restore)
+  watch(() => authStore.isLoggedIn, (loggedIn) => {
+    if (loggedIn) showOnboarding.value = false
+  })
+
+  // Seed timestamp if we have existing data but no key yet (first run after this feature)
+  if (hasStoreData() && !localDataTs.value) {
+    const now = new Date().toISOString()
+    localStorage.setItem('murvbudget-local-updated-at', now)
+    localDataTs.value = now
+  }
+
+  let syncTimer = null
+  store.$subscribe(() => {
+    // Update local-data timestamp reactively
+    if (hasStoreData()) {
+      const now = new Date().toISOString()
+      localStorage.setItem('murvbudget-local-updated-at', now)
+      localDataTs.value = now
+    } else {
+      localStorage.removeItem('murvbudget-local-updated-at')
+      localDataTs.value = null
+    }
+
+    // Auto-sync to cloud
+    if (!authStore.isLoggedIn) return
+    clearTimeout(syncTimer)
+    syncTimer = setTimeout(async () => {
+      await store.syncToCloud()
+      authStore.setLastSynced()
+    }, 2000)
+  })
 })
 </script>

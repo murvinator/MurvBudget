@@ -128,18 +128,41 @@
           <div class="input-group">
             <input type="text" v-model="newIncomeName" placeholder="Namn">
             <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp">
-            <button @click="addIncome">Lägg till</button>
+            <button :class="{ 'btn-added': addFeedback.income }" @click="addIncome">{{ addFeedback.income ? 'Tillagt' : 'Lägg till' }}</button>
           </div>
-          <SwipeToDelete
+          <div
             v-for="(income, idx) in store.income"
             :key="idx"
-            @delete="deleteIncome(idx)"
+            class="expense-item-wrapper"
           >
-            <template #fixed>
-              <div class="expense-name">{{ income.name }}</div>
-            </template>
-            <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
-          </SwipeToDelete>
+            <SwipeToDelete @delete="deleteIncome(idx)">
+              <template #fixed>
+                <div
+                  class="expense-name"
+                  :class="{ editing: editingIncome === idx }"
+                  @click="toggleEditIncome(idx)"
+                >{{ income.name }}</div>
+              </template>
+              <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
+            </SwipeToDelete>
+            <div v-show="editingIncome === idx" class="expense-edit-form">
+              <div class="edit-form-content">
+                <div class="edit-input-group">
+                  <label>Namn</label>
+                  <input type="text" v-model="editIncomeForm.name">
+                </div>
+                <div class="edit-input-group">
+                  <label>Belopp</label>
+                  <input type="number" v-model.number="editIncomeForm.amount">
+                </div>
+                <div class="edit-actions">
+                  <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
+                  <button class="cancel-edit-btn" @click="editingIncome = null">Avbryt</button>
+                  <button class="delete-edit-btn" @click="deleteIncomeFromEdit(idx)">Radera</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div></CollapseTransition>
       </div>
 
@@ -172,7 +195,7 @@
                 <span class="field-label">Dag</span>
                 <input type="number" v-model.number="newExpenseDate" placeholder="valfritt" min="1" max="31">
               </div>
-              <button class="add-expense-bottom-btn" @click="addExpense">Lägg till</button>
+              <button class="add-expense-bottom-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">{{ addFeedback.expense ? 'Tillagt' : 'Lägg till' }}</button>
             </div>
           </template>
 
@@ -231,8 +254,9 @@
                         <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
                       </div>
                       <div class="edit-actions">
-                        <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
                         <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
+                        <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
+                        <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
                       </div>
                     </div>
                   </div>
@@ -252,17 +276,36 @@
         <CollapseTransition><div v-if="!collapsedSections['categories']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newCategoryName" placeholder="Ny kategori">
-            <button @click="addCategory">Lägg till</button>
+            <button :class="{ 'btn-added': addFeedback.category }" @click="addCategory">{{ addFeedback.category ? 'Tillagt' : 'Lägg till' }}</button>
           </div>
-          <SwipeToDelete
+          <div
             v-for="(cat, idx) in store.categories"
             :key="cat"
-            @delete="deleteCategory(idx)"
+            class="expense-item-wrapper"
           >
-            <template #fixed>
-              <span class="expense-name">{{ cat }}</span>
-            </template>
-          </SwipeToDelete>
+            <SwipeToDelete @delete="deleteCategory(idx)">
+              <template #fixed>
+                <div
+                  class="expense-name"
+                  :class="{ editing: editingCategory === idx }"
+                  @click="toggleEditCategory(idx)"
+                >{{ cat }}</div>
+              </template>
+            </SwipeToDelete>
+            <div v-show="editingCategory === idx" class="expense-edit-form">
+              <div class="edit-form-content">
+                <div class="edit-input-group">
+                  <label>Namn</label>
+                  <input type="text" v-model="editCategoryName">
+                </div>
+                <div class="edit-actions">
+                  <button class="save-edit-btn" @click="saveCategoryEdit(idx)">Spara</button>
+                  <button class="cancel-edit-btn" @click="editingCategory = null">Avbryt</button>
+                  <button class="delete-edit-btn" @click="deleteCategoryFromEdit(idx)">Radera</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div></CollapseTransition>
       </div>
 
@@ -276,7 +319,7 @@
           <div class="input-group">
             <input type="text" v-model="newDebtName" placeholder="Namn">
             <input type="number" v-model.number="newDebtAmount" placeholder="Belopp">
-            <button @click="addDebt">Lägg till</button>
+            <button :class="{ 'btn-added': addFeedback.debt }" @click="addDebt">{{ addFeedback.debt ? 'Tillagt' : 'Lägg till' }}</button>
           </div>
           <div
             v-for="(debt, idx) in store.debts"
@@ -296,8 +339,9 @@
                   <input type="number" v-model.number="editDebtAmount">
                 </div>
                 <div class="edit-actions">
-                  <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
                   <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
+                  <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
+                  <button class="delete-edit-btn" @click="deleteDebtFromEdit(idx)">Radera</button>
                 </div>
               </div>
             </div>
@@ -305,27 +349,94 @@
         </div></CollapseTransition>
       </div>
 
-      <!-- Data -->
+      <!-- Konto -->
       <div class="settings-section">
-        <div class="section-toggle" @click="toggleSection('data')">
-          <h3>Data</h3>
-          <svg class="chevron" :class="{ collapsed: collapsedSections['data'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        <div class="section-toggle" @click="toggleSection('account')">
+          <h3>Konto och data</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['account'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <CollapseTransition><div v-if="!collapsedSections['data']" class="settings-content">
-          <div class="export-import" style="padding: 12px 16px;">
-            <button @click="exportData">Exportera Data</button>
-            <button @click="triggerImport">Importera Data</button>
-            <button @click="loadTestData">Ladda testdata</button>
-            <input
-              ref="importFileRef"
-              type="file"
-              class="file-input"
-              accept=".json"
-              @change="importFile"
-              style="display: none"
-            >
+        <CollapseTransition><div v-if="!collapsedSections['account']" class="settings-content">
+
+          <!-- Logged out -->
+          <div v-if="!authStore.isLoggedIn" class="konto-login-block">
+            <div class="konto-login-text">
+              <p class="konto-login-title">Synka din budget</p>
+              <p class="konto-login-sub">Skapa ett konto för att spara din data i molnet och komma åt den från flera enheter. Använd exportera/importera knapparna nedan för att kunna spara data utan konto.</p>
+            </div>
+            <button class="konto-primary-btn" @click="openAuthModal">Logga in / Skapa konto</button>
           </div>
-          <div v-if="statusMsg" style="margin-top:10px; font-size:14px; padding: 0 16px 12px;">{{ statusMsg }}</div>
+
+          <!-- Logged in -->
+          <template v-else>
+            <div class="konto-row">
+              <span class="konto-email">{{ authStore.user.email }}</span>
+              <button class="konto-signout-btn" @click="signOut">Logga ut</button>
+            </div>
+            <div class="konto-sync-row">
+              <div class="konto-sync-status">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" class="konto-sync-check"><polyline points="20 6 9 17 4 12"/></svg>
+                <span class="konto-sync-main">{{ authStore.lastSynced ? `Synkad ${authStore.lastSynced}` : 'Synkad med molnet' }}</span>
+              </div>
+              <span class="konto-sync-sub">Uppdateras automatiskt vid varje ändring</span>
+            </div>
+          </template>
+
+          <!-- Data buttons — always visible -->
+          <div class="konto-data-row">
+            <button class="data-chip" @click="exportData">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportera
+            </button>
+            <button class="data-chip" @click="triggerImport">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Importera
+            </button>
+            <button class="data-chip data-chip--muted" @click="loadTestData">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+              Testdata
+            </button>
+            <input ref="importFileRef" type="file" accept=".json" @change="importFile" style="display:none">
+          </div>
+          <p v-if="statusMsg" class="konto-status-msg">{{ statusMsg }}</p>
+
+          <!-- Radera sub-section -->
+          <div class="radera-toggle" @click="deleteExpanded = !deleteExpanded">
+            <span class="radera-toggle-label">Radera</span>
+            <svg class="chevron-sm" :class="{ 'chevron-sm--open': deleteExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <CollapseTransition>
+            <div v-if="deleteExpanded" class="radera-content">
+
+              <!-- Radera lokal data -->
+              <div class="radera-row">
+                <div class="radera-row-text">
+                  <p class="radera-row-title">Lokal data</p>
+                  <p class="radera-row-sub">{{ hasLocalData ? (localDataDate ? `Senast ändrad ${localDataDate}` : 'Sparad lokalt') : 'Ingen lokal data' }}</p>
+                </div>
+                <button class="radera-btn" :disabled="!hasLocalData" @click="doDeleteLocal">Radera</button>
+              </div>
+
+              <!-- Radera molndata + konto (only if logged in) -->
+              <template v-if="authStore.isLoggedIn">
+                <div class="radera-row radera-row--sep">
+                  <div class="radera-row-text">
+                    <p class="radera-row-title">Molndata</p>
+                    <p class="radera-row-sub">{{ localDataDate ? `Senast synkad ${localDataDate}` : 'Data i ditt konto' }}</p>
+                  </div>
+                  <button class="radera-btn" @click="doDeleteCloud">Radera</button>
+                </div>
+                <div class="radera-row radera-row--sep">
+                  <div class="radera-row-text">
+                    <p class="radera-row-title">Konto</p>
+                    <p class="radera-row-sub">{{ authStore.user.email }}</p>
+                  </div>
+                  <button class="radera-btn" @click="doDeleteAccount">Radera</button>
+                </div>
+              </template>
+
+            </div>
+          </CollapseTransition>
+
         </div></CollapseTransition>
       </div>
 
@@ -341,20 +452,85 @@
       </button>
     </div>
   </div>
+
+  <AuthModal ref="authModalRef" />
 </template>
 
 <script setup>
 import { ref, reactive, computed, inject, watch } from 'vue'
 import { useBudgetStore } from '../stores/budget'
+import { useAuthStore } from '../stores/auth'
 import SwipeToDelete from '../components/SwipeToDelete.vue'
 import CollapseTransition from '../components/CollapseTransition.vue'
+import AuthModal from '../components/AuthModal.vue'
 
 const store = useBudgetStore()
+const authStore = useAuthStore()
 const goBack = inject('goBack')
 const confirm = inject('confirm')
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
-const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'data']
+const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'account']
+
+const authModalRef = ref(null)
+const deleteExpanded = ref(false)
+const localDataTs = inject('localDataTs')
+
+const hasLocalData = computed(() =>
+  store.income.length > 0 || store.expenses.length > 0 ||
+  store.categories.length > 0 || store.debts.length > 0 ||
+  store.variableExpenses.length > 0
+)
+
+const localDataDate = computed(() => {
+  if (!localDataTs.value) return null
+  return new Date(localDataTs.value).toLocaleDateString('sv-SE')
+})
+
+async function openAuthModal() {
+  await authModalRef.value?.show()
+}
+
+async function signOut() {
+  const ok = await confirm(
+    'Du loggas ut från ditt konto. Din lokala data behålls på enheten.',
+    { label: 'Logga ut', style: 'destructive' }
+  )
+  if (ok) authStore.signOut()
+}
+
+async function doDeleteLocal() {
+  const ok = await confirm(
+    'All lokal data på den här enheten raderas permanent. Molndata påverkas inte.',
+    { label: 'Radera lokal data', style: 'destructive' }
+  )
+  if (!ok) return
+  store.clearLocalData()
+  statusMsg.value = 'Lokal data raderad.'
+  setTimeout(() => { statusMsg.value = '' }, 3000)
+}
+
+async function doDeleteCloud() {
+  const ok = await confirm(
+    'All molndata på ditt konto raderas permanent. Lokal data på den här enheten påverkas inte.',
+    { label: 'Radera molndata', style: 'destructive' }
+  )
+  if (!ok) return
+  const success = await authStore.deleteCloudData()
+  if (success) {
+    statusMsg.value = 'Molndata raderad.'
+    setTimeout(() => { statusMsg.value = '' }, 3000)
+  }
+}
+
+async function doDeleteAccount() {
+  const ok = await confirm(
+    'Ditt konto och all molndata raderas permanent. Lokal data på enheten behålls. Åtgärden kan inte ångras.',
+    { label: 'Radera konto', style: 'destructive' }
+  )
+  if (!ok) return
+  await authStore.deleteAccount()
+}
 
 const WIDGET_LABELS = {
   summary:    'Sammanfattning',
@@ -516,6 +692,66 @@ const newDebtName = ref('')
 const newDebtAmount = ref(null)
 const importFileRef = ref(null)
 const statusMsg = ref('')
+const addFeedback = reactive({})
+function showAddFeedback(key) {
+  addFeedback[key] = true
+  setTimeout(() => { addFeedback[key] = false }, 2000)
+}
+
+// Income editing state
+const editingIncome = ref(null)
+const editIncomeForm = reactive({ name: '', amount: null })
+
+function toggleEditIncome(idx) {
+  if (editingIncome.value === idx) { editingIncome.value = null; return }
+  editingIncome.value = idx
+  editIncomeForm.name = store.income[idx].name
+  editIncomeForm.amount = store.income[idx].amount
+}
+
+async function saveIncomeEdit(idx) {
+  if (!editIncomeForm.name || !editIncomeForm.amount || editIncomeForm.amount <= 0) {
+    await confirm('Vänligen fyll i giltigt namn och belopp.', { label: 'OK', style: 'primary' })
+    return
+  }
+  store.saveEditIncome(idx, editIncomeForm.name, editIncomeForm.amount)
+  editingIncome.value = null
+}
+
+async function deleteIncomeFromEdit(idx) {
+  const ok = await confirm('Ta bort inkomsten?')
+  if (ok) {
+    store.deleteIncome(idx)
+    editingIncome.value = null
+  }
+}
+
+// Category editing state
+const editingCategory = ref(null)
+const editCategoryName = ref('')
+
+function toggleEditCategory(idx) {
+  if (editingCategory.value === idx) { editingCategory.value = null; return }
+  editingCategory.value = idx
+  editCategoryName.value = store.categories[idx]
+}
+
+async function saveCategoryEdit(idx) {
+  const name = editCategoryName.value.trim()
+  if (!name) return
+  if (name === 'Skulder') { await confirm("'Skulder' är reserverat och kan inte användas.", { label: 'OK', style: 'primary' }); return }
+  store.saveEditCategory(idx, name)
+  editingCategory.value = null
+}
+
+async function deleteCategoryFromEdit(idx) {
+  if (store.categories.length === 1) { await confirm('Minst en kategori krävs.', { label: 'OK', style: 'primary' }); return }
+  const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
+  if (ok) {
+    store.deleteCategory(idx)
+    editingCategory.value = null
+  }
+}
 
 // Expense editing state
 const editingExpense = ref(null)
@@ -541,21 +777,22 @@ function toggleEditExpense(globalIndex) {
   editForm.date = e.date || null
 }
 
-function saveExpenseEdit(globalIndex) {
+async function saveExpenseEdit(globalIndex) {
   if (!editForm.name || !editForm.amount || editForm.amount <= 0) {
-    alert('Vänligen fyll i giltigt namn och belopp.')
+    await confirm('Vänligen fyll i giltigt namn och belopp.', { label: 'OK', style: 'primary' })
     return
   }
   store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category, editForm.date)
   editingExpense.value = null
 }
 
-function addCategory() {
+async function addCategory() {
   const name = newCategoryName.value.trim()
   if (!name) return
-  if (name === 'Skulder') { alert("'Skulder' är reserverat och kan inte läggas till."); return }
+  if (name === 'Skulder') { await confirm("'Skulder' är reserverat och kan inte läggas till.", { label: 'OK', style: 'primary' }); return }
   store.addCategory(name)
   newCategoryName.value = ''
+  showAddFeedback('category')
 }
 
 async function deleteCategory(idx) {
@@ -573,11 +810,20 @@ function addExpense() {
   newExpenseName.value = ''
   newExpenseAmount.value = null
   newExpenseDate.value = null
+  showAddFeedback('expense')
 }
 
 async function deleteExpense(idx) {
   const ok = await confirm('Ta bort utgiften?')
   if (ok) store.deleteExpense(idx)
+}
+
+async function deleteExpenseFromEdit(globalIndex) {
+  const ok = await confirm('Ta bort utgiften?')
+  if (ok) {
+    store.deleteExpense(globalIndex)
+    editingExpense.value = null
+  }
 }
 
 function addIncome() {
@@ -587,6 +833,7 @@ function addIncome() {
   store.addIncome(name, amount)
   newIncomeName.value = ''
   newIncomeAmount.value = null
+  showAddFeedback('income')
 }
 
 async function deleteIncome(idx) {
@@ -601,11 +848,20 @@ function addDebt() {
   store.addDebt(name, amount)
   newDebtName.value = ''
   newDebtAmount.value = null
+  showAddFeedback('debt')
 }
 
 async function deleteDebt(idx) {
   const ok = await confirm('Ta bort skulden?')
   if (ok) store.deleteDebt(idx)
+}
+
+async function deleteDebtFromEdit(idx) {
+  const ok = await confirm('Ta bort skulden?')
+  if (ok) {
+    store.deleteDebt(idx)
+    editingDebt.value = null
+  }
 }
 
 const editingDebt = ref(null)
@@ -623,37 +879,55 @@ function saveDebtEdit(idx) {
   editingDebt.value = null
 }
 
-function exportData() {
+async function exportData() {
+  const ok = await confirm(
+    'Filen sparas på din enhet som en JSON-fil. Importera den igen med Importera-knappen om du byter enhet eller vill återställa din data.',
+    { label: 'Exportera', style: 'primary' }
+  )
+  if (!ok) return
   store.exportData()
   statusMsg.value = 'Data exporterad!'
   setTimeout(() => { statusMsg.value = '' }, 3000)
 }
 
-function triggerImport() {
-  importFileRef.value?.click()
+async function triggerImport() {
+  const ok = await confirm(
+    'Välj en tidigare exporterad MurvBudget-fil (.json). All nuvarande data på den här enheten ersätts med innehållet i filen.',
+    { label: 'Välj fil', style: 'primary' }
+  )
+  if (ok) importFileRef.value?.click()
 }
 
 function importFile(event) {
   const file = event.target.files[0]
   if (!file) return
   const reader = new FileReader()
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const data = JSON.parse(e.target.result)
       const required = ['income', 'expenses', 'categories']
       const missing = required.filter(k => !Array.isArray(data[k]))
       if (missing.length) {
-        alert(`Filen saknar obligatoriska fält: ${missing.join(', ')}. Kontrollera att det är en giltig MurvBudget-fil.`)
+        await confirm(`Filen saknar obligatoriska fält: ${missing.join(', ')}. Kontrollera att det är en giltig MurvBudget-fil.`, { label: 'OK', style: 'primary' })
         event.target.value = ''
         return
       }
-      if (confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')) {
+      const incomeInvalid = data.income.some(i => typeof i.name !== 'string' || typeof i.amount !== 'number')
+      const expensesInvalid = data.expenses.some(ex => typeof ex.name !== 'string' || typeof ex.amount !== 'number' || typeof ex.category !== 'string')
+      const categoriesInvalid = data.categories.some(c => typeof c !== 'string')
+      if (incomeInvalid || expensesInvalid || categoriesInvalid) {
+        await confirm('Filen innehåller ogiltiga poster. Kontrollera att det är en giltig MurvBudget-fil.', { label: 'OK', style: 'primary' })
+        event.target.value = ''
+        return
+      }
+      const ok = await confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')
+      if (ok) {
         store.importData(data)
         statusMsg.value = 'Data importerad!'
         setTimeout(() => { statusMsg.value = '' }, 3000)
       }
     } catch {
-      alert('Fel vid import av data. Kontrollera att filen är korrekt JSON.')
+      await confirm('Fel vid import av data. Kontrollera att filen är korrekt JSON.', { label: 'OK', style: 'primary' })
     }
     event.target.value = ''
   }
@@ -661,13 +935,14 @@ function importFile(event) {
 }
 
 async function loadTestData() {
-  if (!confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')) return
-  const ok = await store.loadTestData()
-  if (ok) {
+  const ok = await confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')
+  if (!ok) return
+  const result = await store.loadTestData()
+  if (result) {
     statusMsg.value = 'Testdata laddad!'
     setTimeout(() => { statusMsg.value = '' }, 3000)
   } else {
-    alert('Kunde inte ladda testdata.')
+    await confirm('Kunde inte ladda testdata.', { label: 'OK', style: 'primary' })
   }
 }
 
@@ -999,6 +1274,11 @@ function fmt(n) {
   align-self: flex-end;
 }
 
+.btn-added {
+  background: var(--system-green) !important;
+  pointer-events: none;
+}
+
 /* Support button */
 .support-btn {
   display: flex;
@@ -1034,4 +1314,232 @@ function fmt(n) {
     background: rgba(255, 45, 85, 0.15);
   }
 }
+
+/* Konto section */
+.konto-login-block {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.konto-login-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.konto-login-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.konto-primary-btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: var(--system-blue);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+
+.konto-primary-btn:active { opacity: 0.7; }
+
+.konto-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.konto-email {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.konto-signout-btn {
+  flex-shrink: 0;
+  padding: 6px 13px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--system-red);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+
+.konto-signout-btn:active { opacity: 0.6; }
+
+.konto-sync-row {
+  padding: 10px 16px 12px;
+  border-top: 0.5px solid var(--separator);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.konto-sync-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.konto-sync-check {
+  color: var(--system-green);
+  flex-shrink: 0;
+}
+
+.konto-sync-main {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.konto-sync-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding-left: 19px;
+}
+
+/* Data chip buttons */
+.konto-data-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  border-top: 0.5px solid var(--separator);
+  flex-wrap: wrap;
+}
+
+.data-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border: 1px solid var(--separator);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--system-blue);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.data-chip:active { opacity: 0.55; }
+
+.data-chip--muted {
+  color: var(--text-secondary);
+}
+
+.konto-status-msg {
+  font-size: 13px;
+  color: var(--system-green);
+  padding: 0 16px 12px;
+  margin: 0;
+}
+
+/* Radera sub-section */
+.radera-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  border-top: 0.5px solid var(--separator);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.radera-toggle-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--system-red);
+}
+
+.chevron-sm {
+  width: 15px;
+  height: 15px;
+  color: var(--system-red);
+  opacity: 0.7;
+  transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: rotate(-90deg);
+}
+
+.chevron-sm--open {
+  transform: rotate(0deg);
+}
+
+.radera-content {
+  border-top: 0.5px solid var(--separator);
+}
+
+.radera-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: 12px;
+}
+
+.radera-row--sep {
+  border-top: 0.5px solid var(--separator);
+}
+
+.radera-row-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.radera-row-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+
+.radera-row-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.radera-btn {
+  flex-shrink: 0;
+  padding: 6px 13px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--system-red);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+
+.radera-btn:active { opacity: 0.6; }
+.radera-btn:disabled { opacity: 0.3; pointer-events: none; }
 </style>

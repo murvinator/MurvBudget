@@ -33,8 +33,8 @@
         >{{ displayRate }}</text>
       </svg>
     </div>
-    <div class="sr-label">av inkomsten kvar</div>
-    <div class="sr-amount">{{ fmt(store.remaining) }} kr</div>
+    <div class="sr-label">{{ srLabel }}</div>
+    <div class="sr-amount" :style="{ color: store.remaining < 0 ? 'var(--system-red)' : undefined }">{{ fmt(store.remaining) }} kr</div>
   </div>
 </template>
 
@@ -59,6 +59,12 @@ const ringColor = computed(() => {
   if (rate.value > 0) return 'var(--system-green)'
   if (rate.value < 0) return 'var(--system-red)'
   return 'var(--system-gray3)'
+})
+
+const srLabel = computed(() => {
+  if (store.totalIncome === 0) return 'ingen inkomst'
+  if (rate.value < 0) return 'underskott'
+  return 'av inkomsten kvar'
 })
 
 const dashOffset = computed(() => {

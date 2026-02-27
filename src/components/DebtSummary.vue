@@ -1,5 +1,13 @@
 <template>
-  <div v-if="store.debts.length > 0" class="debt-summary-component">
+  <div class="debt-summary-component">
+    <div v-if="store.debts.length === 0" class="debt-empty-state">
+      <div class="no-debts-text">
+      <p>Inga skulder att visa.</p>
+      <p>Lägg till skulder under Inställningar.</p>
+      </div>  
+    </div>
+
+    <template v-else>
     <div class="debt-header-toggle" @click="toggleOpen">
       <h3>Skulder</h3>
       <div class="debt-header-right">
@@ -13,7 +21,7 @@
       </div>
     </div>
 
-    <div v-show="isOpen" class="debt-content">
+    <CollapseTransition><div v-if="isOpen" class="debt-content">
       <div
         v-for="(debt, idx) in store.debts"
         :key="debt.id"
@@ -85,15 +93,18 @@
         <span>Totalt</span>
         <span>{{ fmt(totalDebt) }} kr</span>
       </div>
-    </div>
+    </div></CollapseTransition>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
+import CollapseTransition from './CollapseTransition.vue'
 
 const store = useBudgetStore()
+const confirm = inject('confirm')
 
 const isOpen = ref(false)
 const openDebt = ref(null)
@@ -121,10 +132,10 @@ function reversedPayments(debt) {
   return payments(debt).map((p, i) => ({ p, origIdx: i })).reverse()
 }
 
-function payDebt(idx) {
+async function payDebt(idx) {
   const amount = parseFloat(payAmounts[idx])
   if (isNaN(amount) || amount <= 0) {
-    alert('Ange ett giltigt belopp')
+    await confirm('Ange ett giltigt belopp.', { label: 'OK', style: 'primary' })
     return
   }
   store.addDebtPayment(idx, amount, '')
@@ -135,17 +146,19 @@ function startEdit(debtIdx, payIdx, p) {
   editingPayment.value = { debtIdx, payIdx, amount: p.amount }
 }
 
-function saveEditPayment() {
+async function saveEditPayment() {
   const { debtIdx, payIdx, amount } = editingPayment.value
-  if (isNaN(amount) || amount <= 0) { alert('Ange ett giltigt belopp'); return }
+  if (isNaN(amount) || amount <= 0) {
+    await confirm('Ange ett giltigt belopp.', { label: 'OK', style: 'primary' })
+    return
+  }
   store.editDebtPayment(debtIdx, payIdx, amount, store.debtPayments[store.debts[debtIdx].id][payIdx]?.note || '')
   editingPayment.value = null
 }
 
-function deletePayment(debtIdx, payIdx) {
-  if (confirm('Ta bort denna betalning?')) {
-    store.deleteDebtPayment(debtIdx, payIdx)
-  }
+async function deletePayment(debtIdx, payIdx) {
+  const ok = await confirm('Ta bort denna betalning?')
+  if (ok) store.deleteDebtPayment(debtIdx, payIdx)
 }
 
 function fmt(n) {
@@ -156,3 +169,19 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('sv-SE')
 }
 </script>
+
+<style scoped>
+.debt-empty-state {
+  padding: 8px 4px 4px;
+}
+.debt-empty-state p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+
+.no-debts-text{
+  padding: 12px;
+}
+</style>

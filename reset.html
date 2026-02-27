@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MurvBudget – Nytt lösenord</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #000000;
+      --text-secondary: #6c6c70;
+      --blue: #007aff;
+      --green: #34c759;
+      --red: #ff3b30;
+      --separator: rgba(60, 60, 67, 0.18);
+      --radius: 14px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --card: #1c1c1e;
+        --text: #ffffff;
+        --text-secondary: #aeaeb2;
+        --separator: rgba(255, 255, 255, 0.14);
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+    }
+
+    .card-header {
+      padding: 28px 20px 20px;
+      text-align: center;
+      border-bottom: 0.5px solid var(--separator);
+    }
+
+    .logo-icon {
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, #007AFF, #5273de);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 40px rgba(0, 122, 255, 0.35);
+      margin: 0 auto 14px;
+    }
+
+    .logo-icon svg {
+      width: 46px;
+      height: 46px;
+    }
+
+    .card-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+    }
+
+    .card-header p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid var(--separator);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus { border-color: var(--blue); }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: var(--blue);
+      color: #fff;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+    }
+
+    button:disabled { opacity: 0.6; cursor: default; }
+    button:active:not(:disabled) { opacity: 0.75; }
+
+    .error {
+      font-size: 13px;
+      color: var(--red);
+      text-align: center;
+    }
+
+    /* Success state */
+    .success-card {
+      padding: 32px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .success-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(52, 199, 89, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .success-icon svg { color: var(--green); }
+
+    .success-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .success-card p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .success-card p strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Loading state */
+    #loading {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    /* Invalid link state */
+    .invalid-card {
+      padding: 32px 20px;
+      text-align: center;
+    }
+
+    .invalid-card p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      
+      <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+          </svg>
+      </div>
+
+      <h1>MurvBudget</h1>
+      <p id="header-text">Återställ ditt lösenord</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading">Laddar…</div>
+
+    <!-- Form (hidden initially) -->
+    <div class="card-body" id="form" style="display:none">
+      <input type="password" id="password" placeholder="Nytt lösenord" autocomplete="new-password">
+      <input type="password" id="password-confirm" placeholder="Upprepa lösenord" autocomplete="new-password">
+      <p class="error" id="error" style="display:none"></p>
+      <button id="submit-btn" onclick="submitPassword()">Spara lösenord</button>
+    </div>
+
+    <!-- Success (hidden initially) -->
+    <div class="success-card" id="success" style="display:none">
+      <div class="success-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2>Klart!</h2>
+      <p>Ditt lösenord är uppdaterat.<br>Du kan stänga det här fönstret och <strong>logga in i MurvBudget-appen</strong> med ditt nya lösenord.</p>
+    </div>
+
+    <!-- Invalid link -->
+    <div class="invalid-card" id="invalid" style="display:none">
+      <p>Den här länken är ogiltig eller har redan använts. Begär en ny återställningslänk i appen.</p>
+    </div>
+  </div>
+
+  <script type="module" src="/src/reset.js"></script>
+</body>
+</html>

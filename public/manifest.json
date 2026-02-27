@@ -1,6 +1,6 @@
 {
-  "name": "MurvBudget",
-  "short_name": "MurvBudget",
+  "name": "BudgetApp",
+  "short_name": "BudgetApp",
   "description": "Personlig budgethantering – enkel och lokal",
   "start_url": "/",
   "display": "standalone",

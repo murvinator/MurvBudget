@@ -4,11 +4,15 @@
       <div v-if="visible" class="confirm-backdrop" @click="cancel">
         <div class="confirm-sheet" @click.stop>
 
-          <!-- Action group: message + destructive button -->
+          <!-- Action group: message + action button -->
           <div class="confirm-group">
             <p v-if="message" class="confirm-message">{{ message }}</p>
             <div v-if="message" class="confirm-sep"></div>
-            <button class="confirm-btn confirm-btn--destructive" @click="doConfirm">Ta bort</button>
+            <button
+              class="confirm-btn"
+              :class="btnStyle === 'primary' ? 'confirm-btn--primary' : 'confirm-btn--destructive'"
+              @click="doConfirm"
+            >{{ btnLabel }}</button>
           </div>
 
           <!-- Cancel — separate card, per iOS HIG -->
@@ -27,10 +31,14 @@ import { ref } from 'vue'
 
 const visible = ref(false)
 const message = ref('')
+const btnLabel = ref('Ta bort')
+const btnStyle = ref('destructive')
 let resolveFn = null
 
-function show(msg) {
+function show(msg, opts = {}) {
   message.value = msg || ''
+  btnLabel.value = opts.label || 'Ta bort'
+  btnStyle.value = opts.style || 'destructive'
   visible.value = true
   return new Promise((resolve) => { resolveFn = resolve })
 }
@@ -114,6 +122,11 @@ defineExpose({ show })
 .confirm-btn--destructive {
   color: var(--system-red);
   font-weight: 400;
+}
+
+.confirm-btn--primary {
+  color: var(--system-blue);
+  font-weight: 600;
 }
 
 .confirm-btn--cancel {

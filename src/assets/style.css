@@ -522,7 +522,8 @@ body {
 .edit-actions { display: flex; gap: 10px; margin-top: 8px; }
 
 .cancel-edit-btn,
-.save-edit-btn {
+.save-edit-btn,
+.delete-edit-btn {
     flex: 1;
     padding: 12px 20px;
     border: none;
@@ -533,11 +534,13 @@ body {
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.cancel-edit-btn { background: var(--system-gray5); color: var(--text-primary); }
-.cancel-edit-btn:hover { background: var(--system-gray4); transform: translateY(-1px); }
-.save-edit-btn { background: var(--system-blue); color: white; }
-.save-edit-btn:hover { background: #0056cc; transform: translateY(-1px); }
-.cancel-edit-btn:active, .save-edit-btn:active { transform: scale(0.95); }
+.edit-actions .cancel-edit-btn { background: var(--system-gray5); color: var(--text-primary); }
+.edit-actions .cancel-edit-btn:hover { background: var(--system-gray4); transform: translateY(-1px); }
+.edit-actions .save-edit-btn { background: var(--system-blue); color: white; }
+.edit-actions .save-edit-btn:hover { background: #0056cc; transform: translateY(-1px); }
+.edit-actions .delete-edit-btn { background: var(--system-red); color: white; }
+.edit-actions .delete-edit-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.edit-actions .cancel-edit-btn:active, .edit-actions .save-edit-btn:active, .edit-actions .delete-edit-btn:active { transform: scale(0.95); }
 
 /* ================================= */
 /* CATEGORY COMPONENTS */
