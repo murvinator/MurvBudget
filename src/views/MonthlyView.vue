@@ -58,7 +58,7 @@
             <div class="expense-info">
               <div class="expense-name">{{ expense.name }}</div>
             </div>
-            <span v-if="expense.date" class="expense-date-badge">
+            <span class="expense-date-badge" :style="expense.date ? {} : { visibility: 'hidden' }">
               <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
                 <rect x="1" y="2" width="10" height="9" rx="1.5"/>
                 <line x1="1" y1="5" x2="11" y2="5"/>
