@@ -19,10 +19,24 @@
       </div>
     </div>
 
+    <!-- Show/Hide all toggle -->
+    <div class="monthly-toggle-all">
+      <span class="monthly-section-title">{{ store.currentMonthName }}</span>
+      <span class="monthly-paid-count">{{ paidCount }} av {{ totalCount }} betalt</span>
+      <button class="toggle-all-btn" @click="toggleAll">
+        {{ allExpanded ? 'Dölj alla' : 'Visa alla' }}
+      </button>
+    </div>
+
     <!-- Expenses grouped by category (#54 collapsible) -->
     <template v-for="category in store.categories" :key="category">
       <template v-if="categoryExpenses(category).length > 0">
-        <div class="category-header collapsible-header" @click="toggleCategory(category)">
+        <div class="checklist-section">
+        <div
+          class="category-header collapsible-header"
+          :class="{ 'category-header--expanded': !collapsedCategories[category] }"
+          @click="toggleCategory(category)"
+        >
           <h3>{{ category }}</h3>
           <svg
             class="chevron"
@@ -70,6 +84,7 @@
             <div class="expense-amount" style="font-weight: 600">{{ fmt(categoryTotal(category)) }} kr</div>
           </div>
         </div>
+        </div><!-- /.checklist-section -->
       </template>
     </template>
 
@@ -158,11 +173,35 @@ const grandPaid = computed(() =>
 
 const grandRemaining = computed(() => grandTotal.value - grandPaid.value)
 
+const paidCount = computed(() =>
+  store.expenses.filter((_, i) => isPaid(i)).length
+)
+
+const totalCount = computed(() => store.expenses.length)
+
 const allCollapsed = computed(() =>
   store.categories
     .filter((cat) => categoryExpenses(cat).length > 0)
     .every((cat) => collapsedCategories[cat])
 )
+
+const allExpanded = computed(() =>
+  store.categories
+    .filter((cat) => categoryExpenses(cat).length > 0)
+    .every((cat) => !collapsedCategories[cat])
+)
+
+function toggleAll() {
+  const expand = !allExpanded.value
+  for (const cat of store.categories) {
+    if (categoryExpenses(cat).length > 0) {
+      collapsedCategories[cat] = !expand
+    }
+  }
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
+  } catch {}
+}
 
 function resetMonth() {
   if (confirm('Vill du återställa alla checkboxar?')) {
@@ -213,19 +252,59 @@ function fmt(n) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-right: 4px;
+  padding-right: 16px;
 }
 
 .chevron {
   width: 20px;
   height: 20px;
-  color: var(--text-tertiary);
+  color: var(--system-blue);
   transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   flex-shrink: 0;
 }
 
 .chevron.collapsed {
   transform: rotate(-90deg);
+}
+
+.monthly-toggle-all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.monthly-section-title {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  padding-left: 17px;
+}
+
+.monthly-paid-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  flex: 1;
+  text-align: center;
+}
+
+.toggle-all-btn {
+  padding: 6px 16px;
+  background: transparent;
+  color: var(--system-blue);
+  border: 1px solid var(--system-blue);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toggle-all-btn:active {
+  opacity: 0.6;
+  transform: scale(0.95);
 }
 
 /* Ensure reset button is always above the tab bar on small screens */

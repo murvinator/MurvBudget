@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { computed } from 'vue'
 
 function genId(prefix = 'd') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -27,6 +26,7 @@ export const useBudgetStore = defineStore('budget', {
       showDebts: true,
       chartType: 'pie',
       cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
+      summaryStyle: 'default',
     },
   }),
 
@@ -289,13 +289,18 @@ export const useBudgetStore = defineStore('budget', {
         }
       }
       // Ensure overviewSettings exists with all required keys
-      const defaultOverview = { showSummaryCards: true, showVariableMini: true, showChart: true, showDebts: true, chartType: 'pie', cardColors: ['blue-purple', 'orange-pink', 'green-teal'] }
+      const defaultOverview = { showSummaryCards: true, showVariableMini: true, showChart: true, showDebts: true, chartType: 'pie', cardColors: ['blue-purple', 'orange-pink', 'green-teal'], summaryStyle: 'default' }
       if (!this.overviewSettings) {
         this.overviewSettings = defaultOverview
       } else {
         for (const [k, v] of Object.entries(defaultOverview)) {
           if (this.overviewSettings[k] === undefined) this.overviewSettings[k] = v
         }
+      }
+
+      // Rename old summaryStyle 'medium' (previous default) to 'default'
+      if (this.overviewSettings.summaryStyle === 'medium') {
+        this.overviewSettings.summaryStyle = 'default'
       }
 
       // Remove Skulder category from categories list

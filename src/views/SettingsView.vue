@@ -20,41 +20,56 @@
           <svg class="chevron" :class="{ collapsed: collapsedSections['overview'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div v-show="!collapsedSections['overview']" class="settings-content">
-          <div class="overview-toggle-row">
+          <div class="overview-toggle-row" :class="{ 'no-separator': store.overviewSettings.showSummaryCards }">
             <span class="overview-toggle-label">Sammanfattning</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showSummaryCards" @change="store.setOverviewSetting('showSummaryCards', $event.target.checked)">
           </div>
-          <div v-if="store.overviewSettings.showSummaryCards" class="chart-type-section">
-            <div class="chart-type-label">Färgtema</div>
-            <div class="chart-type-segment">
-              <button
-                v-for="p in colorPresets"
-                :key="p.value"
-                :class="['segment-btn', 'preset-btn', { active: activePreset === p.value }]"
-                @click="setPreset(p.value)"
-              >
-                <div class="preset-dots">
-                  <span v-for="c in p.colors" :key="c" class="preset-dot" :style="{ background: GRADIENTS[c] }"></span>
-                </div>
-                <span>{{ p.label }}</span>
-              </button>
+          <template v-if="store.overviewSettings.showSummaryCards">
+            <div class="chart-type-section">
+              <div class="chart-type-label">Storlek</div>
+              <div class="chart-type-segment">
+                <button
+                  v-for="opt in summaryStyleOptions"
+                  :key="opt.value"
+                  :class="['segment-btn', { active: store.overviewSettings.summaryStyle === opt.value }]"
+                  @click="store.setOverviewSetting('summaryStyle', opt.value)"
+                >{{ opt.label }}</button>
+              </div>
             </div>
-          </div>
-          <div class="overview-toggle-row">
+            <div class="chart-type-section chart-type-section--last">
+              <div class="chart-type-label">Färgtema</div>
+              <div class="chart-type-segment">
+                <button
+                  v-for="p in colorPresets"
+                  :key="p.value"
+                  :class="['segment-btn', 'preset-btn', { active: activePreset === p.value }]"
+                  @click="setPreset(p.value)"
+                >
+                  <div class="preset-dots">
+                    <span v-for="c in p.colors" :key="c" class="preset-dot" :style="{ background: GRADIENTS[c] }"></span>
+                  </div>
+                  <span>{{ p.label }}</span>
+                </button>
+              </div>
+            </div>
+          </template>
+          <div class="overview-toggle-row" :class="{ 'no-separator': store.overviewSettings.showChart }">
             <span class="overview-toggle-label">Diagram</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showChart" @change="store.setOverviewSetting('showChart', $event.target.checked)">
           </div>
-          <div v-if="store.overviewSettings.showChart" class="chart-type-section">
-            <div class="chart-type-label">Diagramtyp</div>
-            <div class="chart-type-segment">
-              <button
-                v-for="opt in chartTypeOptions"
-                :key="opt.value"
-                :class="['segment-btn', { active: store.overviewSettings.chartType === opt.value }]"
-                @click="store.setOverviewSetting('chartType', opt.value)"
-              >{{ opt.label }}</button>
+          <template v-if="store.overviewSettings.showChart">
+            <div class="chart-type-section chart-type-section--last">
+              <div class="chart-type-label">Diagramtyp</div>
+              <div class="chart-type-segment">
+                <button
+                  v-for="opt in chartTypeOptions"
+                  :key="opt.value"
+                  :class="['segment-btn', { active: store.overviewSettings.chartType === opt.value }]"
+                  @click="store.setOverviewSetting('chartType', opt.value)"
+                >{{ opt.label }}</button>
+              </div>
             </div>
-          </div>
+          </template>
           <div class="overview-toggle-row">
             <span class="overview-toggle-label">Skulder</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showDebts" @change="store.setOverviewSetting('showDebts', $event.target.checked)">
@@ -90,7 +105,7 @@
       <!-- Fasta utgifter -->
       <div class="settings-section">
         <div class="section-toggle" @click="toggleSection('expenses')">
-          <h3>Fasta utgifter</h3>
+          <h3>Utgifter</h3>
           <svg class="chevron" :class="{ collapsed: collapsedSections['expenses'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div v-show="!collapsedSections['expenses']" class="settings-content">
@@ -289,19 +304,28 @@ const chartTypeOptions = [
   { value: 'stackedBar', label: 'Staplad' },
 ]
 
+const summaryStyleOptions = [
+  { value: 'compact',  label: 'Kompakt' },
+  { value: 'medium',   label: 'Medium' },
+  { value: 'default',  label: 'Standard' },
+  { value: 'large',    label: 'Stor' },
+]
+
 const GRADIENTS = {
+  'blue':        'linear-gradient(135deg, #007AFF, #007AFF)',
   'blue-purple': 'linear-gradient(135deg, #007AFF, #AF52DE)',
   'orange-pink': 'linear-gradient(135deg, #FF9500, #FF2D92)',
   'green-teal':  'linear-gradient(135deg, #34C759, #5AC8FA)',
   'red-orange':  'linear-gradient(135deg, #FF3B30, #FF9500)',
   'indigo-blue': 'linear-gradient(135deg, #5856D6, #007AFF)',
   'pink-red':    'linear-gradient(135deg, #FF2D92, #FF3B30)',
+  'neutral':     'linear-gradient(135deg, #D1D1D6, #D1D1D6)',
 }
 
 const colorPresets = [
   { value: 'colorful', label: 'Färgglad', colors: ['blue-purple', 'orange-pink', 'green-teal'] },
-  { value: 'mono',     label: 'Enkel',    colors: ['blue-purple', 'blue-purple', 'blue-purple'] },
-  { value: 'stylish',  label: 'Stilren',  colors: ['indigo-blue', 'pink-red', 'red-orange'] },
+  { value: 'blue',     label: 'Blue',     colors: ['blue', 'blue', 'blue'] },
+  { value: 'neutral',  label: 'Neutral',  colors: ['neutral', 'neutral', 'neutral'] },
 ]
 
 const activePreset = computed(() => {
@@ -561,6 +585,14 @@ function fmt(n) {
   border-bottom: 0.5px solid var(--separator);
 }
 
+.overview-toggle-row.no-separator {
+  border-bottom: none;
+}
+
+.chart-type-section--last {
+  border-bottom: 0.5px solid var(--separator);
+}
+
 .overview-toggle-label {
   font-size: 16px;
   color: var(--text-primary);
@@ -714,6 +746,7 @@ function fmt(n) {
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.4px;
+  padding-left: 7px;
 }
 
 .add-expense-bottom-btn {

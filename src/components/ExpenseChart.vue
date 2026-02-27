@@ -1,6 +1,14 @@
 <template>
-  <div class="chart-component" :style="isLinearChart ? { minHeight: '380px' } : {}">
-    <canvas ref="canvasRef"></canvas>
+  <div class="chart-component">
+    <div :style="chartContainerStyle">
+      <canvas ref="canvasRef"></canvas>
+    </div>
+    <div v-if="isStackedBar && stackedLegendItems.length" class="stacked-legend">
+      <div v-for="item in stackedLegendItems" :key="item.label" class="stacked-legend-item">
+        <span class="legend-dot" :style="{ background: item.color }"></span>
+        <span>{{ item.label }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -24,9 +32,15 @@ const COLORS = [
   '#5AC8FA', '#FFCC00', '#FF6482', '#30B0C7', '#32D74B',
 ]
 
-const isLinearChart = computed(() => {
+const isStackedBar = computed(() => (store.overviewSettings?.chartType || 'pie') === 'stackedBar')
+
+const stackedLegendItems = ref([])
+
+const chartContainerStyle = computed(() => {
   const t = store.overviewSettings?.chartType || 'pie'
-  return t === 'bar' || t === 'stackedBar'
+  if (t === 'stackedBar') return { height: '46px', marginTop: '12px' }
+  if (t === 'bar') return { minHeight: '380px' }
+  return {}
 })
 
 function getTextColor() {
@@ -57,6 +71,7 @@ function buildChart() {
     chartInstance.destroy()
     chartInstance = null
   }
+  stackedLegendItems.value = []
 
   const main = prepareData()
   if (!main) return
@@ -70,11 +85,16 @@ function buildChart() {
   const grandTotal = amounts.reduce((s, v) => s + v, 0)
 
   if (chartType === 'stackedBar') {
+    stackedLegendItems.value = main.map((e, i) => ({
+      label: `${e.name}: ${((e.amount / grandTotal) * 100).toFixed(0)}%`,
+      color: COLORS[i % COLORS.length],
+    }))
+
     const datasets = main.map((e, i) => ({
       label: e.name,
       data: [e.amount],
       backgroundColor: COLORS[i % COLORS.length],
-      barThickness: 44,
+      barThickness: 30,
     }))
 
     chartInstance = new Chart(canvasRef.value, {
@@ -84,34 +104,13 @@ function buildChart() {
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { top: 4, bottom: 4, left: 0, right: 0 } },
         scales: {
           x: { stacked: true, display: false },
           y: { stacked: true, display: false },
         },
         plugins: {
-          legend: {
-            position: 'bottom',
-            onClick: () => {},
-            labels: {
-              padding: 25,
-              usePointStyle: true,
-              pointStyle: 'circle',
-              font: { size: 13 },
-              color: textColor,
-              generateLabels() {
-                return main.map((e, i) => ({
-                  text: `${e.name}: ${((e.amount / grandTotal) * 100).toFixed(0)}%`,
-                  fillStyle: COLORS[i % COLORS.length],
-                  strokeStyle: COLORS[i % COLORS.length],
-                  fontColor: textColor,
-                  pointStyle: 'circle',
-                  hidden: false,
-                  index: i,
-                  datasetIndex: i,
-                }))
-              },
-            },
-          },
+          legend: { display: false },
           tooltip: {
             callbacks: {
               label(context) {
@@ -141,6 +140,7 @@ function buildChart() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { top: 20, bottom: 10, left: 4, right: 4 } },
         plugins: {
           legend: { display: false, onClick: () => {} },
           tooltip: {
@@ -243,3 +243,27 @@ onUnmounted(() => {
   if (darkModeQuery) darkModeQuery.removeEventListener('change', buildChart)
 })
 </script>
+
+<style scoped>
+.stacked-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 14px;
+  padding: 8px 4px 16px;
+}
+
+.stacked-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+</style>
