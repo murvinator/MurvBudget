@@ -982,7 +982,7 @@ body {
 }
 
 .settings-header-left { display: flex; align-items: center; gap: 12px; }
-.settings-header h2 { font-size: 20px; font-weight: 700; margin: 0; margin-right: 10px; letter-spacing: -0.3px; }
+.settings-header h2 { font-size: 25px; font-weight: 700; margin: 0; margin-right: 10px; letter-spacing: -0.3px; }
 
 .back-btn {
     width: 44px;
