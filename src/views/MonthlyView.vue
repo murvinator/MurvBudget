@@ -229,7 +229,7 @@ function fmt(n) {
   display: flex;
   gap: 12px;
   background: var(--card-bg);
-  border-radius: 20px;
+  border-radius: 30px;
   padding: 20px;
   margin-bottom: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
