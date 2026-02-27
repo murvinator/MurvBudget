@@ -155,6 +155,7 @@ function isOver(expense) {
 }
 
 function getPct(expense) {
+  if (!expense.budget) return 0
   return Math.min((getSpent(expense) / expense.budget) * 100, 100)
 }
 

@@ -10,6 +10,8 @@
     -moz-osx-font-smoothing: grayscale;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 *::-webkit-scrollbar {
@@ -408,8 +410,8 @@ body {
 }
 
 .expense-item:active { background: var(--system-gray5); transform: scale(0.995); }
-.expense-info { flex-grow: 1; }
-.expense-name { font-weight: 500; color: var(--text-primary); font-size: 17px; }
+.expense-info { flex-grow: 1; min-width: 0; }
+.expense-name { font-weight: 500; color: var(--text-primary); font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .expense-amount { color: var(--text-secondary); font-weight: 600; margin-right: 16px; font-size: 17px; }
 
 .expense-item.paid { opacity: 0.6; background: var(--system-gray6); }
@@ -709,8 +711,8 @@ body {
 .chart-component {
     background: var(--card-bg);
     border-radius: 20px;
-    padding: 5px 30px;
-    margin-bottom: 32px;
+    padding: 0px 30px;
+    margin-bottom: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
@@ -937,11 +939,31 @@ body {
 .reset-btn:hover { opacity: 1; }
 .reset-btn:active { transform: scale(0.95); opacity: 0.5; }
 
-.expense-date {
-    font-size: 16px;
+.expense-date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--text-tertiary);
-    font-weight: 400;
-    margin-left: 12px;
+    background: var(--system-gray5);
+    border-radius: 6px;
+    padding: 3px 7px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+
+.expense-date-badge svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+}
+
+.expense-row-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 /* ================================= */
@@ -1082,7 +1104,7 @@ body {
 .settings-content .expense-item .expense-amount { font-weight: 600; font-size: 15px; color: var(--text-secondary); margin: 0 12px 0 0; }
 
 /* Swipe-to-delete slot structure (no .expense-item wrapper) */
-.settings-content .expense-name { font-weight: 500; font-size: 15px; }
+.settings-content .expense-name { font-weight: 500; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-content .expense-amount { font-weight: 600; font-size: 15px; color: var(--text-secondary); margin-right: 4px; }
 
 .settings-content .delete-btn,

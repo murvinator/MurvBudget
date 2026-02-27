@@ -20,59 +20,100 @@
           <svg class="chevron" :class="{ collapsed: collapsedSections['overview'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div v-show="!collapsedSections['overview']" class="settings-content">
-          <div class="overview-toggle-row" :class="{ 'no-separator': store.overviewSettings.showSummaryCards }">
-            <span class="overview-toggle-label">Sammanfattning</span>
-            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showSummaryCards" @change="store.setOverviewSetting('showSummaryCards', $event.target.checked)">
-          </div>
-          <template v-if="store.overviewSettings.showSummaryCards">
-            <div class="chart-type-section">
-              <div class="chart-type-label">Storlek</div>
-              <div class="chart-type-segment">
-                <button
-                  v-for="opt in summaryStyleOptions"
-                  :key="opt.value"
-                  :class="['segment-btn', { active: store.overviewSettings.summaryStyle === opt.value }]"
-                  @click="store.setOverviewSetting('summaryStyle', opt.value)"
-                >{{ opt.label }}</button>
+          <div
+            v-for="(widget, idx) in store.overviewSettings.widgetOrder"
+            :key="widget.id"
+            class="widget-order-row"
+            :class="{ 'widget-dragging': dragIdx === idx }"
+          >
+            <div class="widget-order-header">
+              <!-- Drag handle: only visible when all sub-settings are collapsed -->
+              <div
+                class="widget-drag-handle"
+                :class="{ 'handle-hidden': !allCollapsed }"
+                @pointerdown="startDrag(idx, $event)"
+                title="Dra för att ändra ordning"
+              >
+                <svg viewBox="0 0 10 16" fill="currentColor">
+                  <circle cx="3" cy="3"  r="1.5"/>
+                  <circle cx="7" cy="3"  r="1.5"/>
+                  <circle cx="3" cy="8"  r="1.5"/>
+                  <circle cx="7" cy="8"  r="1.5"/>
+                  <circle cx="3" cy="13" r="1.5"/>
+                  <circle cx="7" cy="13" r="1.5"/>
+                </svg>
               </div>
-            </div>
-            <div class="chart-type-section chart-type-section--last">
-              <div class="chart-type-label">Färgtema</div>
-              <div class="chart-type-segment">
-                <button
-                  v-for="p in colorPresets"
-                  :key="p.value"
-                  :class="['segment-btn', 'preset-btn', { active: activePreset === p.value }]"
-                  @click="setPreset(p.value)"
+
+              <!-- Label + expand chevron (clickable for widgets with sub-settings) -->
+              <div
+                class="widget-order-expandable"
+                :class="{ 'has-settings': WIDGETS_WITH_SETTINGS.includes(widget.id) }"
+                @click="toggleWidgetSettings(widget.id)"
+              >
+                <span class="widget-order-label">{{ WIDGET_LABELS[widget.id] }}</span>
+                <svg
+                  v-if="WIDGETS_WITH_SETTINGS.includes(widget.id)"
+                  class="widget-chevron"
+                  :class="{ expanded: expandedWidgets[widget.id] }"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 >
-                  <div class="preset-dots">
-                    <span v-for="c in p.colors" :key="c" class="preset-dot" :style="{ background: GRADIENTS[c] }"></span>
-                  </div>
-                  <span>{{ p.label }}</span>
-                </button>
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+
+              <input
+                type="checkbox"
+                class="ios-toggle"
+                :checked="widget.visible"
+                @change="toggleWidgetVisible(idx, $event.target.checked)"
+              >
+            </div>
+
+            <!-- Sub-settings for summary widget -->
+            <div v-show="expandedWidgets[widget.id] && widget.id === 'summary'" class="widget-sub-settings">
+              <div class="chart-type-section">
+                <div class="chart-type-label">Storlek</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="opt in summaryStyleOptions"
+                    :key="opt.value"
+                    :class="['segment-btn', { active: store.overviewSettings.summaryStyle === opt.value }]"
+                    @click="store.setOverviewSetting('summaryStyle', opt.value)"
+                  >{{ opt.label }}</button>
+                </div>
+              </div>
+              <div class="chart-type-section chart-type-section--last">
+                <div class="chart-type-label">Färgtema</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="p in colorPresets"
+                    :key="p.value"
+                    :class="['segment-btn', 'preset-btn', { active: activePreset === p.value }]"
+                    @click="setPreset(p.value)"
+                  >
+                    <div class="preset-dots">
+                      <span v-for="c in p.colors" :key="c" class="preset-dot" :style="{ background: GRADIENTS[c] }"></span>
+                    </div>
+                    <span>{{ p.label }}</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </template>
-          <div class="overview-toggle-row" :class="{ 'no-separator': store.overviewSettings.showChart }">
-            <span class="overview-toggle-label">Diagram</span>
-            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showChart" @change="store.setOverviewSetting('showChart', $event.target.checked)">
-          </div>
-          <template v-if="store.overviewSettings.showChart">
-            <div class="chart-type-section chart-type-section--last">
-              <div class="chart-type-label">Diagramtyp</div>
-              <div class="chart-type-segment">
-                <button
-                  v-for="opt in chartTypeOptions"
-                  :key="opt.value"
-                  :class="['segment-btn', { active: store.overviewSettings.chartType === opt.value }]"
-                  @click="store.setOverviewSetting('chartType', opt.value)"
-                >{{ opt.label }}</button>
+
+            <!-- Sub-settings for chart widget -->
+            <div v-show="expandedWidgets[widget.id] && widget.id === 'chart'" class="widget-sub-settings">
+              <div class="chart-type-section chart-type-section--last">
+                <div class="chart-type-label">Diagramtyp</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="opt in chartTypeOptions"
+                    :key="opt.value"
+                    :class="['segment-btn', { active: store.overviewSettings.chartType === opt.value }]"
+                    @click="store.setOverviewSetting('chartType', opt.value)"
+                  >{{ opt.label }}</button>
+                </div>
               </div>
             </div>
-          </template>
-          <div class="overview-toggle-row">
-            <span class="overview-toggle-label">Skulder</span>
-            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showDebts" @change="store.setOverviewSetting('showDebts', $event.target.checked)">
           </div>
         </div>
       </div>
@@ -109,23 +150,31 @@
           <svg class="chevron" :class="{ collapsed: collapsedSections['expenses'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div v-show="!collapsedSections['expenses']" class="settings-content">
-          <div class="input-group">
-            <input type="text" v-model="newExpenseName" placeholder="Namn">
-            <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
+          <div v-if="store.categories.length === 0" class="no-categories-notice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>Skapa en kategori först innan du lägger till utgifter</span>
           </div>
-          <div class="input-group input-group--labeled">
-            <div class="field-with-label">
-              <span class="field-label">Kategori</span>
-              <select v-model="newExpenseCategory">
-                <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
-              </select>
+          <template v-else>
+            <div class="input-group">
+              <input type="text" v-model="newExpenseName" placeholder="Namn">
+              <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
             </div>
-            <div class="field-with-label field-with-label--narrow">
-              <span class="field-label">Dag</span>
-              <input type="number" v-model.number="newExpenseDate" placeholder="1–31" min="1" max="31">
+            <div class="input-group input-group--labeled">
+              <div class="field-with-label">
+                <span class="field-label">Kategori</span>
+                <select v-model="newExpenseCategory">
+                  <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+              </div>
+              <div class="field-with-label field-with-label--narrow">
+                <span class="field-label">Dag</span>
+                <input type="number" v-model.number="newExpenseDate" placeholder="valfritt" min="1" max="31">
+              </div>
+              <button class="add-expense-bottom-btn" @click="addExpense">Lägg till</button>
             </div>
-            <button class="add-expense-bottom-btn" @click="addExpense">Lägg till</button>
-          </div>
+          </template>
 
           <!-- Expenses grouped by category -->
           <template v-for="cat in store.categories" :key="cat">
@@ -145,9 +194,20 @@
                         class="expense-name"
                         :class="{ editing: editingExpense === expense.globalIndex }"
                         @click="toggleEditExpense(expense.globalIndex)"
-                      >{{ expense.name }}<span v-if="expense.date" class="expense-date"> {{ expense.date }}</span></div>
+                      >{{ expense.name }}</div>
                     </template>
-                    <div class="expense-amount">{{ fmt(expense.amount) }} kr</div>
+                    <div class="expense-row-right">
+                      <span v-if="expense.date" class="expense-date-badge">
+                        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                          <line x1="1" y1="5" x2="11" y2="5"/>
+                          <line x1="4" y1="1" x2="4" y2="3"/>
+                          <line x1="8" y1="1" x2="8" y2="3"/>
+                        </svg>
+                        {{ expense.date }}
+                      </span>
+                      <span class="expense-amount">{{ fmt(expense.amount) }} kr</span>
+                    </div>
                   </SwipeToDelete>
 
                   <div v-show="editingExpense === expense.globalIndex" class="expense-edit-form">
@@ -218,9 +278,6 @@
             <input type="number" v-model.number="newDebtAmount" placeholder="Belopp">
             <button @click="addDebt">Lägg till</button>
           </div>
-          <template v-if="store.debts.length === 0">
-            <p style="padding: 12px 16px;">Inga skulder registrerade</p>
-          </template>
           <div
             v-for="(debt, idx) in store.debts"
             :key="debt.id"
@@ -256,7 +313,7 @@
         </div>
         <div v-show="!collapsedSections['data']" class="settings-content">
           <div class="export-import" style="padding: 12px 16px;">
-            <button @click="store.exportData()">Exportera Data</button>
+            <button @click="exportData">Exportera Data</button>
             <button @click="triggerImport">Importera Data</button>
             <button @click="loadTestData">Ladda testdata</button>
             <input
@@ -287,7 +344,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, inject } from 'vue'
+import { ref, reactive, computed, inject, watch } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 import SwipeToDelete from '../components/SwipeToDelete.vue'
 
@@ -296,6 +353,77 @@ const goBack = inject('goBack')
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
 const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'data']
+
+const WIDGET_LABELS = {
+  summary:    'Sammanfattning',
+  chart:      'Diagram',
+  debts:      'Skulder',
+  checklist:  'Checklista',
+  savings:    'Sparkvot',
+  categories: 'Kategorier',
+}
+
+const WIDGETS_WITH_SETTINGS = ['summary', 'chart']
+
+// Collapsible sub-settings state (all start closed)
+const expandedWidgets = reactive({})
+
+const allCollapsed = computed(() =>
+  Object.values(expandedWidgets).every(v => !v)
+)
+
+function toggleWidgetSettings(id) {
+  if (!WIDGETS_WITH_SETTINGS.includes(id)) return
+  expandedWidgets[id] = !expandedWidgets[id]
+}
+
+function toggleWidgetVisible(idx, value) {
+  const order = store.overviewSettings.widgetOrder.map((w, i) =>
+    i === idx ? { ...w, visible: value } : w
+  )
+  store.setOverviewSetting('widgetOrder', order)
+}
+
+// Drag-to-reorder
+const dragIdx = ref(null)
+
+function startDrag(idx, event) {
+  if (!allCollapsed.value) return
+  event.preventDefault()
+  dragIdx.value = idx
+  document.addEventListener('pointermove', onDragMove, { passive: false })
+  document.addEventListener('pointerup', onDragEnd)
+  document.addEventListener('pointercancel', onDragEnd)
+}
+
+function onDragMove(event) {
+  if (dragIdx.value === null) return
+  event.preventDefault()
+  const y = event.clientY
+  const rows = document.querySelectorAll('.widget-order-row')
+  let newIdx = rows.length - 1
+  for (let i = 0; i < rows.length; i++) {
+    const rect = rows[i].getBoundingClientRect()
+    if (y < rect.top + rect.height / 2) {
+      newIdx = i
+      break
+    }
+  }
+  if (newIdx !== dragIdx.value) {
+    const order = [...store.overviewSettings.widgetOrder]
+    const [item] = order.splice(dragIdx.value, 1)
+    order.splice(newIdx, 0, item)
+    store.setOverviewSetting('widgetOrder', order)
+    dragIdx.value = newIdx
+  }
+}
+
+function onDragEnd() {
+  dragIdx.value = null
+  document.removeEventListener('pointermove', onDragMove)
+  document.removeEventListener('pointerup', onDragEnd)
+  document.removeEventListener('pointercancel', onDragEnd)
+}
 
 const chartTypeOptions = [
   { value: 'pie', label: 'Tårta' },
@@ -340,7 +468,7 @@ function setPreset(value) {
 
 function loadCollapsed() {
   try {
-    const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '{}')
+    const saved = JSON.parse(sessionStorage.getItem(COLLAPSED_KEY) || '{}')
     const state = {}
     for (const s of SECTIONS) state[s] = saved[s] !== false
     return state
@@ -351,16 +479,20 @@ function loadCollapsed() {
 
 const collapsedSections = reactive(loadCollapsed())
 
+watch(() => collapsedSections['overview'], (collapsed) => {
+  if (collapsed) {
+    for (const id of WIDGETS_WITH_SETTINGS) expandedWidgets[id] = false
+  }
+})
+
 function toggleSection(key) {
   collapsedSections[key] = !collapsedSections[key]
   try {
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedSections }))
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedSections }))
   } catch {}
 }
 
 // New item form state
-const newVarName = ref('')
-const newVarBudget = ref(null)
 const newCategoryName = ref('')
 const newExpenseName = ref('')
 const newExpenseAmount = ref(null)
@@ -404,20 +536,6 @@ function saveExpenseEdit(globalIndex) {
   }
   store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category, editForm.date)
   editingExpense.value = null
-}
-
-function addVarExpense() {
-  if (!newVarName.value || !newVarBudget.value || newVarBudget.value <= 0) return
-  const ok = store.addVariableExpense(newVarName.value.trim(), newVarBudget.value)
-  if (!ok) { alert('En kategori med detta namn finns redan.'); return }
-  newVarName.value = ''
-  newVarBudget.value = null
-}
-
-function deleteVarExpense(idx) {
-  if (confirm('Är du säker på att du vill ta bort denna varierande utgift? All historik kommer att raderas.')) {
-    store.deleteVariableExpense(idx)
-  }
 }
 
 function addCategory() {
@@ -497,6 +615,12 @@ function saveDebtEdit(idx) {
   editingDebt.value = null
 }
 
+function exportData() {
+  store.exportData()
+  statusMsg.value = 'Data exporterad!'
+  setTimeout(() => { statusMsg.value = '' }, 3000)
+}
+
 function triggerImport() {
   importFileRef.value?.click()
 }
@@ -508,13 +632,20 @@ function importFile(event) {
   reader.onload = (e) => {
     try {
       const data = JSON.parse(e.target.result)
+      const required = ['income', 'expenses', 'categories']
+      const missing = required.filter(k => !Array.isArray(data[k]))
+      if (missing.length) {
+        alert(`Filen saknar obligatoriska fält: ${missing.join(', ')}. Kontrollera att det är en giltig MurvBudget-fil.`)
+        event.target.value = ''
+        return
+      }
       if (confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')) {
         store.importData(data)
         statusMsg.value = 'Data importerad!'
         setTimeout(() => { statusMsg.value = '' }, 3000)
       }
     } catch {
-      alert('Fel vid import av data. Kontrollera att filen är korrekt.')
+      alert('Fel vid import av data. Kontrollera att filen är korrekt JSON.')
     }
     event.target.value = ''
   }
@@ -596,6 +727,94 @@ function fmt(n) {
 .overview-toggle-label {
   font-size: 16px;
   color: var(--text-primary);
+}
+
+/* Widget order rows */
+.widget-order-row {
+  border-bottom: 0.5px solid var(--separator);
+  transition: background 0.15s;
+}
+
+.widget-order-row.widget-dragging {
+  background: rgba(120, 120, 128, 0.1);
+  border-radius: 10px;
+  border-bottom-color: transparent;
+}
+
+.widget-order-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 10px;
+}
+
+/* Drag handle */
+.widget-drag-handle {
+  flex-shrink: 0;
+  width: 20px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: var(--text-tertiary);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  opacity: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.widget-drag-handle.handle-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.6);
+}
+
+.widget-drag-handle:active {
+  cursor: grabbing;
+}
+
+.widget-drag-handle svg {
+  width: 10px;
+  height: 16px;
+}
+
+/* Expandable label area */
+.widget-order-expandable {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.widget-order-expandable.has-settings {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.widget-order-label {
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+/* Per-widget expand chevron */
+.widget-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--system-blue);
+  flex-shrink: 0;
+  transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.widget-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* Sub-settings panel */
+.widget-sub-settings {
+  border-top: 0.5px solid var(--separator);
 }
 
 /* iOS 26 toggle — wider, flatter, near-transparent off-state with border */
@@ -737,7 +956,7 @@ function fmt(n) {
 }
 
 .field-with-label--narrow {
-  flex: 0 0 72px;
+  flex: 0 0 84px;
 }
 
 .field-label {
@@ -747,6 +966,25 @@ function fmt(n) {
   text-transform: uppercase;
   letter-spacing: 0.4px;
   padding-left: 7px;
+}
+
+.no-categories-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 16px;
+  padding: 12px 14px;
+  background: rgba(255, 149, 0, 0.1);
+  border-radius: 10px;
+  color: var(--system-orange);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.no-categories-notice svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .add-expense-bottom-btn {

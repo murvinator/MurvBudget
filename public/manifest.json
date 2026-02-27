@@ -1,0 +1,12 @@
+{
+  "name": "MurvBudget",
+  "short_name": "MurvBudget",
+  "description": "Personlig budgethantering – enkel och lokal",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "lang": "sv",
+  "categories": ["finance", "productivity"]
+}

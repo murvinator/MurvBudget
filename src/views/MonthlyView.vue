@@ -56,8 +56,17 @@
             @click="togglePaid(expense.index)"
           >
             <div class="expense-info">
-              <div class="expense-name">{{ expense.name }}<span v-if="expense.date" class="expense-date">{{ expense.date }}</span></div>
+              <div class="expense-name">{{ expense.name }}</div>
             </div>
+            <span v-if="expense.date" class="expense-date-badge">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                <line x1="1" y1="5" x2="11" y2="5"/>
+                <line x1="4" y1="1" x2="4" y2="3"/>
+                <line x1="8" y1="1" x2="8" y2="3"/>
+              </svg>
+              {{ expense.date }}
+            </span>
             <div class="expense-amount">{{ fmt(expense.amount) }} kr</div>
             <input
               type="checkbox"
@@ -104,7 +113,7 @@ const COLLAPSED_KEY = 'murvbudget-monthly-collapsed'
 
 function loadCollapsed() {
   try {
-    const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '{}')
+    const saved = JSON.parse(sessionStorage.getItem(COLLAPSED_KEY) || '{}')
     const state = {}
     for (const cat of store.categories) {
       state[cat] = saved[cat] !== false
@@ -120,7 +129,7 @@ const collapsedCategories = reactive(loadCollapsed())
 function toggleCategory(category) {
   collapsedCategories[category] = !collapsedCategories[category]
   try {
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
   } catch {}
 }
 
@@ -199,7 +208,7 @@ function toggleAll() {
     }
   }
   try {
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
   } catch {}
 }
 
@@ -279,7 +288,7 @@ function fmt(n) {
   font-weight: 500;
   color: var(--text-primary);
   letter-spacing: 1px;
-  padding-left: 17px;
+  padding-left: 12px;
 }
 
 .monthly-paid-count {

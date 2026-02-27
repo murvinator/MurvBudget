@@ -27,6 +27,14 @@ export const useBudgetStore = defineStore('budget', {
       chartType: 'pie',
       cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
       summaryStyle: 'default',
+      widgetOrder: [
+        { id: 'summary',    visible: true },
+        { id: 'chart',      visible: true },
+        { id: 'debts',      visible: true },
+        { id: 'checklist',  visible: true },
+        { id: 'savings',    visible: true },
+        { id: 'categories', visible: true },
+      ],
     },
   }),
 
@@ -295,6 +303,24 @@ export const useBudgetStore = defineStore('budget', {
       } else {
         for (const [k, v] of Object.entries(defaultOverview)) {
           if (this.overviewSettings[k] === undefined) this.overviewSettings[k] = v
+        }
+      }
+      // Migrate widgetOrder
+      const ALL_WIDGET_IDS = ['summary', 'chart', 'debts', 'checklist', 'savings', 'categories']
+      if (!this.overviewSettings.widgetOrder?.length) {
+        this.overviewSettings.widgetOrder = [
+          { id: 'summary',    visible: this.overviewSettings.showSummaryCards ?? true },
+          { id: 'chart',      visible: this.overviewSettings.showChart ?? true },
+          { id: 'debts',      visible: this.overviewSettings.showDebts ?? true },
+          { id: 'checklist',  visible: true },
+          { id: 'savings',    visible: true },
+          { id: 'categories', visible: true },
+        ]
+      } else {
+        for (const id of ALL_WIDGET_IDS) {
+          if (!this.overviewSettings.widgetOrder.find(w => w.id === id)) {
+            this.overviewSettings.widgetOrder.push({ id, visible: true })
+          }
         }
       }
 

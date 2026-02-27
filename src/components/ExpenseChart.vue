@@ -1,14 +1,27 @@
 <template>
   <div class="chart-component">
-    <div :style="chartContainerStyle">
-      <canvas ref="canvasRef"></canvas>
+    <!-- Empty state -->
+    <div v-if="store.expenses.length === 0" class="chart-empty" @click="emit('navigate', 'settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="chart-empty-icon">
+        <path d="M3 3v18h18"/>
+        <path d="M7 16l4-4 4 4 4-6"/>
+      </svg>
+      <p class="chart-empty-title">Inga utgifter ännu</p>
+      <p class="chart-empty-sub">Lägg till utgifter under <strong>Inställningar</strong> för att se ett diagram</p>
     </div>
-    <div v-if="isStackedBar && stackedLegendItems.length" class="stacked-legend">
-      <div v-for="item in stackedLegendItems" :key="item.label" class="stacked-legend-item">
-        <span class="legend-dot" :style="{ background: item.color }"></span>
-        <span>{{ item.label }}</span>
+
+    <!-- Chart -->
+    <template v-else>
+      <div :style="chartContainerStyle">
+        <canvas ref="canvasRef"></canvas>
       </div>
-    </div>
+      <div v-if="isStackedBar && stackedLegendItems.length" class="stacked-legend">
+        <div v-for="item in stackedLegendItems" :key="item.label" class="stacked-legend-item">
+          <span class="legend-dot" :style="{ background: item.color }"></span>
+          <span>{{ item.label }}</span>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -18,6 +31,7 @@ import { Chart } from 'chart.js/auto'
 import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
+const emit = defineEmits(['navigate'])
 const canvasRef = ref(null)
 let chartInstance = null
 let darkModeQuery = null
@@ -245,6 +259,47 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+
+.chart-empty:active {
+  opacity: 0.6;
+}
+
+.chart-empty-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.chart-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chart-empty-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.chart-empty-sub strong {
+  color: var(--system-blue);
+  font-weight: 600;
+}
+
 .stacked-legend {
   display: flex;
   flex-wrap: wrap;

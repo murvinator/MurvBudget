@@ -52,11 +52,11 @@
             <!-- Payment history -->
             <div class="payments-history" v-if="payments(debt).length > 0">
               <div
-                v-for="(p, pi) in [...payments(debt)].reverse()"
-                :key="pi"
+                v-for="{ p, origIdx } in reversedPayments(debt)"
+                :key="origIdx"
                 class="payment-item"
               >
-                <template v-if="editingPayment?.debtIdx === idx && editingPayment?.payIdx === (payments(debt).length - 1 - pi)">
+                <template v-if="editingPayment?.debtIdx === idx && editingPayment?.payIdx === origIdx">
                   <div class="payment-info">
                     <input type="number" v-model.number="editingPayment.amount" min="0" step="0.01" style="width:80px; padding:4px 8px; border-radius:6px; border:1px solid var(--separator);">
                   </div>
@@ -71,8 +71,8 @@
                     <span class="payment-date">{{ formatDate(p.date) }}</span>
                   </div>
                   <div class="payment-actions">
-                    <button @click="startEdit(idx, payments(debt).length - 1 - pi, p)">Ändra</button>
-                    <button @click="deletePayment(idx, payments(debt).length - 1 - pi)">Ta bort</button>
+                    <button @click="startEdit(idx, origIdx, p)">Ändra</button>
+                    <button @click="deletePayment(idx, origIdx)">Ta bort</button>
                   </div>
                 </template>
               </div>
@@ -115,6 +115,10 @@ function toggleDebt(idx) {
 
 function payments(debt) {
   return store.debtPayments[debt.id] || []
+}
+
+function reversedPayments(debt) {
+  return payments(debt).map((p, i) => ({ p, origIdx: i })).reverse()
 }
 
 function payDebt(idx) {
