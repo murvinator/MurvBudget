@@ -28,6 +28,18 @@
           </svg>
           <span>Checklista</span>
         </button>
+        <button
+          type="button"
+          class="tab-btn"
+          :class="{ active: currentView === 'sparande' }"
+          @click="emit('navigate', 'sparande')"
+        >
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 7c0-1.1-.9-2-2-2H7a2 2 0 0 0-2 2v2a4 4 0 0 0 0 8v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1a4 4 0 0 0 0-8V7z"/>
+            <circle cx="15" cy="13" r="1" fill="currentColor"/>
+          </svg>
+          <span>Sparande</span>
+        </button>
       </div>
 
       <button

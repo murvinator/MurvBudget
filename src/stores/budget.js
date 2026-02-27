@@ -19,11 +19,14 @@ export const useBudgetStore = defineStore('budget', {
     debtPayments: {},
     variableExpenses: [],
     variableExpenseTransactions: {},
+    savingsGoals: [],
     overviewSettings: {
       showSummaryCards: true,
       showVariableMini: true,
       showChart: true,
       showDebts: true,
+      showSavingsRate: true,
+      showUpcomingBills: true,
       chartType: 'pie',
       cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
       summaryStyle: 'default',
@@ -51,6 +54,22 @@ export const useBudgetStore = defineStore('budget', {
     // ── Overview Settings ────────────────────────────────────────────────────
     setOverviewSetting(key, value) {
       this.overviewSettings[key] = value
+    },
+
+    // ── Savings Goals ────────────────────────────────────────────────────────
+    addSavingsGoal(name, targetAmount) {
+      this.savingsGoals.push({ id: Date.now(), name, targetAmount: parseInt(targetAmount), currentAmount: 0 })
+    },
+    deleteSavingsGoal(id) {
+      this.savingsGoals = this.savingsGoals.filter((g) => g.id !== id)
+    },
+    addToGoal(id, amount) {
+      const goal = this.savingsGoals.find((g) => g.id === id)
+      if (goal) goal.currentAmount += parseInt(amount)
+    },
+    withdrawFromGoal(id, amount) {
+      const goal = this.savingsGoals.find((g) => g.id === id)
+      if (goal) goal.currentAmount = Math.max(0, goal.currentAmount - parseInt(amount))
     },
 
     // ── Income ──────────────────────────────────────────────────────────────
@@ -288,8 +307,11 @@ export const useBudgetStore = defineStore('budget', {
           this.debtPayments = migrated
         }
       }
+      // Ensure savingsGoals exists
+      if (!this.savingsGoals) this.savingsGoals = []
+
       // Ensure overviewSettings exists with all required keys
-      const defaultOverview = { showSummaryCards: true, showVariableMini: true, showChart: true, showDebts: true, chartType: 'pie', cardColors: ['blue-purple', 'orange-pink', 'green-teal'], summaryStyle: 'default' }
+      const defaultOverview = { showSummaryCards: true, showVariableMini: true, showChart: true, showDebts: true, showSavingsRate: true, showUpcomingBills: true, chartType: 'pie', cardColors: ['blue-purple', 'orange-pink', 'green-teal'], summaryStyle: 'default' }
       if (!this.overviewSettings) {
         this.overviewSettings = defaultOverview
       } else {

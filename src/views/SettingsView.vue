@@ -74,6 +74,14 @@
             <span class="overview-toggle-label">Skulder</span>
             <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showDebts" @change="store.setOverviewSetting('showDebts', $event.target.checked)">
           </div>
+          <div class="overview-toggle-row">
+            <span class="overview-toggle-label">Sparkvot</span>
+            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showSavingsRate" @change="store.setOverviewSetting('showSavingsRate', $event.target.checked)">
+          </div>
+          <div class="overview-toggle-row">
+            <span class="overview-toggle-label">Kommande räkningar</span>
+            <input type="checkbox" class="ios-toggle" :checked="store.overviewSettings.showUpcomingBills" @change="store.setOverviewSetting('showUpcomingBills', $event.target.checked)">
+          </div>
         </div>
       </div>
 

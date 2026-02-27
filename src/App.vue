@@ -23,7 +23,7 @@
     <div class="container">
       <div class="content">
         <!-- Large title scrolls with content, naturally disappears behind the fixed nav bar -->
-        <h1 v-if="currentView !== 'settings'" class="page-large-title">Budget</h1>
+        <h1 v-if="currentView !== 'settings' && currentView !== 'sparande'" class="page-large-title">Budget</h1>
         <component :is="currentViewComponent" @navigate="showView" />
       </div>
     </div>
@@ -43,6 +43,7 @@ import DebtPaymentModal from './components/DebtPaymentModal.vue'
 import OverviewView from './views/OverviewView.vue'
 import BudgetView from './views/BudgetView.vue'
 import MonthlyView from './views/MonthlyView.vue'
+import SparView from './views/SparView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 const store = useBudgetStore()
@@ -55,6 +56,7 @@ const currentViewComponent = computed(() => {
     case 'overview': return OverviewView
     case 'budget': return BudgetView
     case 'monthly': return MonthlyView
+    case 'sparande': return SparView
     case 'settings': return SettingsView
     default: return OverviewView
   }
