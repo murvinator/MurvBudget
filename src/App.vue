@@ -1,5 +1,7 @@
 <template>
   <div>
+    <SplashScreen v-if="!splashDone" @done="splashDone = true" />
+
     <!-- Liquid Glass SVG filter (hidden) -->
     <svg style="display:none">
       <filter id="glass-distortion" x="0" y="0" width="100%" height="100%">
@@ -40,12 +42,16 @@ import { useBudgetStore } from './stores/budget'
 import AppHeader from './components/AppHeader.vue'
 import TabBar from './components/TabBar.vue'
 import DebtPaymentModal from './components/DebtPaymentModal.vue'
+import SplashScreen from './components/SplashScreen.vue'
 import OverviewView from './views/OverviewView.vue'
 import BudgetView from './views/BudgetView.vue'
 import MonthlyView from './views/MonthlyView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 const store = useBudgetStore()
+
+const splashDone = ref(sessionStorage.getItem('splashShown') === '1')
+if (!splashDone.value) sessionStorage.setItem('splashShown', '1')
 
 const currentView = ref('overview')
 const lastView = ref('overview')
