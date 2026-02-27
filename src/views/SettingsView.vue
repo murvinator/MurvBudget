@@ -278,32 +278,54 @@
             <input type="text" v-model="newCategoryName" placeholder="Ny kategori">
             <button :class="{ 'btn-added': addFeedback.category }" @click="addCategory">{{ addFeedback.category ? 'Tillagt' : 'Lägg till' }}</button>
           </div>
-          <div
-            v-for="(cat, idx) in store.categories"
-            :key="cat"
-            class="expense-item-wrapper"
-          >
-            <SwipeToDelete @delete="deleteCategory(idx)">
-              <template #fixed>
-                <div
-                  class="expense-name"
-                  :class="{ editing: editingCategory === idx }"
-                  @click="toggleEditCategory(idx)"
-                >{{ cat }}</div>
-              </template>
-            </SwipeToDelete>
-            <div v-show="editingCategory === idx" class="expense-edit-form">
-              <div class="edit-form-content">
-                <div class="edit-input-group">
-                  <label>Namn</label>
-                  <input type="text" v-model="editCategoryName">
+          <div ref="catListRef">
+            <div
+              v-for="(cat, idx) in store.categories"
+              :key="cat"
+              class="cat-order-row"
+              :class="{ 'widget-dragging': catDragIdx === idx }"
+            >
+              <SwipeToDelete @delete="deleteCategorySwipe(idx)">
+                <template #fixed>
+                  <div class="cat-row-inner">
+                    <div
+                      class="widget-drag-handle"
+                      :class="{ 'handle-hidden': editingCategory !== null }"
+                      @pointerdown="startCatDrag(idx, $event)"
+                      @touchstart.stop
+                      title="Dra för att ändra ordning"
+                    >
+                      <svg viewBox="0 0 10 16" fill="currentColor">
+                        <circle cx="3" cy="3"  r="1.5"/>
+                        <circle cx="7" cy="3"  r="1.5"/>
+                        <circle cx="3" cy="8"  r="1.5"/>
+                        <circle cx="7" cy="8"  r="1.5"/>
+                        <circle cx="3" cy="13" r="1.5"/>
+                        <circle cx="7" cy="13" r="1.5"/>
+                      </svg>
+                    </div>
+                    <span
+                      class="widget-order-label"
+                      @click="toggleEditCategory(idx)"
+                    >{{ cat }}</span>
+                  </div>
+                </template>
+              </SwipeToDelete>
+              <CollapseTransition>
+                <div v-if="editingCategory === idx" class="widget-sub-settings">
+                  <div class="edit-form-content" style="padding: 16px 16px 8px;">
+                    <div class="edit-input-group">
+                      <label>Namn</label>
+                      <input type="text" v-model="editCategoryName">
+                    </div>
+                    <div class="edit-actions">
+                      <button class="save-edit-btn" @click="saveCategoryEdit(idx)">Spara</button>
+                      <button class="cancel-edit-btn" @click="editingCategory = null">Avbryt</button>
+                      <button class="delete-edit-btn" @click="deleteCategoryFromEdit(idx)">Radera</button>
+                    </div>
+                  </div>
                 </div>
-                <div class="edit-actions">
-                  <button class="save-edit-btn" @click="saveCategoryEdit(idx)">Spara</button>
-                  <button class="cancel-edit-btn" @click="editingCategory = null">Avbryt</button>
-                  <button class="delete-edit-btn" @click="deleteCategoryFromEdit(idx)">Radera</button>
-                </div>
-              </div>
+              </CollapseTransition>
             </div>
           </div>
         </div></CollapseTransition>
@@ -603,6 +625,46 @@ function onDragEnd() {
   document.removeEventListener('pointercancel', onDragEnd)
 }
 
+// Category drag-to-reorder
+const catListRef = ref(null)
+const catDragIdx = ref(null)
+
+function startCatDrag(idx, event) {
+  if (editingCategory.value !== null) return
+  event.preventDefault()
+  catDragIdx.value = idx
+  document.addEventListener('pointermove', onCatDragMove, { passive: false })
+  document.addEventListener('pointerup', onCatDragEnd)
+  document.addEventListener('pointercancel', onCatDragEnd)
+}
+
+function onCatDragMove(event) {
+  if (catDragIdx.value === null) return
+  event.preventDefault()
+  const y = event.clientY
+  const rows = catListRef.value?.querySelectorAll('.cat-order-row')
+  if (!rows || rows.length === 0) { catDragIdx.value = null; return }
+  let newIdx = rows.length - 1
+  for (let i = 0; i < rows.length; i++) {
+    const rect = rows[i].getBoundingClientRect()
+    if (y < rect.top + rect.height / 2) { newIdx = i; break }
+  }
+  if (newIdx !== catDragIdx.value) {
+    const cats = [...store.categories]
+    const [item] = cats.splice(catDragIdx.value, 1)
+    cats.splice(newIdx, 0, item)
+    store.reorderCategories(cats)
+    catDragIdx.value = newIdx
+  }
+}
+
+function onCatDragEnd() {
+  catDragIdx.value = null
+  document.removeEventListener('pointermove', onCatDragMove)
+  document.removeEventListener('pointerup', onCatDragEnd)
+  document.removeEventListener('pointercancel', onCatDragEnd)
+}
+
 const chartTypeOptions = [
   { value: 'pie', label: 'Tårta' },
   { value: 'doughnut', label: 'Munk' },
@@ -744,6 +806,15 @@ async function saveCategoryEdit(idx) {
   editingCategory.value = null
 }
 
+async function deleteCategorySwipe(idx) {
+  if (store.categories.length === 1) return
+  const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
+  if (ok) {
+    store.deleteCategory(idx)
+    if (editingCategory.value === idx) editingCategory.value = null
+  }
+}
+
 async function deleteCategoryFromEdit(idx) {
   if (store.categories.length === 1) { await confirm('Minst en kategori krävs.', { label: 'OK', style: 'primary' }); return }
   const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
@@ -795,11 +866,6 @@ async function addCategory() {
   showAddFeedback('category')
 }
 
-async function deleteCategory(idx) {
-  if (store.categories.length === 1) return
-  const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
-  if (ok) store.deleteCategory(idx)
-}
 
 function addExpense() {
   const name = newExpenseName.value.trim()
@@ -1542,4 +1608,24 @@ function fmt(n) {
 
 .radera-btn:active { opacity: 0.6; }
 .radera-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+/* Category drag-to-reorder rows */
+.cat-order-row {
+  transition: background 0.15s;
+}
+.cat-order-row.widget-dragging {
+  border-radius: 10px;
+}
+.cat-order-row.widget-dragging :deep(.swipe-row) {
+  background: rgba(120, 120, 128, 0.1);
+  border-bottom-color: transparent;
+}
+.cat-order-row :deep(.swipe-row) {
+  padding: 10px 16px;
+}
+.cat-row-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 </style>

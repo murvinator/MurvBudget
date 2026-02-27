@@ -109,6 +109,9 @@ export const useBudgetStore = defineStore('budget', {
         })
       }
     },
+    reorderCategories(newOrder) {
+      this.categories = newOrder
+    },
     saveEditCategory(index, newName) {
       const oldName = this.categories[index]
       if (!oldName || !newName || newName === oldName) return
