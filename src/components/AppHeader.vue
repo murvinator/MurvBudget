@@ -1,13 +1,18 @@
 <template>
   <!-- Fixed nav bar strip — always 44px + safe area -->
   <div class="header">
-    <span class="title-small" :style="{ opacity: titleOpacity }">Budget</span>
+    <span class="title-small" :style="{ opacity: titleOpacity }">{{ smallTitle }}</span>
     <div class="header-separator" :style="{ opacity: titleOpacity }"></div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+
+const props = defineProps({ currentView: String })
+
+const viewTitles = { overview: 'Budget', monthly: 'Checklista' }
+const smallTitle = computed(() => viewTitles[props.currentView] ?? 'MurvBudget')
 
 const scrollY = ref(0)
 

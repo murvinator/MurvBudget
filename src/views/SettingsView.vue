@@ -350,6 +350,7 @@ import SwipeToDelete from '../components/SwipeToDelete.vue'
 
 const store = useBudgetStore()
 const goBack = inject('goBack')
+const confirm = inject('confirm')
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
 const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'data']
@@ -546,11 +547,10 @@ function addCategory() {
   newCategoryName.value = ''
 }
 
-function deleteCategory(idx) {
-  if (store.categories.length === 1) { alert('Du måste ha minst en kategori.'); return }
-  if (confirm('Detta kommer att ta bort kategorin. Utgifter i denna kategori kommer att flyttas till första kategorin.')) {
-    store.deleteCategory(idx)
-  }
+async function deleteCategory(idx) {
+  if (store.categories.length === 1) return
+  const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
+  if (ok) store.deleteCategory(idx)
 }
 
 function addExpense() {
@@ -564,10 +564,9 @@ function addExpense() {
   newExpenseDate.value = null
 }
 
-function deleteExpense(idx) {
-  if (confirm('Är du säker på att du vill ta bort denna utgift?')) {
-    store.deleteExpense(idx)
-  }
+async function deleteExpense(idx) {
+  const ok = await confirm('Ta bort utgiften?')
+  if (ok) store.deleteExpense(idx)
 }
 
 function addIncome() {
@@ -579,10 +578,9 @@ function addIncome() {
   newIncomeAmount.value = null
 }
 
-function deleteIncome(idx) {
-  if (confirm('Är du säker på att du vill ta bort denna inkomst?')) {
-    store.deleteIncome(idx)
-  }
+async function deleteIncome(idx) {
+  const ok = await confirm('Ta bort inkomsten?')
+  if (ok) store.deleteIncome(idx)
 }
 
 function addDebt() {
@@ -594,10 +592,9 @@ function addDebt() {
   newDebtAmount.value = null
 }
 
-function deleteDebt(idx) {
-  if (confirm('Är du säker på att du vill ta bort denna skuld?')) {
-    store.deleteDebt(idx)
-  }
+async function deleteDebt(idx) {
+  const ok = await confirm('Ta bort skulden?')
+  if (ok) store.deleteDebt(idx)
 }
 
 const editingDebt = ref(null)

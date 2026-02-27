@@ -107,7 +107,7 @@ function onDelete() {
 }
 
 function onContentClick(e) {
-  if (isOpen.value) {
+  if (isOpen.value && !e.target.closest('.swipe-actions')) {
     e.stopPropagation()
     close()
   }

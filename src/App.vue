@@ -33,6 +33,7 @@
     <TabBar :current-view="currentView" @navigate="showView" />
 
     <DebtPaymentModal />
+    <ConfirmSheet ref="confirmSheetRef" />
   </div>
 </template>
 
@@ -42,12 +43,14 @@ import { useBudgetStore } from './stores/budget'
 import AppHeader from './components/AppHeader.vue'
 import TabBar from './components/TabBar.vue'
 import DebtPaymentModal from './components/DebtPaymentModal.vue'
+import ConfirmSheet from './components/ConfirmSheet.vue'
 import SplashScreen from './components/SplashScreen.vue'
 import OverviewView from './views/OverviewView.vue'
 import MonthlyView from './views/MonthlyView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 const store = useBudgetStore()
+const confirmSheetRef = ref(null)
 
 const splashDone = ref(sessionStorage.getItem('splashShown') === '1')
 if (!splashDone.value) sessionStorage.setItem('splashShown', '1')
@@ -66,7 +69,7 @@ const currentViewComponent = computed(() => {
 
 const viewTitle = computed(() => {
   switch (currentView.value) {
-    case 'overview': return 'Översikt'
+    case 'overview': return 'Budget'
     case 'monthly': return 'Checklista'
     default: return 'MurvBudget'
   }
@@ -86,6 +89,7 @@ function goBack() {
 }
 
 provide('goBack', goBack)
+provide('confirm', (msg) => confirmSheetRef.value?.show(msg))
 
 onMounted(() => {
   store.migrateData()

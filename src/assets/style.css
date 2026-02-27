@@ -73,7 +73,7 @@ body {
     font-size: 17px;
     line-height: 1.47;
     /* 44px nav bar + safe area + small gap */
-    padding-top: calc(60px + var(--safe-area-top));
+    padding-top: calc(38px + var(--safe-area-top));
     padding-bottom: calc(80px + var(--safe-area-bottom));
     overflow-x: hidden;
     overscroll-behavior-x: none;
