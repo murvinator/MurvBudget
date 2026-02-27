@@ -298,11 +298,6 @@ export const useBudgetStore = defineStore('budget', {
         }
       }
 
-      // Rename old summaryStyle 'medium' (previous default) to 'default'
-      if (this.overviewSettings.summaryStyle === 'medium') {
-        this.overviewSettings.summaryStyle = 'default'
-      }
-
       // Remove Skulder category from categories list
       this.categories = this.categories.filter((c) => c !== 'Skulder')
       // Migrate expenses with category Skulder into debts
