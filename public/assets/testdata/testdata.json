@@ -12,21 +12,6 @@
       "category": "E-faktura"
     },
     {
-      "name": "Gas",
-      "amount": 350,
-      "category": "E-faktura"
-    },
-    {
-      "name": "A-kassa",
-      "amount": 160,
-      "category": "E-faktura"
-    },
-    {
-      "name": "Comviq",
-      "amount": 548,
-      "category": "Manuella"
-    },
-    {
       "name": "El",
       "amount": 350,
       "category": "E-faktura"
@@ -39,37 +24,14 @@
     {
       "name": "Spotify",
       "amount": 100,
-      "category": "Autogiro"
-    },
-    {
-      "name": "Apple TV",
-      "amount": 100,
-      "category": "Autogiro"
-    },
-    {
-      "name": "Folksam",
-      "amount": 200,
-      "category": "E-faktura"
+      "category": "Autogiro",
+      "date": 27
     },
     {
       "name": "Avanza",
       "amount": 2000,
-      "category": "Autogiro"
-    },
-    {
-      "name": "iCloud",
-      "amount": 129,
-      "category": "Autogiro"
-    },
-    {
-      "name": "HBO",
-      "amount": 129,
-      "category": "Autogiro"
-    },
-    {
-      "name": "Bredband",
-      "amount": 350,
-      "category": "Autogiro"
+      "category": "Autogiro",
+      "date": 25
     }
   ],
   "categories": [
@@ -110,40 +72,9 @@
   },
   "debts": [
     {
-      "id": "debt-mhiefpp2-czvc9j",
-      "name": "Mamma",
-      "amount": 10000
-    },
-    {
       "id": "debt-mhupd16o-ihub0k",
       "name": "Lån",
       "amount": 30000
-    },
-    {
-      "id": "debt-mhupd8vm-8fk3kb",
-      "name": "Lukas",
-      "amount": 7000
     }
-  ],
-  "debtPayments": {
-    "debt-mhupd16o-ihub0k": [],
-    "debt-mhupd8vm-8fk3kb": []
-  },
-  "variableExpenses": [
-    {
-      "name": "Mat",
-      "budget": 4000
-    },
-    {
-      "name": "Shopping",
-      "budget": 1000
-    },
-    {
-      "name": "Övrigt",
-      "budget": 1000
-    }
-  ],
-  "variableExpenseTransactions": {
-    "2025-9": {}
-  }
+  ]
 }

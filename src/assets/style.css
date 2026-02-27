@@ -10,6 +10,8 @@
     -moz-osx-font-smoothing: grayscale;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 *::-webkit-scrollbar {
@@ -71,7 +73,7 @@ body {
     font-size: 17px;
     line-height: 1.47;
     /* 44px nav bar + safe area + small gap */
-    padding-top: calc(60px + var(--safe-area-top));
+    padding-top: calc(38px + var(--safe-area-top));
     padding-bottom: calc(80px + var(--safe-area-bottom));
     overflow-x: hidden;
     overscroll-behavior-x: none;
@@ -152,8 +154,8 @@ body {
     .liquidGlass-tint { background: rgba(30, 30, 30, 0.45); }
     .liquidGlass-shine {
         box-shadow:
-            inset 0.5px 0.5px 1px rgba(255,255,255,0.15),
-            inset -0.5px -0.5px 1px rgba(255,255,255,0.05);
+            inset -0.5px -0.5px 1px rgba(0, 0, 0, 0.15),
+            inset -0.5px -0.5px 2px rgba(0, 0, 0, 0.05);
     }
     .liquidGlass-effect { backdrop-filter: blur(4px) brightness(0.9); }
 }
@@ -203,16 +205,12 @@ body {
     justify-content: center;
     border-radius: 999px;
     background: transparent;
-    border: 1px solid var(--separator);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
 }
 
 .tab-group .liquidGlass-tint {
     background: rgba(255, 255, 255, 0.78);
-}
-
-@media (prefers-color-scheme: dark) {
-    .tab-group .liquidGlass-tint { background: rgba(28, 28, 30, 0.85); }
 }
 
 .nav-action-btn {
@@ -223,9 +221,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
     cursor: pointer;
-    border: 1px solid rgba(0,0,0,0.06);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
     flex-grow: 0;
 }
@@ -233,7 +231,7 @@ body {
 .nav-action-btn svg { width: 20px; height: 20px; color: var(--text-secondary); }
 
 .nav-action-btn.active {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.18);
     border: 1px solid var(--system-blue);
     color: var(--system-blue);
 }
@@ -302,9 +300,10 @@ body {
 }
 
 @media (prefers-color-scheme: dark) {
-    .tab-bar .nav-action-btn { border: 1px solid rgba(255,255,255,0.06); }
-    .nav-action-btn { border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
-    .nav-action-btn.active { border: 1px solid var(--system-blue); }
+    .tab-group { border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .tab-group .liquidGlass-tint { background: rgba(28, 28, 30, 0.85); }
+    .nav-action-btn { border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .nav-action-btn.active { border-color: var(--system-blue); box-shadow: 0 4px 16px rgba(0, 122, 255, 0.25); }
     .tab-btn.active::before { background: rgba(255, 255, 255, 0.18); }
 }
 
@@ -408,8 +407,8 @@ body {
 }
 
 .expense-item:active { background: var(--system-gray5); transform: scale(0.995); }
-.expense-info { flex-grow: 1; }
-.expense-name { font-weight: 500; color: var(--text-primary); font-size: 17px; }
+.expense-info { flex-grow: 1; min-width: 0; }
+.expense-name { font-weight: 500; color: var(--text-primary); font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .expense-amount { color: var(--text-secondary); font-weight: 600; margin-right: 16px; font-size: 17px; }
 
 .expense-item.paid { opacity: 0.6; background: var(--system-gray6); }
@@ -523,7 +522,8 @@ body {
 .edit-actions { display: flex; gap: 10px; margin-top: 8px; }
 
 .cancel-edit-btn,
-.save-edit-btn {
+.save-edit-btn,
+.delete-edit-btn {
     flex: 1;
     padding: 12px 20px;
     border: none;
@@ -534,11 +534,13 @@ body {
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.cancel-edit-btn { background: var(--system-gray5); color: var(--text-primary); }
-.cancel-edit-btn:hover { background: var(--system-gray4); transform: translateY(-1px); }
-.save-edit-btn { background: var(--system-blue); color: white; }
-.save-edit-btn:hover { background: #0056cc; transform: translateY(-1px); }
-.cancel-edit-btn:active, .save-edit-btn:active { transform: scale(0.95); }
+.edit-actions .cancel-edit-btn { background: var(--system-gray5); color: var(--text-primary); }
+.edit-actions .cancel-edit-btn:hover { background: var(--system-gray4); transform: translateY(-1px); }
+.edit-actions .save-edit-btn { background: var(--system-blue); color: white; }
+.edit-actions .save-edit-btn:hover { background: #0056cc; transform: translateY(-1px); }
+.edit-actions .delete-edit-btn { background: var(--system-red); color: white; }
+.edit-actions .delete-edit-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.edit-actions .cancel-edit-btn:active, .edit-actions .save-edit-btn:active, .edit-actions .delete-edit-btn:active { transform: scale(0.95); }
 
 /* ================================= */
 /* CATEGORY COMPONENTS */
@@ -546,7 +548,7 @@ body {
 
 .checklist-section {
     background: var(--card-bg);
-    border-radius: 14px;
+    border-radius: 25px;
     margin-bottom: 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     overflow: hidden;
@@ -599,15 +601,15 @@ body {
 .summary-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    margin-bottom: 32px;
+    gap: 10px;
+    margin-bottom: 16px;
 }
 
 .summary-card {
     background: linear-gradient(135deg, var(--system-blue), var(--system-purple));
     color: white;
     padding: 24px;
-    border-radius: 20px;
+    border-radius: 30px;
     position: relative;
     overflow: hidden;
     min-height: 110px;
@@ -631,7 +633,7 @@ body {
 .summary-cards--compact .summary-card {
     padding: 11px 18px;
     min-height: unset;
-    border-radius: 14px;
+    border-radius: 23px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -640,7 +642,7 @@ body {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 0;
-    opacity: 0.88;
+    /* opacity: 0.88; */
 }
 .summary-cards--compact .summary-card .amount {
     font-size: 22px;
@@ -657,7 +659,7 @@ body {
 .summary-cards--medium .summary-card {
     padding: 25px 18px;
     min-height: unset;
-    border-radius: 18px;
+    border-radius: 30px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -709,8 +711,8 @@ body {
 .chart-component {
     background: var(--card-bg);
     border-radius: 20px;
-    padding: 5px 30px;
-    margin-bottom: 32px;
+    padding: 0px 30px;
+    margin-bottom: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
@@ -726,7 +728,7 @@ body {
     box-shadow: 0 1px 1px rgba(255, 59, 48, 0.15), 0 2px 8px rgba(255, 59, 48, 0.08);
     border: 1px solid rgba(255, 59, 48, 0.2);
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    margin-bottom: 32px;
+    margin-bottom: 16px;
 }
 
 .debt-summary-component:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(255, 59, 48, 0.2), 0 4px 12px rgba(255, 59, 48, 0.12); }
@@ -937,11 +939,33 @@ body {
 .reset-btn:hover { opacity: 1; }
 .reset-btn:active { transform: scale(0.95); opacity: 0.5; }
 
-.expense-date {
-    font-size: 16px;
+.expense-date-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--text-tertiary);
-    font-weight: 400;
-    margin-left: 12px;
+    background: var(--system-gray5);
+    border-radius: 6px;
+    padding: 3px 7px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-right: 10px;
+    min-width: 42px;
+}
+
+.expense-date-badge svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+}
+
+.expense-row-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 /* ================================= */
@@ -961,7 +985,7 @@ body {
 }
 
 .settings-header-left { display: flex; align-items: center; gap: 12px; }
-.settings-header h2 { font-size: 20px; font-weight: 700; margin: 0; margin-right: 10px; letter-spacing: -0.3px; }
+.settings-header h2 { font-size: 25px; font-weight: 700; margin: 0; margin-right: 10px; letter-spacing: -0.3px; }
 
 .back-btn {
     width: 44px;
@@ -1082,7 +1106,7 @@ body {
 .settings-content .expense-item .expense-amount { font-weight: 600; font-size: 15px; color: var(--text-secondary); margin: 0 12px 0 0; }
 
 /* Swipe-to-delete slot structure (no .expense-item wrapper) */
-.settings-content .expense-name { font-weight: 500; font-size: 15px; }
+.settings-content .expense-name { font-weight: 500; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-content .expense-amount { font-weight: 600; font-size: 15px; color: var(--text-secondary); margin-right: 4px; }
 
 .settings-content .delete-btn,

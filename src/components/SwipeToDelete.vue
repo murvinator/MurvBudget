@@ -2,9 +2,9 @@
   <div
     ref="rowEl"
     class="swipe-row"
-    @touchstart.passive="onTouchStart"
+    @touchstart="onTouchStart"
     @touchmove="onTouchMove"
-    @touchend.passive="onTouchEnd"
+    @touchend="onTouchEnd"
     @click.capture="onContentClick"
   >
     <!-- Left side: never moves -->
@@ -107,7 +107,7 @@ function onDelete() {
 }
 
 function onContentClick(e) {
-  if (isOpen.value) {
+  if (isOpen.value && !e.target.closest('.swipe-actions')) {
     e.stopPropagation()
     close()
   }
@@ -143,6 +143,7 @@ onUnmounted(() => {
   padding: 14px 16px;
   border-bottom: 0.5px solid var(--separator);
   background: var(--card-bg);
+  touch-action: pan-y;
 }
 
 /* Name column: takes all available width, never moves */

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import supabase from '../lib/supabase'
 
 function genId(prefix = 'd') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -27,6 +28,14 @@ export const useBudgetStore = defineStore('budget', {
       chartType: 'pie',
       cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
       summaryStyle: 'default',
+      widgetOrder: [
+        { id: 'summary',    visible: true },
+        { id: 'chart',      visible: true },
+        { id: 'debts',      visible: true },
+        { id: 'checklist',  visible: true },
+        { id: 'savings',    visible: true },
+        { id: 'categories', visible: true },
+      ],
     },
   }),
 
@@ -60,6 +69,12 @@ export const useBudgetStore = defineStore('budget', {
     deleteIncome(index) {
       this.income.splice(index, 1)
     },
+    saveEditIncome(index, name, amount) {
+      if (this.income[index]) {
+        this.income[index].name = name
+        this.income[index].amount = parseInt(amount)
+      }
+    },
 
     // ── Expenses ─────────────────────────────────────────────────────────────
     addExpense(name, amount, category, date = null) {
@@ -86,10 +101,24 @@ export const useBudgetStore = defineStore('budget', {
       const name = this.categories[index]
       this.categories.splice(index, 1)
       // Move expenses to first remaining category
+      if (this.categories.length > 0) {
+        this.expenses.forEach((e) => {
+          if (e.category === name) {
+            e.category = this.categories[0]
+          }
+        })
+      }
+    },
+    reorderCategories(newOrder) {
+      this.categories = newOrder
+    },
+    saveEditCategory(index, newName) {
+      const oldName = this.categories[index]
+      if (!oldName || !newName || newName === oldName) return
+      if (this.categories.includes(newName)) return
+      this.categories[index] = newName
       this.expenses.forEach((e) => {
-        if (e.category === name) {
-          e.category = this.categories[0]
-        }
+        if (e.category === oldName) e.category = newName
       })
     },
 
@@ -185,6 +214,7 @@ export const useBudgetStore = defineStore('budget', {
 
     // ── Data ─────────────────────────────────────────────────────────────────
     exportData() {
+      const date = new Date().toISOString().slice(0, 10)
       const dataStr = JSON.stringify({
         income: this.income,
         expenses: this.expenses,
@@ -199,7 +229,7 @@ export const useBudgetStore = defineStore('budget', {
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = 'budget-data.json'
+      link.download = `murvBudget data - ${date}.json`
       link.click()
       URL.revokeObjectURL(url)
     },
@@ -271,6 +301,42 @@ export const useBudgetStore = defineStore('budget', {
       }
     },
 
+    // ── Cloud Sync ───────────────────────────────────────────────────────────
+    async syncToCloud() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const now = new Date().toISOString()
+      const payload = JSON.parse(localStorage.getItem('budgetApp') || '{}')
+      const { error } = await supabase.from('user_budgets')
+        .upsert({ id: user.id, data: payload, updated_at: now })
+      if (!error) {
+        localStorage.setItem('murvbudget-last-cloud-sync', now)
+      }
+    },
+
+    async loadFromCloud() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+      const { data, error } = await supabase
+        .from('user_budgets').select('data, updated_at').eq('id', user.id).single()
+      if (error || !data) return null
+      return { payload: data.data, updatedAt: data.updated_at }
+    },
+
+    clearLocalData() {
+      this.$patch({
+        income: [],
+        expenses: [],
+        categories: [],
+        monthlyStatus: {},
+        debts: [],
+        debtPayments: {},
+        variableExpenses: [],
+        variableExpenseTransactions: {},
+      })
+      localStorage.removeItem('murvbudget-last-cloud-sync')
+    },
+
     // Backwards compat: called once on app mount to migrate legacy localStorage data
     migrateData() {
       // Ensure all debts have ids
@@ -297,10 +363,23 @@ export const useBudgetStore = defineStore('budget', {
           if (this.overviewSettings[k] === undefined) this.overviewSettings[k] = v
         }
       }
-
-      // Rename old summaryStyle 'medium' (previous default) to 'default'
-      if (this.overviewSettings.summaryStyle === 'medium') {
-        this.overviewSettings.summaryStyle = 'default'
+      // Migrate widgetOrder
+      const ALL_WIDGET_IDS = ['summary', 'chart', 'debts', 'checklist', 'savings', 'categories']
+      if (!this.overviewSettings.widgetOrder?.length) {
+        this.overviewSettings.widgetOrder = [
+          { id: 'summary',    visible: this.overviewSettings.showSummaryCards ?? true },
+          { id: 'chart',      visible: this.overviewSettings.showChart ?? true },
+          { id: 'debts',      visible: this.overviewSettings.showDebts ?? true },
+          { id: 'checklist',  visible: true },
+          { id: 'savings',    visible: true },
+          { id: 'categories', visible: true },
+        ]
+      } else {
+        for (const id of ALL_WIDGET_IDS) {
+          if (!this.overviewSettings.widgetOrder.find(w => w.id === id)) {
+            this.overviewSettings.widgetOrder.push({ id, visible: true })
+          }
+        }
       }
 
       // Remove Skulder category from categories list

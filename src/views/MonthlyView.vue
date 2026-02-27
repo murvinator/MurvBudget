@@ -46,7 +46,7 @@
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </div>
-        <div v-show="!collapsedCategories[category]" class="category-list">
+        <CollapseTransition><div v-if="!collapsedCategories[category]" class="category-list">
           <div
             v-for="expense in categoryExpenses(category)"
             :key="expense.index"
@@ -56,8 +56,17 @@
             @click="togglePaid(expense.index)"
           >
             <div class="expense-info">
-              <div class="expense-name">{{ expense.name }}<span v-if="expense.date" class="expense-date">{{ expense.date }}</span></div>
+              <div class="expense-name">{{ expense.name }}</div>
             </div>
+            <span v-if="expense.date" class="expense-date-badge">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                <line x1="1" y1="5" x2="11" y2="5"/>
+                <line x1="4" y1="1" x2="4" y2="3"/>
+                <line x1="8" y1="1" x2="8" y2="3"/>
+              </svg>
+              {{ expense.date }}
+            </span>
             <div class="expense-amount">{{ fmt(expense.amount) }} kr</div>
             <input
               type="checkbox"
@@ -83,7 +92,7 @@
             </div>
             <div class="expense-amount" style="font-weight: 600">{{ fmt(categoryTotal(category)) }} kr</div>
           </div>
-        </div>
+        </div></CollapseTransition>
         </div><!-- /.checklist-section -->
       </template>
     </template>
@@ -95,16 +104,18 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, watch, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
+import CollapseTransition from '../components/CollapseTransition.vue'
 
 const store = useBudgetStore()
+const confirm = inject('confirm')
 
 const COLLAPSED_KEY = 'murvbudget-monthly-collapsed'
 
 function loadCollapsed() {
   try {
-    const saved = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '{}')
+    const saved = JSON.parse(sessionStorage.getItem(COLLAPSED_KEY) || '{}')
     const state = {}
     for (const cat of store.categories) {
       state[cat] = saved[cat] !== false
@@ -117,10 +128,16 @@ function loadCollapsed() {
 
 const collapsedCategories = reactive(loadCollapsed())
 
+watch(() => store.categories, (cats) => {
+  for (const cat of cats) {
+    if (collapsedCategories[cat] === undefined) collapsedCategories[cat] = true
+  }
+}, { deep: true })
+
 function toggleCategory(category) {
   collapsedCategories[category] = !collapsedCategories[category]
   try {
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
   } catch {}
 }
 
@@ -199,18 +216,17 @@ function toggleAll() {
     }
   }
   try {
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
   } catch {}
 }
 
-function resetMonth() {
-  if (confirm('Vill du återställa alla checkboxar?')) {
-    store.resetCurrentMonth()
-  }
+async function resetMonth() {
+  const ok = await confirm('Vill du återställa alla checkboxar?', { label: 'Återställ', style: 'destructive' })
+  if (ok) store.resetCurrentMonth()
 }
 
 function fmt(n) {
-  return n.toLocaleString('sv-SE')
+  return (n || 0).toLocaleString('sv-SE')
 }
 </script>
 
@@ -219,7 +235,7 @@ function fmt(n) {
   display: flex;
   gap: 12px;
   background: var(--card-bg);
-  border-radius: 20px;
+  border-radius: 30px;
   padding: 20px;
   margin-bottom: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -279,7 +295,7 @@ function fmt(n) {
   font-weight: 500;
   color: var(--text-primary);
   letter-spacing: 1px;
-  padding-left: 17px;
+  padding-left: 12px;
 }
 
 .monthly-paid-count {

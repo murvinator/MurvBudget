@@ -1,5 +1,13 @@
 <template>
-  <div v-if="store.debts.length > 0" class="debt-summary-component">
+  <div class="debt-summary-component">
+    <div v-if="store.debts.length === 0" class="debt-empty-state">
+      <div class="no-debts-text">
+      <p>Inga skulder att visa.</p>
+      <p>Lägg till skulder under Inställningar.</p>
+      </div>  
+    </div>
+
+    <template v-else>
     <div class="debt-header-toggle" @click="toggleOpen">
       <h3>Skulder</h3>
       <div class="debt-header-right">
@@ -13,7 +21,7 @@
       </div>
     </div>
 
-    <div v-show="isOpen" class="debt-content">
+    <CollapseTransition><div v-if="isOpen" class="debt-content">
       <div
         v-for="(debt, idx) in store.debts"
         :key="debt.id"
@@ -52,11 +60,11 @@
             <!-- Payment history -->
             <div class="payments-history" v-if="payments(debt).length > 0">
               <div
-                v-for="(p, pi) in [...payments(debt)].reverse()"
-                :key="pi"
+                v-for="{ p, origIdx } in reversedPayments(debt)"
+                :key="origIdx"
                 class="payment-item"
               >
-                <template v-if="editingPayment?.debtIdx === idx && editingPayment?.payIdx === (payments(debt).length - 1 - pi)">
+                <template v-if="editingPayment?.debtIdx === idx && editingPayment?.payIdx === origIdx">
                   <div class="payment-info">
                     <input type="number" v-model.number="editingPayment.amount" min="0" step="0.01" style="width:80px; padding:4px 8px; border-radius:6px; border:1px solid var(--separator);">
                   </div>
@@ -71,8 +79,8 @@
                     <span class="payment-date">{{ formatDate(p.date) }}</span>
                   </div>
                   <div class="payment-actions">
-                    <button @click="startEdit(idx, payments(debt).length - 1 - pi, p)">Ändra</button>
-                    <button @click="deletePayment(idx, payments(debt).length - 1 - pi)">Ta bort</button>
+                    <button @click="startEdit(idx, origIdx, p)">Ändra</button>
+                    <button @click="deletePayment(idx, origIdx)">Ta bort</button>
                   </div>
                 </template>
               </div>
@@ -85,15 +93,18 @@
         <span>Totalt</span>
         <span>{{ fmt(totalDebt) }} kr</span>
       </div>
-    </div>
+    </div></CollapseTransition>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
+import CollapseTransition from './CollapseTransition.vue'
 
 const store = useBudgetStore()
+const confirm = inject('confirm')
 
 const isOpen = ref(false)
 const openDebt = ref(null)
@@ -117,10 +128,14 @@ function payments(debt) {
   return store.debtPayments[debt.id] || []
 }
 
-function payDebt(idx) {
+function reversedPayments(debt) {
+  return payments(debt).map((p, i) => ({ p, origIdx: i })).reverse()
+}
+
+async function payDebt(idx) {
   const amount = parseFloat(payAmounts[idx])
   if (isNaN(amount) || amount <= 0) {
-    alert('Ange ett giltigt belopp')
+    await confirm('Ange ett giltigt belopp.', { label: 'OK', style: 'primary' })
     return
   }
   store.addDebtPayment(idx, amount, '')
@@ -131,17 +146,19 @@ function startEdit(debtIdx, payIdx, p) {
   editingPayment.value = { debtIdx, payIdx, amount: p.amount }
 }
 
-function saveEditPayment() {
+async function saveEditPayment() {
   const { debtIdx, payIdx, amount } = editingPayment.value
-  if (isNaN(amount) || amount <= 0) { alert('Ange ett giltigt belopp'); return }
+  if (isNaN(amount) || amount <= 0) {
+    await confirm('Ange ett giltigt belopp.', { label: 'OK', style: 'primary' })
+    return
+  }
   store.editDebtPayment(debtIdx, payIdx, amount, store.debtPayments[store.debts[debtIdx].id][payIdx]?.note || '')
   editingPayment.value = null
 }
 
-function deletePayment(debtIdx, payIdx) {
-  if (confirm('Ta bort denna betalning?')) {
-    store.deleteDebtPayment(debtIdx, payIdx)
-  }
+async function deletePayment(debtIdx, payIdx) {
+  const ok = await confirm('Ta bort denna betalning?')
+  if (ok) store.deleteDebtPayment(debtIdx, payIdx)
 }
 
 function fmt(n) {
@@ -152,3 +169,19 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('sv-SE')
 }
 </script>
+
+<style scoped>
+.debt-empty-state {
+  padding: 8px 4px 4px;
+}
+.debt-empty-state p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+
+.no-debts-text{
+  padding: 12px;
+}
+</style>
