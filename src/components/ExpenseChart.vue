@@ -52,7 +52,7 @@ const stackedLegendItems = ref([])
 
 const chartContainerStyle = computed(() => {
   const t = store.overviewSettings?.chartType || 'pie'
-  if (t === 'stackedBar') return { height: '46px', marginTop: '12px' }
+  if (t === 'stackedBar') return { height: '46px', marginTop: '12px', paddingTop:'12px' }
   if (t === 'bar') return { minHeight: '380px' }
   return {}
 })
