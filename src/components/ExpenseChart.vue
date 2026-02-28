@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { Chart } from 'chart.js/auto'
 import { useBudgetStore } from '../stores/budget'
 
@@ -248,7 +248,7 @@ onMounted(() => {
   darkModeQuery.addEventListener('change', buildChart)
 })
 
-watch(chartData, () => { buildChart() }, { deep: true })
+watch(chartData, async () => { await nextTick(); buildChart() }, { deep: true })
 
 watch(() => store.overviewSettings?.chartType, () => { buildChart() })
 

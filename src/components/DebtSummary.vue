@@ -135,7 +135,7 @@ function reversedPayments(debt) {
 async function payDebt(idx) {
   const amount = parseFloat(payAmounts[idx])
   if (isNaN(amount) || amount <= 0) {
-    await confirm('Ange ett giltigt belopp.', { label: 'OK', style: 'primary' })
+    await confirm('Ogiltigt belopp', { label: 'OK', style: 'primary', description: 'Ange ett giltigt belopp.' })
     return
   }
   store.addDebtPayment(idx, amount, '')
@@ -149,7 +149,7 @@ function startEdit(debtIdx, payIdx, p) {
 async function saveEditPayment() {
   const { debtIdx, payIdx, amount } = editingPayment.value
   if (isNaN(amount) || amount <= 0) {
-    await confirm('Ange ett giltigt belopp.', { label: 'OK', style: 'primary' })
+    await confirm('Ogiltigt belopp', { label: 'OK', style: 'primary', description: 'Ange ett giltigt belopp.' })
     return
   }
   store.editDebtPayment(debtIdx, payIdx, amount, store.debtPayments[store.debts[debtIdx].id][payIdx]?.note || '')
@@ -157,7 +157,7 @@ async function saveEditPayment() {
 }
 
 async function deletePayment(debtIdx, payIdx) {
-  const ok = await confirm('Ta bort denna betalning?')
+  const ok = await confirm('Ta bort betalning?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) store.deleteDebtPayment(debtIdx, payIdx)
 }
 

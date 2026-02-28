@@ -145,23 +145,25 @@
               </template>
               <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
             </SwipeToDelete>
-            <div v-show="editingIncome === idx" class="expense-edit-form">
-              <div class="edit-form-content">
-                <div class="edit-input-group">
-                  <label>Namn</label>
-                  <input type="text" v-model="editIncomeForm.name">
-                </div>
-                <div class="edit-input-group">
-                  <label>Belopp</label>
-                  <input type="number" v-model.number="editIncomeForm.amount">
-                </div>
-                <div class="edit-actions">
-                  <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
-                  <button class="cancel-edit-btn" @click="editingIncome = null">Avbryt</button>
-                  <button class="delete-edit-btn" @click="deleteIncomeFromEdit(idx)">Radera</button>
+            <CollapseTransition>
+              <div v-if="editingIncome === idx" class="expense-edit-form">
+                <div class="edit-form-content">
+                  <div class="edit-input-group">
+                    <label>Namn</label>
+                    <input type="text" v-model="editIncomeForm.name">
+                  </div>
+                  <div class="edit-input-group">
+                    <label>Belopp</label>
+                    <input type="number" v-model.number="editIncomeForm.amount">
+                  </div>
+                  <div class="edit-actions">
+                    <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
+                    <button class="cancel-edit-btn" @click="editingIncome = null">Avbryt</button>
+                    <button class="delete-edit-btn" @click="deleteIncomeFromEdit(idx)">Radera</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </CollapseTransition>
           </div>
         </div></CollapseTransition>
       </div>
@@ -173,29 +175,88 @@
           <svg class="chevron" :class="{ collapsed: collapsedSections['expenses'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <CollapseTransition><div v-if="!collapsedSections['expenses']" class="settings-content">
-          <div v-if="store.categories.length === 0" class="no-categories-notice">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <span>Skapa en kategori först innan du lägger till utgifter</span>
+          <div class="input-group">
+            <input type="text" v-model="newExpenseName" placeholder="Namn">
+            <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
           </div>
-          <template v-else>
-            <div class="input-group">
-              <input type="text" v-model="newExpenseName" placeholder="Namn">
-              <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
+          <div class="input-group input-group--labeled">
+            <div class="field-with-label">
+              <span class="field-label">Kategori</span>
+              <select v-model="newExpenseCategory">
+                <option value="">Ingen kategori</option>
+                <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
             </div>
-            <div class="input-group input-group--labeled">
-              <div class="field-with-label">
-                <span class="field-label">Kategori</span>
-                <select v-model="newExpenseCategory">
-                  <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
+            <div class="field-with-label field-with-label--narrow">
+              <span class="field-label">Dag</span>
+              <input type="number" v-model.number="newExpenseDate" placeholder="valfritt" min="1" max="31">
+            </div>
+            <button class="add-expense-bottom-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">{{ addFeedback.expense ? 'Tillagt' : 'Lägg till' }}</button>
+          </div>
+
+          <!-- Uncategorized expenses -->
+          <template v-if="uncategorizedExpenses.length > 0">
+            <div class="category-header" style="margin-top: 16px;">
+              <h4 style="padding: 12px 16px; font-size: 16px; font-weight: 600; color: var(--text-secondary); margin: 0;">Utan kategori</h4>
+            </div>
+            <div class="category-list">
+              <div
+                v-for="expense in uncategorizedExpenses"
+                :key="expense.globalIndex"
+                class="expense-item-wrapper"
+              >
+                <SwipeToDelete @delete="deleteExpense(expense.globalIndex)">
+                  <template #fixed>
+                    <div
+                      class="expense-name"
+                      :class="{ editing: editingExpense === expense.globalIndex }"
+                      @click="toggleEditExpense(expense.globalIndex)"
+                    >{{ expense.name }}</div>
+                  </template>
+                  <div class="expense-row-right">
+                    <span class="expense-date-badge" :style="expense.date ? {} : { visibility: 'hidden' }">
+                      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                        <line x1="1" y1="5" x2="11" y2="5"/>
+                        <line x1="4" y1="1" x2="4" y2="3"/>
+                        <line x1="8" y1="1" x2="8" y2="3"/>
+                      </svg>
+                      {{ expense.date }}
+                    </span>
+                    <span class="expense-amount">{{ fmt(expense.amount) }} kr</span>
+                  </div>
+                </SwipeToDelete>
+                <CollapseTransition>
+                  <div v-if="editingExpense === expense.globalIndex" class="expense-edit-form">
+                    <div class="edit-form-content">
+                      <div class="edit-input-group">
+                        <label>Namn</label>
+                        <input type="text" v-model="editForm.name">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Belopp</label>
+                        <input type="number" v-model.number="editForm.amount">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Kategori</label>
+                        <select v-model="editForm.category">
+                          <option value="">Ingen kategori</option>
+                          <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
+                        </select>
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Dag (valfritt)</label>
+                        <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
+                      </div>
+                      <div class="edit-actions">
+                        <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
+                        <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
+                        <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                      </div>
+                    </div>
+                  </div>
+                </CollapseTransition>
               </div>
-              <div class="field-with-label field-with-label--narrow">
-                <span class="field-label">Dag</span>
-                <input type="number" v-model.number="newExpenseDate" placeholder="valfritt" min="1" max="31">
-              </div>
-              <button class="add-expense-bottom-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">{{ addFeedback.expense ? 'Tillagt' : 'Lägg till' }}</button>
             </div>
           </template>
 
@@ -233,33 +294,36 @@
                     </div>
                   </SwipeToDelete>
 
-                  <div v-show="editingExpense === expense.globalIndex" class="expense-edit-form">
-                    <div class="edit-form-content">
-                      <div class="edit-input-group">
-                        <label>Namn</label>
-                        <input type="text" v-model="editForm.name">
-                      </div>
-                      <div class="edit-input-group">
-                        <label>Belopp</label>
-                        <input type="number" v-model.number="editForm.amount">
-                      </div>
-                      <div class="edit-input-group">
-                        <label>Kategori</label>
-                        <select v-model="editForm.category">
-                          <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
-                        </select>
-                      </div>
-                      <div class="edit-input-group">
-                        <label>Dag (valfritt)</label>
-                        <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
-                      </div>
-                      <div class="edit-actions">
-                        <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
-                        <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
-                        <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                  <CollapseTransition>
+                    <div v-if="editingExpense === expense.globalIndex" class="expense-edit-form">
+                      <div class="edit-form-content">
+                        <div class="edit-input-group">
+                          <label>Namn</label>
+                          <input type="text" v-model="editForm.name">
+                        </div>
+                        <div class="edit-input-group">
+                          <label>Belopp</label>
+                          <input type="number" v-model.number="editForm.amount">
+                        </div>
+                        <div class="edit-input-group">
+                          <label>Kategori</label>
+                          <select v-model="editForm.category">
+                            <option value="">Ingen kategori</option>
+                            <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
+                          </select>
+                        </div>
+                        <div class="edit-input-group">
+                          <label>Dag (valfritt)</label>
+                          <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
+                        </div>
+                        <div class="edit-actions">
+                          <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
+                          <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
+                          <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </CollapseTransition>
                 </div>
               </div>
             </template>
@@ -354,20 +418,63 @@
               </template>
               <div class="expense-amount">{{ fmt(debt.amount) }} kr</div>
             </SwipeToDelete>
-            <div v-show="editingDebt === idx" class="expense-edit-form">
-              <div class="edit-form-content">
-                <div class="edit-input-group">
-                  <label>Belopp</label>
-                  <input type="number" v-model.number="editDebtAmount">
-                </div>
-                <div class="edit-actions">
-                  <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
-                  <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
-                  <button class="delete-edit-btn" @click="deleteDebtFromEdit(idx)">Radera</button>
+            <CollapseTransition>
+              <div v-if="editingDebt === idx" class="expense-edit-form">
+                <div class="edit-form-content">
+                  <div class="edit-input-group">
+                    <label>Belopp</label>
+                    <input type="number" v-model.number="editDebtAmount">
+                  </div>
+                  <div class="edit-actions">
+                    <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
+                    <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
+                    <button class="delete-edit-btn" @click="deleteDebtFromEdit(idx)">Radera</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </CollapseTransition>
           </div>
+        </div></CollapseTransition>
+      </div>
+
+      <!-- Lönedag -->
+      <div class="settings-section">
+        <div class="section-toggle" @click="toggleSection('salary')">
+          <h3>Lönedag</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['salary'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <CollapseTransition><div v-if="!collapsedSections['salary']" class="settings-content">
+
+          <div class="salary-row">
+            <div class="salary-row-text">
+              <p class="salary-row-title">Vilken dag får du lön?</p>
+              <p class="salary-row-sub">Används för att visa rätt månadsnamn i checklistan</p>
+            </div>
+            <input
+              type="number"
+              class="salary-day-input"
+              :value="store.salaryDay"
+              placeholder="1-31"
+              min="1"
+              max="31"
+              @input="store.salaryDay = $event.target.value ? parseInt($event.target.value) : null"
+            >
+          </div>
+
+          <div class="salary-row salary-row--sep">
+            <div class="salary-row-text">
+              <p class="salary-row-title">Visa nästa månads namn</p>
+              <p class="salary-row-sub">Om du betalar räkningar samma dag du får lön visas nästa månads namn i checklistan från lönedagen till månadens slut</p>
+            </div>
+            <input
+              type="checkbox"
+              class="ios-toggle"
+              :checked="store.salaryMonthOffset"
+              :disabled="!store.salaryDay"
+              @change="store.salaryMonthOffset = $event.target.checked"
+            >
+          </div>
+
         </div></CollapseTransition>
       </div>
 
@@ -463,15 +570,21 @@
       </div>
 
       <div class="settings-footer">
-        <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget</a>
+        <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget   <br>
+        © Jonathan Belloni 2026</a>
+      
       </div>
 
-      <button class="support-btn" @click="swish">
+      <div class="settings-footer">
+        <span> </span>
+      </div>
+
+      <!-- <button class="support-btn" @click="swish">
         <svg viewBox="0 0 24 24" fill="currentColor" class="support-icon">
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
         </svg>
         <span>Support this project</span>
-      </button>
+      </button> -->
     </div>
   </div>
 
@@ -488,11 +601,10 @@ import AuthModal from '../components/AuthModal.vue'
 
 const store = useBudgetStore()
 const authStore = useAuthStore()
-const goBack = inject('goBack')
 const confirm = inject('confirm')
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
-const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'account']
+const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'salary', 'account']
 
 const authModalRef = ref(null)
 const deleteExpanded = ref(false)
@@ -515,16 +627,27 @@ async function openAuthModal() {
 
 async function signOut() {
   const ok = await confirm(
-    'Du loggas ut från ditt konto. Din lokala data behålls på enheten.',
-    { label: 'Logga ut', style: 'destructive' }
+    'Logga ut?',
+    { label: 'Logga ut', style: 'destructive', description: 'Du loggas ut. Lokal data återgår till läget innan inloggning.' }
   )
-  if (ok) authStore.signOut()
+  if (!ok) return
+
+  authStore.signOut()
+
+  const preLogin = localStorage.getItem('budgetApp-pre-login')
+  if (preLogin !== null) {
+    store.$reset()
+    if (preLogin) {
+      try { store.$patch(JSON.parse(preLogin)) } catch {}
+    }
+    localStorage.removeItem('budgetApp-pre-login')
+  }
 }
 
 async function doDeleteLocal() {
   const ok = await confirm(
-    'All lokal data på den här enheten raderas permanent. Molndata påverkas inte.',
-    { label: 'Radera lokal data', style: 'destructive' }
+    'Radera lokal data?',
+    { label: 'Radera lokal data', style: 'destructive', description: 'All lokal data på den här enheten raderas permanent. Molndata påverkas inte.' }
   )
   if (!ok) return
   store.clearLocalData()
@@ -534,8 +657,8 @@ async function doDeleteLocal() {
 
 async function doDeleteCloud() {
   const ok = await confirm(
-    'All molndata på ditt konto raderas permanent. Lokal data på den här enheten påverkas inte.',
-    { label: 'Radera molndata', style: 'destructive' }
+    'Radera molndata?',
+    { label: 'Radera molndata', style: 'destructive', description: 'All molndata på ditt konto raderas permanent. Lokal data på den här enheten påverkas inte.' }
   )
   if (!ok) return
   const success = await authStore.deleteCloudData()
@@ -547,8 +670,8 @@ async function doDeleteCloud() {
 
 async function doDeleteAccount() {
   const ok = await confirm(
-    'Ditt konto och all molndata raderas permanent. Lokal data på enheten behålls. Åtgärden kan inte ångras.',
-    { label: 'Radera konto', style: 'destructive' }
+    'Radera konto?',
+    { label: 'Radera konto', style: 'destructive', description: 'Ditt konto och all molndata raderas permanent. Lokal data på enheten behålls. Åtgärden kan inte ångras.' }
   )
   if (!ok) return
   await authStore.deleteAccount()
@@ -746,7 +869,7 @@ defineExpose({ toggleAllSections })
 const newCategoryName = ref('')
 const newExpenseName = ref('')
 const newExpenseAmount = ref(null)
-const newExpenseCategory = ref(store.categories[0] || '')
+const newExpenseCategory = ref('')
 const newExpenseDate = ref(null)
 const newIncomeName = ref('')
 const newIncomeAmount = ref(null)
@@ -773,7 +896,7 @@ function toggleEditIncome(idx) {
 
 async function saveIncomeEdit(idx) {
   if (!editIncomeForm.name || !editIncomeForm.amount || editIncomeForm.amount <= 0) {
-    await confirm('Vänligen fyll i giltigt namn och belopp.', { label: 'OK', style: 'primary' })
+    await confirm('Ogiltigt värde', { label: 'OK', style: 'primary', description: 'Vänligen fyll i giltigt namn och belopp.' })
     return
   }
   store.saveEditIncome(idx, editIncomeForm.name, editIncomeForm.amount)
@@ -781,7 +904,7 @@ async function saveIncomeEdit(idx) {
 }
 
 async function deleteIncomeFromEdit(idx) {
-  const ok = await confirm('Ta bort inkomsten?')
+  const ok = await confirm('Ta bort inkomsten?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) {
     store.deleteIncome(idx)
     editingIncome.value = null
@@ -801,14 +924,13 @@ function toggleEditCategory(idx) {
 async function saveCategoryEdit(idx) {
   const name = editCategoryName.value.trim()
   if (!name) return
-  if (name === 'Skulder') { await confirm("'Skulder' är reserverat och kan inte användas.", { label: 'OK', style: 'primary' }); return }
+  if (name === 'Skulder') { await confirm('Reserverat namn', { label: 'OK', style: 'primary', description: "'Skulder' är reserverat och kan inte användas." }); return }
   store.saveEditCategory(idx, name)
   editingCategory.value = null
 }
 
 async function deleteCategorySwipe(idx) {
-  if (store.categories.length === 1) return
-  const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
+  const ok = await confirm('Ta bort kategorin?', { description: 'Utgifter i den här kategorin blir utan kategori.' })
   if (ok) {
     store.deleteCategory(idx)
     if (editingCategory.value === idx) editingCategory.value = null
@@ -816,8 +938,7 @@ async function deleteCategorySwipe(idx) {
 }
 
 async function deleteCategoryFromEdit(idx) {
-  if (store.categories.length === 1) { await confirm('Minst en kategori krävs.', { label: 'OK', style: 'primary' }); return }
-  const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
+  const ok = await confirm('Ta bort kategorin?', { description: 'Utgifter i den här kategorin blir utan kategori.' })
   if (ok) {
     store.deleteCategory(idx)
     editingCategory.value = null
@@ -835,6 +956,13 @@ function expensesByCategory(cat) {
     .sort((a, b) => b.amount - a.amount)
 }
 
+const uncategorizedExpenses = computed(() =>
+  store.expenses
+    .map((e, i) => ({ ...e, globalIndex: i }))
+    .filter((e) => !e.category || !store.categories.includes(e.category))
+    .sort((a, b) => b.amount - a.amount)
+)
+
 function toggleEditExpense(globalIndex) {
   if (editingExpense.value === globalIndex) {
     editingExpense.value = null
@@ -850,7 +978,7 @@ function toggleEditExpense(globalIndex) {
 
 async function saveExpenseEdit(globalIndex) {
   if (!editForm.name || !editForm.amount || editForm.amount <= 0) {
-    await confirm('Vänligen fyll i giltigt namn och belopp.', { label: 'OK', style: 'primary' })
+    await confirm('Ogiltigt värde', { label: 'OK', style: 'primary', description: 'Vänligen fyll i giltigt namn och belopp.' })
     return
   }
   store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category, editForm.date)
@@ -860,7 +988,7 @@ async function saveExpenseEdit(globalIndex) {
 async function addCategory() {
   const name = newCategoryName.value.trim()
   if (!name) return
-  if (name === 'Skulder') { await confirm("'Skulder' är reserverat och kan inte läggas till.", { label: 'OK', style: 'primary' }); return }
+  if (name === 'Skulder') { await confirm('Reserverat namn', { label: 'OK', style: 'primary', description: "'Skulder' är reserverat och kan inte läggas till." }); return }
   store.addCategory(name)
   newCategoryName.value = ''
   showAddFeedback('category')
@@ -870,9 +998,8 @@ async function addCategory() {
 function addExpense() {
   const name = newExpenseName.value.trim()
   const amount = newExpenseAmount.value
-  const category = newExpenseCategory.value
-  if (!name || !amount || amount <= 0 || !category) return
-  store.addExpense(name, amount, category, newExpenseDate.value)
+  if (!name || !amount || amount <= 0) return
+  store.addExpense(name, amount, newExpenseCategory.value || null, newExpenseDate.value)
   newExpenseName.value = ''
   newExpenseAmount.value = null
   newExpenseDate.value = null
@@ -880,12 +1007,12 @@ function addExpense() {
 }
 
 async function deleteExpense(idx) {
-  const ok = await confirm('Ta bort utgiften?')
+  const ok = await confirm('Ta bort utgiften?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) store.deleteExpense(idx)
 }
 
 async function deleteExpenseFromEdit(globalIndex) {
-  const ok = await confirm('Ta bort utgiften?')
+  const ok = await confirm('Ta bort utgiften?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) {
     store.deleteExpense(globalIndex)
     editingExpense.value = null
@@ -903,7 +1030,7 @@ function addIncome() {
 }
 
 async function deleteIncome(idx) {
-  const ok = await confirm('Ta bort inkomsten?')
+  const ok = await confirm('Ta bort inkomsten?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) store.deleteIncome(idx)
 }
 
@@ -918,12 +1045,12 @@ function addDebt() {
 }
 
 async function deleteDebt(idx) {
-  const ok = await confirm('Ta bort skulden?')
+  const ok = await confirm('Ta bort skulden?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) store.deleteDebt(idx)
 }
 
 async function deleteDebtFromEdit(idx) {
-  const ok = await confirm('Ta bort skulden?')
+  const ok = await confirm('Ta bort skulden?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) {
     store.deleteDebt(idx)
     editingDebt.value = null
@@ -947,8 +1074,8 @@ function saveDebtEdit(idx) {
 
 async function exportData() {
   const ok = await confirm(
-    'Filen sparas på din enhet som en JSON-fil. Importera den igen med Importera-knappen om du byter enhet eller vill återställa din data.',
-    { label: 'Exportera', style: 'primary' }
+    'Exportera data?',
+    { label: 'Exportera', style: 'primary', description: 'Filen sparas på din enhet som en JSON-fil. Importera den igen med Importera-knappen om du byter enhet eller vill återställa din data.' }
   )
   if (!ok) return
   store.exportData()
@@ -958,8 +1085,8 @@ async function exportData() {
 
 async function triggerImport() {
   const ok = await confirm(
-    'Välj en tidigare exporterad MurvBudget-fil (.json). All nuvarande data på den här enheten ersätts med innehållet i filen.',
-    { label: 'Välj fil', style: 'primary' }
+    'Importera data?',
+    { label: 'Välj fil', style: 'primary', description: 'Välj en tidigare exporterad MurvBudget-fil (.json). All nuvarande data på den här enheten ersätts med innehållet i filen.' }
   )
   if (ok) importFileRef.value?.click()
 }
@@ -974,7 +1101,7 @@ function importFile(event) {
       const required = ['income', 'expenses', 'categories']
       const missing = required.filter(k => !Array.isArray(data[k]))
       if (missing.length) {
-        await confirm(`Filen saknar obligatoriska fält: ${missing.join(', ')}. Kontrollera att det är en giltig MurvBudget-fil.`, { label: 'OK', style: 'primary' })
+        await confirm('Ogiltig fil', { label: 'OK', style: 'primary', description: `Filen saknar obligatoriska fält: ${missing.join(', ')}. Kontrollera att det är en giltig MurvBudget-fil.` })
         event.target.value = ''
         return
       }
@@ -982,18 +1109,18 @@ function importFile(event) {
       const expensesInvalid = data.expenses.some(ex => typeof ex.name !== 'string' || typeof ex.amount !== 'number' || typeof ex.category !== 'string')
       const categoriesInvalid = data.categories.some(c => typeof c !== 'string')
       if (incomeInvalid || expensesInvalid || categoriesInvalid) {
-        await confirm('Filen innehåller ogiltiga poster. Kontrollera att det är en giltig MurvBudget-fil.', { label: 'OK', style: 'primary' })
+        await confirm('Ogiltig fil', { label: 'OK', style: 'primary', description: 'Filen innehåller ogiltiga poster. Kontrollera att det är en giltig MurvBudget-fil.' })
         event.target.value = ''
         return
       }
-      const ok = await confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')
+      const ok = await confirm('Ersätt all data?', { description: 'All nuvarande data på den här enheten ersätts med innehållet i filen.' })
       if (ok) {
         store.importData(data)
         statusMsg.value = 'Data importerad!'
         setTimeout(() => { statusMsg.value = '' }, 3000)
       }
     } catch {
-      await confirm('Fel vid import av data. Kontrollera att filen är korrekt JSON.', { label: 'OK', style: 'primary' })
+      await confirm('Fel vid import', { label: 'OK', style: 'primary', description: 'Kunde inte läsa filen. Kontrollera att det är korrekt JSON.' })
     }
     event.target.value = ''
   }
@@ -1001,7 +1128,7 @@ function importFile(event) {
 }
 
 async function loadTestData() {
-  const ok = await confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')
+  const ok = await confirm('Ladda testdata?', { description: 'All nuvarande data ersätts med exempeldata.' })
   if (!ok) return
   const result = await store.loadTestData()
   if (result) {
@@ -1012,10 +1139,6 @@ async function loadTestData() {
   }
 }
 
-
-function swish() {
-  window.location.href = 'https://app.swish.nu/1/p/sw/?sw=46701484473&amt=10.0&msg=Cool%20app&edit=amt,msg'
-}
 
 function fmt(n) {
   return (n || 0).toLocaleString('sv-SE')
@@ -1608,6 +1731,61 @@ function fmt(n) {
 
 .radera-btn:active { opacity: 0.6; }
 .radera-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+/* ── Lönedag section ──────────────────────────────────────── */
+.salary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: 16px;
+}
+
+.salary-row--sep {
+  border-top: 0.5px solid var(--separator);
+}
+
+.salary-row-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.salary-row-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+
+.salary-row-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.salary-day-input {
+  flex-shrink: 0;
+  width: 52px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 10px;
+  background: var(--system-gray5, rgba(120,120,128,0.18));
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.salary-day-input::-webkit-inner-spin-button,
+.salary-day-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
 
 /* Category drag-to-reorder rows */
 .cat-order-row {

@@ -21,12 +21,47 @@
 
     <!-- Show/Hide all toggle -->
     <div class="monthly-toggle-all">
-      <span class="monthly-section-title">{{ store.currentMonthName }}</span>
+      <span class="monthly-section-title">{{ store.displayMonthName }}</span>
       <span class="monthly-paid-count">{{ paidCount }} av {{ totalCount }} betalt</span>
-      <button class="toggle-all-btn" @click="toggleAll">
+      <button v-if="hasCategorizedExpenses" class="toggle-all-btn" @click="toggleAll">
         {{ allExpanded ? 'Dölj alla' : 'Visa alla' }}
       </button>
     </div>
+
+    <!-- Uncategorized expenses — shown plainly above all categories -->
+    <template v-if="uncategorizedExpenses.length > 0">
+      <div class="category-list" style="margin-bottom: 8px;">
+        <div
+          v-for="expense in uncategorizedExpenses"
+          :key="expense.index"
+          class="expense-item"
+          :class="{ paid: isPaid(expense.index) }"
+          style="cursor: pointer"
+          @click="togglePaid(expense.index)"
+        >
+          <div class="expense-info">
+            <div class="expense-name">{{ expense.name }}</div>
+          </div>
+          <span v-if="expense.date" class="expense-date-badge">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+              <line x1="1" y1="5" x2="11" y2="5"/>
+              <line x1="4" y1="1" x2="4" y2="3"/>
+              <line x1="8" y1="1" x2="8" y2="3"/>
+            </svg>
+            {{ expense.date }}
+          </span>
+          <div class="expense-amount">{{ fmt(expense.amount) }} kr</div>
+          <input
+            type="checkbox"
+            class="checkbox"
+            :checked="isPaid(expense.index)"
+            @change.stop="togglePaid(expense.index)"
+            @click.stop
+          >
+        </div>
+      </div>
+    </template>
 
     <!-- Expenses grouped by category (#54 collapsible) -->
     <template v-for="category in store.categories" :key="category">
@@ -97,7 +132,7 @@
       </template>
     </template>
 
-    <div v-if="!allCollapsed" class="month-controls">
+    <div v-if="store.expenses.length > 0" class="month-controls">
       <button class="reset-btn" @click="resetMonth">Återställ checkboxar</button>
     </div>
   </div>
@@ -148,6 +183,17 @@ function categoryExpenses(category) {
     .sort((a, b) => b.amount - a.amount)
 }
 
+const uncategorizedExpenses = computed(() =>
+  store.expenses
+    .map((e, index) => ({ ...e, index }))
+    .filter((e) => !e.category || !store.categories.includes(e.category))
+    .sort((a, b) => b.amount - a.amount)
+)
+
+const hasCategorizedExpenses = computed(() =>
+  store.expenses.some((e) => e.category && store.categories.includes(e.category))
+)
+
 function isPaid(index) {
   return !!(store.monthlyStatus['current']?.[index])
 }
@@ -181,11 +227,11 @@ function categoryAllPaid(category) {
 }
 
 const grandTotal = computed(() =>
-  store.categories.reduce((sum, cat) => sum + categoryTotal(cat), 0)
+  store.expenses.reduce((sum, e) => sum + e.amount, 0)
 )
 
 const grandPaid = computed(() =>
-  store.categories.reduce((sum, cat) => sum + categoryPaidAmount(cat), 0)
+  store.expenses.reduce((sum, e, i) => sum + (isPaid(i) ? e.amount : 0), 0)
 )
 
 const grandRemaining = computed(() => grandTotal.value - grandPaid.value)
@@ -221,7 +267,7 @@ function toggleAll() {
 }
 
 async function resetMonth() {
-  const ok = await confirm('Vill du återställa alla checkboxar?', { label: 'Återställ', style: 'destructive' })
+  const ok = await confirm('Återställ checkboxar?', { label: 'Återställ', style: 'destructive', description: 'Alla utgifter markeras som ej betalda.' })
   if (ok) store.resetCurrentMonth()
 }
 

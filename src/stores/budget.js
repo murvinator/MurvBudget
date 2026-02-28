@@ -20,6 +20,8 @@ export const useBudgetStore = defineStore('budget', {
     debtPayments: {},
     variableExpenses: [],
     variableExpenseTransactions: {},
+    salaryDay: null,
+    salaryMonthOffset: false,
     overviewSettings: {
       showSummaryCards: true,
       showVariableMini: true,
@@ -54,6 +56,13 @@ export const useBudgetStore = defineStore('budget', {
     currentMonthName: () => {
       return SWEDISH_MONTHS[new Date().getMonth()]
     },
+    displayMonthName: (state) => {
+      const today = new Date()
+      if (state.salaryMonthOffset && state.salaryDay && today.getDate() >= state.salaryDay) {
+        return SWEDISH_MONTHS[(today.getMonth() + 1) % 12]
+      }
+      return SWEDISH_MONTHS[today.getMonth()]
+    },
   },
 
   actions: {
@@ -77,8 +86,8 @@ export const useBudgetStore = defineStore('budget', {
     },
 
     // ── Expenses ─────────────────────────────────────────────────────────────
-    addExpense(name, amount, category, date = null) {
-      const item = { name, amount: parseInt(amount), category }
+    addExpense(name, amount, category = null, date = null) {
+      const item = { name, amount: parseInt(amount), category: category || null }
       if (date) item.date = parseInt(date)
       this.expenses.push(item)
     },
@@ -86,7 +95,7 @@ export const useBudgetStore = defineStore('budget', {
       this.expenses.splice(index, 1)
     },
     saveEditExpense(index, name, amount, category, date = null) {
-      const item = { name, amount: parseInt(amount), category }
+      const item = { name, amount: parseInt(amount), category: category || null }
       if (date) item.date = parseInt(date)
       this.expenses[index] = item
     },
@@ -100,14 +109,12 @@ export const useBudgetStore = defineStore('budget', {
     deleteCategory(index) {
       const name = this.categories[index]
       this.categories.splice(index, 1)
-      // Move expenses to first remaining category
-      if (this.categories.length > 0) {
-        this.expenses.forEach((e) => {
-          if (e.category === name) {
-            e.category = this.categories[0]
-          }
-        })
-      }
+      // Uncategorize expenses that belonged to the deleted category
+      this.expenses.forEach((e) => {
+        if (e.category === name) {
+          e.category = null
+        }
+      })
     },
     reorderCategories(newOrder) {
       this.categories = newOrder
