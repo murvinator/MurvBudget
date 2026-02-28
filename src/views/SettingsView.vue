@@ -454,7 +454,7 @@
               type="number"
               class="salary-day-input"
               :value="store.salaryDay"
-              placeholder="–"
+              placeholder="1-31"
               min="1"
               max="31"
               @input="store.salaryDay = $event.target.value ? parseInt($event.target.value) : null"
@@ -570,7 +570,13 @@
       </div>
 
       <div class="settings-footer">
-        <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget</a>
+        <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget   <br>
+        © Jonathan Belloni 2026</a>
+      
+      </div>
+
+      <div class="settings-footer">
+        <span> </span>
       </div>
 
       <!-- <button class="support-btn" @click="swish">
