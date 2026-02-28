@@ -1,85 +1,52 @@
 <template>
   <Teleport to="body">
     <Transition name="auth">
-      <div v-if="visible" class="auth-backdrop" @click="dismiss">
+      <div v-if="visible" class="auth-backdrop" @click="!successMode && dismiss()">
         <div class="auth-card" @click.stop>
 
-          <!-- Segmented control: Logga in / Skapa konto -->
-          <div v-if="mode !== 'forgot'" class="auth-segment-wrap">
-            <div class="auth-segment">
-              <button
-                :class="['seg-btn', { active: mode === 'login' }]"
-                @click="setMode('login')"
-              >Logga in</button>
-              <button
-                :class="['seg-btn', { active: mode === 'register' }]"
-                @click="setMode('register')"
-              >Skapa konto</button>
-            </div>
-          </div>
-
-          <!-- Forgot password header -->
-          <div v-else class="auth-forgot-header">
-            <button class="auth-back-btn" @click="setMode('login')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
-              Tillbaka
-            </button>
-            <span class="auth-forgot-title">Glömt lösenord</span>
-            <span class="auth-back-spacer"></span>
-          </div>
-
-          <!-- Form area -->
-          <div class="auth-form">
-
-            <!-- Login / Register -->
-            <template v-if="mode !== 'forgot'">
-              <div class="auth-input-group">
-                <input
-                  v-model="email"
-                  type="email"
-                  placeholder="E-postadress"
-                  class="auth-input"
-                  autocomplete="email"
-                  @keydown.enter="submit"
-                >
-                <div class="input-sep"></div>
-                <input
-                  v-model="password"
-                  type="password"
-                  placeholder="Lösenord"
-                  class="auth-input"
-                  autocomplete="current-password"
-                  @keydown.enter="submit"
-                >
-                <template v-if="mode === 'register'">
-                  <div class="input-sep"></div>
-                  <input
-                    v-model="passwordConfirm"
-                    type="password"
-                    placeholder="Upprepa lösenord"
-                    class="auth-input"
-                    autocomplete="new-password"
-                    @keydown.enter="submit"
-                  >
-                </template>
+          <!-- Success state -->
+          <template v-if="successMode">
+            <div class="auth-success">
+              <div class="auth-success-icon">
+                <svg viewBox="0 0 24 24" fill="none" width="36" height="36">
+                  <circle cx="12" cy="12" r="12" fill="var(--system-green)"/>
+                  <path d="M6.5 12.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
               </div>
+              <p class="auth-success-title">{{ successMessage }}</p>
+            </div>
+          </template>
 
-              <p v-if="authStore.error || localError" class="auth-error">{{ authStore.error || localError }}</p>
+          <template v-else>
+            <!-- Segmented control: Logga in / Skapa konto -->
+            <div v-if="mode !== 'forgot'" class="auth-segment-wrap">
+              <div class="auth-segment">
+                <button
+                  :class="['seg-btn', { active: mode === 'login' }]"
+                  @click="setMode('login')"
+                >Logga in</button>
+                <button
+                  :class="['seg-btn', { active: mode === 'register' }]"
+                  @click="setMode('register')"
+                >Skapa konto</button>
+              </div>
+            </div>
 
-              <button class="auth-submit-btn" :disabled="authStore.loading" @click="submit">
-                <span v-if="authStore.loading" class="spinner"></span>
-                <span v-else>{{ mode === 'login' ? 'Logga in' : 'Skapa konto' }}</span>
+            <!-- Forgot password header -->
+            <div v-else class="auth-forgot-header">
+              <button class="auth-back-btn" @click="setMode('login')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+                Tillbaka
               </button>
+              <span class="auth-forgot-title">Glömt lösenord</span>
+              <span class="auth-back-spacer"></span>
+            </div>
 
-              <button v-if="mode === 'login'" class="auth-forgot-link" @click="setMode('forgot')">
-                Glömt lösenord?
-              </button>
-            </template>
+            <!-- Form area -->
+            <div class="auth-form">
 
-            <!-- Forgot password -->
-            <template v-else>
-              <template v-if="!resetSent">
-                <p class="auth-hint">Ange din e-postadress så skickar vi en återställningslänk.</p>
+              <!-- Login / Register -->
+              <template v-if="mode !== 'forgot'">
                 <div class="auth-input-group">
                   <input
                     v-model="email"
@@ -87,26 +54,74 @@
                     placeholder="E-postadress"
                     class="auth-input"
                     autocomplete="email"
-                    @keydown.enter="submitReset"
+                    @keydown.enter="submit"
                   >
+                  <div class="input-sep"></div>
+                  <input
+                    v-model="password"
+                    type="password"
+                    placeholder="Lösenord"
+                    class="auth-input"
+                    :autocomplete="mode === 'register' ? 'new-password' : 'current-password'"
+                    @keydown.enter="submit"
+                  >
+                  <template v-if="mode === 'register'">
+                    <div class="input-sep"></div>
+                    <input
+                      v-model="passwordConfirm"
+                      type="password"
+                      placeholder="Upprepa lösenord"
+                      class="auth-input"
+                      autocomplete="new-password"
+                      @keydown.enter="submit"
+                    >
+                  </template>
                 </div>
-                <p v-if="authStore.error" class="auth-error">{{ authStore.error }}</p>
-                <button class="auth-submit-btn" :disabled="authStore.loading" @click="submitReset">
+
+                <p v-if="authStore.error || localError" class="auth-error">{{ authStore.error || localError }}</p>
+
+                <button class="auth-submit-btn" :disabled="authStore.loading" @click="submit">
                   <span v-if="authStore.loading" class="spinner"></span>
-                  <span v-else>Skicka återställningslänk</span>
+                  <span v-else>{{ mode === 'login' ? 'Logga in' : 'Skapa konto' }}</span>
+                </button>
+
+                <button v-if="mode === 'login'" class="auth-forgot-link" @click="setMode('forgot')">
+                  Glömt lösenord?
                 </button>
               </template>
+
+              <!-- Forgot password -->
               <template v-else>
-                <p class="auth-hint auth-hint--success">Länk skickad till {{ email }}. Kolla din inkorg.</p>
+                <template v-if="!resetSent">
+                  <p class="auth-hint">Ange din e-postadress så skickar vi en återställningslänk.</p>
+                  <div class="auth-input-group">
+                    <input
+                      v-model="email"
+                      type="email"
+                      placeholder="E-postadress"
+                      class="auth-input"
+                      autocomplete="email"
+                      @keydown.enter="submitReset"
+                    >
+                  </div>
+                  <p v-if="authStore.error" class="auth-error">{{ authStore.error }}</p>
+                  <button class="auth-submit-btn" :disabled="authStore.loading" @click="submitReset">
+                    <span v-if="authStore.loading" class="spinner"></span>
+                    <span v-else>Skicka återställningslänk</span>
+                  </button>
+                </template>
+                <template v-else>
+                  <p class="auth-hint auth-hint--success">Länk skickad till {{ email }}. Kolla din inkorg.</p>
+                </template>
               </template>
-            </template>
 
-          </div>
+            </div>
 
-          <!-- Cancel -->
-          <div class="auth-cancel-row">
-            <button class="auth-cancel-btn" @click="dismiss">Avbryt</button>
-          </div>
+            <!-- Cancel -->
+            <div class="auth-cancel-row">
+              <button class="auth-cancel-btn" @click="dismiss">Avbryt</button>
+            </div>
+          </template>
 
         </div>
       </div>
@@ -115,13 +130,12 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useBudgetStore } from '../stores/budget'
 
 const authStore = useAuthStore()
 const store = useBudgetStore()
-const confirm = inject('confirm')
 
 const visible = ref(false)
 const mode = ref('login')
@@ -130,6 +144,8 @@ const password = ref('')
 const passwordConfirm = ref('')
 const localError = ref('')
 const resetSent = ref(false)
+const successMode = ref(false)
+const successMessage = ref('')
 let resolveFn = null
 
 function setMode(m) {
@@ -147,6 +163,7 @@ function show() {
   authStore.error = null
   mode.value = 'login'
   resetSent.value = false
+  successMode.value = false
   visible.value = true
   return new Promise((resolve) => { resolveFn = resolve })
 }
@@ -178,47 +195,32 @@ async function submit() {
 
   if (!user) return
 
-  await handleConflict()
+  const isRegister = mode.value === 'register'
+  await handleCloudSync()
 
-  visible.value = false
-  resolveFn?.(true)
+  successMessage.value = isRegister ? 'Konto skapat!' : 'Inloggad!'
+  successMode.value = true
+
+  setTimeout(() => {
+    visible.value = false
+    successMode.value = false
+    resolveFn?.(true)
+  }, 1200)
 }
 
-async function handleConflict() {
+async function handleCloudSync() {
   const result = await store.loadFromCloud()
 
   if (result === null) {
+    // No cloud data yet — upload whatever is local
     await store.syncToCloud()
     authStore.setLastSynced()
     return
   }
 
-  const { payload: cloudData, updatedAt: cloudUpdatedAt } = result
-
-  const localIsEmpty =
-    store.income.length === 0 &&
-    store.expenses.length === 0 &&
-    store.categories.length === 0
-
-  if (localIsEmpty) {
-    store.$patch(cloudData)
-    return
-  }
-
-  const lastSync = localStorage.getItem('murvbudget-last-cloud-sync')
-  if (lastSync && new Date(lastSync) >= new Date(cloudUpdatedAt)) {
-    await store.syncToCloud()
-    authStore.setLastSynced()
-    return
-  }
-
-  const answer = await confirm('Nyare molndata hittades', { label: 'Ersätt', style: 'destructive', description: 'Molnet har nyare data. Vill du ersätta lokal data med molndata?' })
-  if (answer) {
-    store.$patch(cloudData)
-  } else {
-    await store.syncToCloud()
-    authStore.setLastSynced()
-  }
+  // Cloud has data — always load it, no questions asked
+  store.$patch(result.payload)
+  authStore.setLastSynced()
 }
 
 async function submitReset() {
@@ -256,6 +258,32 @@ defineExpose({ show })
   display: flex;
   flex-direction: column;
   will-change: transform, opacity;
+}
+
+/* ── Success state ────────────────────────────────────────── */
+.auth-success {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.auth-success-icon {
+  animation: successPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.auth-success-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--system-green);
+  letter-spacing: -0.3px;
+}
+
+@keyframes successPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }
 
 /* ── Segmented control ────────────────────────────────────── */
