@@ -173,29 +173,86 @@
           <svg class="chevron" :class="{ collapsed: collapsedSections['expenses'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <CollapseTransition><div v-if="!collapsedSections['expenses']" class="settings-content">
-          <div v-if="store.categories.length === 0" class="no-categories-notice">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <span>Skapa en kategori först innan du lägger till utgifter</span>
+          <div class="input-group">
+            <input type="text" v-model="newExpenseName" placeholder="Namn">
+            <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
           </div>
-          <template v-else>
-            <div class="input-group">
-              <input type="text" v-model="newExpenseName" placeholder="Namn">
-              <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
+          <div class="input-group input-group--labeled">
+            <div class="field-with-label">
+              <span class="field-label">Kategori</span>
+              <select v-model="newExpenseCategory">
+                <option value="">Ingen kategori</option>
+                <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
             </div>
-            <div class="input-group input-group--labeled">
-              <div class="field-with-label">
-                <span class="field-label">Kategori</span>
-                <select v-model="newExpenseCategory">
-                  <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
+            <div class="field-with-label field-with-label--narrow">
+              <span class="field-label">Dag</span>
+              <input type="number" v-model.number="newExpenseDate" placeholder="valfritt" min="1" max="31">
+            </div>
+            <button class="add-expense-bottom-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">{{ addFeedback.expense ? 'Tillagt' : 'Lägg till' }}</button>
+          </div>
+
+          <!-- Uncategorized expenses -->
+          <template v-if="uncategorizedExpenses.length > 0">
+            <div class="category-header" style="margin-top: 16px;">
+              <h4 style="padding: 12px 16px; font-size: 16px; font-weight: 600; color: var(--text-secondary); margin: 0;">Utan kategori</h4>
+            </div>
+            <div class="category-list">
+              <div
+                v-for="expense in uncategorizedExpenses"
+                :key="expense.globalIndex"
+                class="expense-item-wrapper"
+              >
+                <SwipeToDelete @delete="deleteExpense(expense.globalIndex)">
+                  <template #fixed>
+                    <div
+                      class="expense-name"
+                      :class="{ editing: editingExpense === expense.globalIndex }"
+                      @click="toggleEditExpense(expense.globalIndex)"
+                    >{{ expense.name }}</div>
+                  </template>
+                  <div class="expense-row-right">
+                    <span class="expense-date-badge" :style="expense.date ? {} : { visibility: 'hidden' }">
+                      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                        <line x1="1" y1="5" x2="11" y2="5"/>
+                        <line x1="4" y1="1" x2="4" y2="3"/>
+                        <line x1="8" y1="1" x2="8" y2="3"/>
+                      </svg>
+                      {{ expense.date }}
+                    </span>
+                    <span class="expense-amount">{{ fmt(expense.amount) }} kr</span>
+                  </div>
+                </SwipeToDelete>
+                <div v-show="editingExpense === expense.globalIndex" class="expense-edit-form">
+                  <div class="edit-form-content">
+                    <div class="edit-input-group">
+                      <label>Namn</label>
+                      <input type="text" v-model="editForm.name">
+                    </div>
+                    <div class="edit-input-group">
+                      <label>Belopp</label>
+                      <input type="number" v-model.number="editForm.amount">
+                    </div>
+                    <div class="edit-input-group">
+                      <label>Kategori</label>
+                      <select v-model="editForm.category">
+                        <option value="">Ingen kategori</option>
+                        <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
+                      </select>
+                    </div>
+                    <div class="edit-input-group">
+                      <label>Dag (valfritt)</label>
+                      <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
+                    </div>
+                    <div class="edit-actions">
+                      <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
+                      <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
+                      <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="field-with-label field-with-label--narrow">
-                <span class="field-label">Dag</span>
-                <input type="number" v-model.number="newExpenseDate" placeholder="valfritt" min="1" max="31">
-              </div>
-              <button class="add-expense-bottom-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">{{ addFeedback.expense ? 'Tillagt' : 'Lägg till' }}</button>
             </div>
           </template>
 
@@ -246,6 +303,7 @@
                       <div class="edit-input-group">
                         <label>Kategori</label>
                         <select v-model="editForm.category">
+                          <option value="">Ingen kategori</option>
                           <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
                         </select>
                       </div>
@@ -371,6 +429,47 @@
         </div></CollapseTransition>
       </div>
 
+      <!-- Lönedag -->
+      <div class="settings-section">
+        <div class="section-toggle" @click="toggleSection('salary')">
+          <h3>Lönedag</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['salary'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <CollapseTransition><div v-if="!collapsedSections['salary']" class="settings-content">
+
+          <div class="salary-row">
+            <div class="salary-row-text">
+              <p class="salary-row-title">Vilken dag får du lön?</p>
+              <p class="salary-row-sub">Används för att visa rätt månadsnamn i checklistan</p>
+            </div>
+            <input
+              type="number"
+              class="salary-day-input"
+              :value="store.salaryDay"
+              placeholder="–"
+              min="1"
+              max="31"
+              @input="store.salaryDay = $event.target.value ? parseInt($event.target.value) : null"
+            >
+          </div>
+
+          <div class="salary-row salary-row--sep">
+            <div class="salary-row-text">
+              <p class="salary-row-title">Visa nästa månads namn</p>
+              <p class="salary-row-sub">Om du betalar räkningar samma dag du får lön visas nästa månads namn i checklistan från lönedagen till månadens slut</p>
+            </div>
+            <input
+              type="checkbox"
+              class="ios-toggle"
+              :checked="store.salaryMonthOffset"
+              :disabled="!store.salaryDay"
+              @change="store.salaryMonthOffset = $event.target.checked"
+            >
+          </div>
+
+        </div></CollapseTransition>
+      </div>
+
       <!-- Konto -->
       <div class="settings-section">
         <div class="section-toggle" @click="toggleSection('account')">
@@ -492,7 +591,7 @@ const goBack = inject('goBack')
 const confirm = inject('confirm')
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
-const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'account']
+const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'salary', 'account']
 
 const authModalRef = ref(null)
 const deleteExpanded = ref(false)
@@ -757,7 +856,7 @@ defineExpose({ toggleAllSections })
 const newCategoryName = ref('')
 const newExpenseName = ref('')
 const newExpenseAmount = ref(null)
-const newExpenseCategory = ref(store.categories[0] || '')
+const newExpenseCategory = ref('')
 const newExpenseDate = ref(null)
 const newIncomeName = ref('')
 const newIncomeAmount = ref(null)
@@ -818,8 +917,7 @@ async function saveCategoryEdit(idx) {
 }
 
 async function deleteCategorySwipe(idx) {
-  if (store.categories.length === 1) return
-  const ok = await confirm('Ta bort kategorin?', { description: 'Utgifter i den här kategorin flyttas till den första kategorin.' })
+  const ok = await confirm('Ta bort kategorin?', { description: 'Utgifter i den här kategorin blir utan kategori.' })
   if (ok) {
     store.deleteCategory(idx)
     if (editingCategory.value === idx) editingCategory.value = null
@@ -827,8 +925,7 @@ async function deleteCategorySwipe(idx) {
 }
 
 async function deleteCategoryFromEdit(idx) {
-  if (store.categories.length === 1) { await confirm('Kan inte ta bort', { label: 'OK', style: 'primary', description: 'Minst en kategori krävs.' }); return }
-  const ok = await confirm('Ta bort kategorin?', { description: 'Utgifter i den här kategorin flyttas till den första kategorin.' })
+  const ok = await confirm('Ta bort kategorin?', { description: 'Utgifter i den här kategorin blir utan kategori.' })
   if (ok) {
     store.deleteCategory(idx)
     editingCategory.value = null
@@ -845,6 +942,13 @@ function expensesByCategory(cat) {
     .filter((e) => e.category === cat)
     .sort((a, b) => b.amount - a.amount)
 }
+
+const uncategorizedExpenses = computed(() =>
+  store.expenses
+    .map((e, i) => ({ ...e, globalIndex: i }))
+    .filter((e) => !e.category || !store.categories.includes(e.category))
+    .sort((a, b) => b.amount - a.amount)
+)
 
 function toggleEditExpense(globalIndex) {
   if (editingExpense.value === globalIndex) {
@@ -881,9 +985,8 @@ async function addCategory() {
 function addExpense() {
   const name = newExpenseName.value.trim()
   const amount = newExpenseAmount.value
-  const category = newExpenseCategory.value
-  if (!name || !amount || amount <= 0 || !category) return
-  store.addExpense(name, amount, category, newExpenseDate.value)
+  if (!name || !amount || amount <= 0) return
+  store.addExpense(name, amount, newExpenseCategory.value || null, newExpenseDate.value)
   newExpenseName.value = ''
   newExpenseAmount.value = null
   newExpenseDate.value = null
@@ -1619,6 +1722,59 @@ function fmt(n) {
 
 .radera-btn:active { opacity: 0.6; }
 .radera-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+/* ── Lönedag section ──────────────────────────────────────── */
+.salary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: 16px;
+}
+
+.salary-row--sep {
+  border-top: 0.5px solid var(--separator);
+}
+
+.salary-row-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.salary-row-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+
+.salary-row-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.salary-day-input {
+  flex-shrink: 0;
+  width: 52px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 10px;
+  background: var(--system-gray5, rgba(120,120,128,0.18));
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.salary-day-input::-webkit-inner-spin-button,
+.salary-day-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
 
 /* Category drag-to-reorder rows */
 .cat-order-row {
