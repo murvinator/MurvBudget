@@ -516,9 +516,20 @@ async function openAuthModal() {
 async function signOut() {
   const ok = await confirm(
     'Logga ut?',
-    { label: 'Logga ut', style: 'destructive', description: 'Du loggas ut från ditt konto. Din lokala data behålls på enheten.' }
+    { label: 'Logga ut', style: 'destructive', description: 'Du loggas ut. Lokal data återgår till läget innan inloggning.' }
   )
-  if (ok) authStore.signOut()
+  if (!ok) return
+
+  authStore.signOut()
+
+  const preLogin = localStorage.getItem('budgetApp-pre-login')
+  if (preLogin !== null) {
+    store.$reset()
+    if (preLogin) {
+      try { store.$patch(JSON.parse(preLogin)) } catch {}
+    }
+    localStorage.removeItem('budgetApp-pre-login')
+  }
 }
 
 async function doDeleteLocal() {

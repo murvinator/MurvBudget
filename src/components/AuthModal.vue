@@ -218,6 +218,10 @@ async function handleCloudSync() {
     return
   }
 
+  // Save pre-login local snapshot so logout can restore it
+  const localSnapshot = localStorage.getItem('budgetApp')
+  localStorage.setItem('budgetApp-pre-login', localSnapshot ?? '')
+
   // Cloud has data — always load it, no questions asked
   store.$patch(result.payload)
   authStore.setLastSynced()
