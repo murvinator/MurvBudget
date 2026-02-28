@@ -615,12 +615,14 @@ body {
     min-height: 110px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
 }
 
-.summary-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06); }
+.summary-card:active { opacity: 0.88; }
 .summary-card h4 { font-size: 18px; font-weight: 600; letter-spacing: 0.2px; opacity: 0.9; margin-bottom: 10px; }
 .summary-card .amount { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
 
@@ -634,23 +636,27 @@ body {
     padding: 11px 18px;
     min-height: unset;
     border-radius: 23px;
+}
+.summary-cards--compact .card-main {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px;
 }
-.summary-cards--compact .summary-card h4 {
+.summary-cards--compact .card-main .card-chevron {
+    position: static;
+}
+.summary-cards--compact .card-main h4 {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 0;
-    /* opacity: 0.88; */
+    flex: 1;
 }
-.summary-cards--compact .summary-card .amount {
+.summary-cards--compact .card-main .amount {
     font-size: 22px;
     letter-spacing: -0.3px;
 }
 
 /* Medium: stacked, tighter than default */
-
 .summary-cards--medium {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -660,38 +666,26 @@ body {
     padding: 25px 18px;
     min-height: unset;
     border-radius: 30px;
+}
+.summary-cards--medium .card-main {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px;
 }
-.summary-cards--medium .summary-card h4 {
+.summary-cards--medium .card-main .card-chevron {
+    position: static;
+}
+.summary-cards--medium .card-main h4 {
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 0;
     opacity: 0.88;
+    flex: 1;
 }
-.summary-cards--medium .summary-card .amount {
+.summary-cards--medium .card-main .amount {
     font-size: 22px;
     letter-spacing: -0.3px;
 }
-/* .summary-cards--medium {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-}
-.summary-cards--medium .summary-card {
-    padding: 16px 18px;
-    min-height: unset;
-    border-radius: 16px;
-}
-.summary-cards--medium .summary-card h4 {
-    font-size: 15px;
-    margin-bottom: 7px;
-}
-.summary-cards--medium .summary-card .amount {
-    font-size: 25px;
-} */
-
 /* Large: default card size, bigger font */
 .summary-cards--large .summary-card {
     min-height: unset;
