@@ -192,7 +192,7 @@ async function handleConflict() {
   }
 
   // Cloud is genuinely newer than our last sync — ask user
-  const answer = await confirm('Molnet har nyare data. Ersätta lokal data med molndata?', { label: 'Ersätt', style: 'destructive' })
+  const answer = await confirm('Nyare molndata hittades', { label: 'Ersätt', style: 'destructive', description: 'Molnet har nyare data. Vill du ersätta lokal data med molndata?' })
   if (answer) {
     store.$patch(cloudData)
   } else {

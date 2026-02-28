@@ -14,15 +14,15 @@ No test suite or linter is configured.
 
 ## Architecture
 
-MurvBudget is a Vue 3 PWA for personal budget tracking. All data lives in the browser — no backend, no accounts.
+MurvBudget is a Vue 3 PWA for personal budget tracking. User can create account and store data in the cloud.
 
-**Tech stack:** Vue 3 (Composition API + `<script setup>`), Pinia with `pinia-plugin-persistedstate`, Chart.js, Vite. Deployed to Netlify.
+**Tech stack:** Vue 3 (Composition API + `<script setup>`), Pinia with `pinia-plugin-persistedstate`, Chart.js, Vite. Backend on SupaBase, user data and accounts. Deployed to Netlify.
 
 ### Navigation model
 
-The app uses a custom single-page navigation system rather than Vue Router. `App.vue` holds `currentView` as a ref and renders the active view via `<component :is="currentViewComponent">`. Navigation events bubble up from children via `emit('navigate', viewName)`. The four views are: `overview`, `budget` (variable expenses), `monthly` (checklist), and `settings`.
+The app uses a custom single-page navigation system rather than Vue Router. `App.vue` holds `currentView` as a ref and renders the active view via `<component :is="currentViewComponent">`. Navigation events bubble up from children via `emit('navigate', viewName)`. The four views are: `overview`, `monthly` (checklist), and `settings`.
 
-The `goBack` function is provided via `provide('goBack', goBack)` and injected in Settings for back navigation.
+The `goBack` function is provided via `provide('goBack', goBack)` but not used at the moment.
 
 ### State (src/stores/budget.js)
 
@@ -30,8 +30,6 @@ Single Pinia store (`useBudgetStore`) persisted to `localStorage` under key `bud
 
 - **income** / **expenses** — fixed monthly items; expenses have `name`, `amount`, `category`, optional `date`
 - **categories** — ordered list of category names; expenses reference categories by name string
-- **variableExpenses** — budget envelopes with a monthly `budget` amount
-- **variableExpenseTransactions** — keyed by `currentMonthKey` (`"YYYY-M"`) then by expense name; holds per-month spending transactions
 - **debts** — each debt has a unique `id` (generated via `genId()`), `name`, and remaining `amount`
 - **debtPayments** — keyed by debt `id`; each payment reduces `debt.amount` immediately
 - **monthlyStatus** — tracks checkbox state for the monthly checklist; keyed by `'current'` then by expense index
@@ -51,7 +49,7 @@ Single Pinia store (`useBudgetStore`) persisted to `localStorage` under key `bud
 ### UI conventions
 
 - **Language:** Swedish (UI text, month names, `toLocaleString('sv-SE')` for numbers)
-- **Design language:** iOS-native aesthetic — SF Pro font stack, iOS system colors as CSS variables (`--system-blue`, `--system-red`, etc.), safe-area insets, liquid glass tab bar effect
+- **Design language:** iOS-native aesthetic - SPECIFICALLY LATEST IOS26 — SF Pro font stack, iOS system colors as CSS variables (`--system-blue`, `--system-red`, etc.), safe-area insets, liquid glass tab bar effect
 - **Styling:** Global styles in `src/assets/style.css`; component-scoped `<style scoped>` for local overrides. Dark mode via `@media (prefers-color-scheme: dark)`.
 - **No routing library** — view switching is manual via emitted `navigate` events
 - **No HTTP calls** — all data is local; `loadTestData()` fetches from `/assets/testdata/testdata.json`

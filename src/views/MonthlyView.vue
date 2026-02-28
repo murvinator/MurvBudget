@@ -221,7 +221,7 @@ function toggleAll() {
 }
 
 async function resetMonth() {
-  const ok = await confirm('Vill du återställa alla checkboxar?', { label: 'Återställ', style: 'destructive' })
+  const ok = await confirm('Återställ checkboxar?', { label: 'Återställ', style: 'destructive', description: 'Alla utgifter markeras som ej betalda.' })
   if (ok) store.resetCurrentMonth()
 }
 

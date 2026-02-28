@@ -466,12 +466,12 @@
         <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget</a>
       </div>
 
-      <button class="support-btn" @click="swish">
+      <!-- <button class="support-btn" @click="swish">
         <svg viewBox="0 0 24 24" fill="currentColor" class="support-icon">
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
         </svg>
         <span>Support this project</span>
-      </button>
+      </button> -->
     </div>
   </div>
 
@@ -515,16 +515,16 @@ async function openAuthModal() {
 
 async function signOut() {
   const ok = await confirm(
-    'Du loggas ut från ditt konto. Din lokala data behålls på enheten.',
-    { label: 'Logga ut', style: 'destructive' }
+    'Logga ut?',
+    { label: 'Logga ut', style: 'destructive', description: 'Du loggas ut från ditt konto. Din lokala data behålls på enheten.' }
   )
   if (ok) authStore.signOut()
 }
 
 async function doDeleteLocal() {
   const ok = await confirm(
-    'All lokal data på den här enheten raderas permanent. Molndata påverkas inte.',
-    { label: 'Radera lokal data', style: 'destructive' }
+    'Radera lokal data?',
+    { label: 'Radera lokal data', style: 'destructive', description: 'All lokal data på den här enheten raderas permanent. Molndata påverkas inte.' }
   )
   if (!ok) return
   store.clearLocalData()
@@ -534,8 +534,8 @@ async function doDeleteLocal() {
 
 async function doDeleteCloud() {
   const ok = await confirm(
-    'All molndata på ditt konto raderas permanent. Lokal data på den här enheten påverkas inte.',
-    { label: 'Radera molndata', style: 'destructive' }
+    'Radera molndata?',
+    { label: 'Radera molndata', style: 'destructive', description: 'All molndata på ditt konto raderas permanent. Lokal data på den här enheten påverkas inte.' }
   )
   if (!ok) return
   const success = await authStore.deleteCloudData()
@@ -547,8 +547,8 @@ async function doDeleteCloud() {
 
 async function doDeleteAccount() {
   const ok = await confirm(
-    'Ditt konto och all molndata raderas permanent. Lokal data på enheten behålls. Åtgärden kan inte ångras.',
-    { label: 'Radera konto', style: 'destructive' }
+    'Radera konto?',
+    { label: 'Radera konto', style: 'destructive', description: 'Ditt konto och all molndata raderas permanent. Lokal data på enheten behålls. Åtgärden kan inte ångras.' }
   )
   if (!ok) return
   await authStore.deleteAccount()
@@ -773,7 +773,7 @@ function toggleEditIncome(idx) {
 
 async function saveIncomeEdit(idx) {
   if (!editIncomeForm.name || !editIncomeForm.amount || editIncomeForm.amount <= 0) {
-    await confirm('Vänligen fyll i giltigt namn och belopp.', { label: 'OK', style: 'primary' })
+    await confirm('Ogiltigt värde', { label: 'OK', style: 'primary', description: 'Vänligen fyll i giltigt namn och belopp.' })
     return
   }
   store.saveEditIncome(idx, editIncomeForm.name, editIncomeForm.amount)
@@ -781,7 +781,7 @@ async function saveIncomeEdit(idx) {
 }
 
 async function deleteIncomeFromEdit(idx) {
-  const ok = await confirm('Ta bort inkomsten?')
+  const ok = await confirm('Ta bort inkomsten?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) {
     store.deleteIncome(idx)
     editingIncome.value = null
@@ -801,14 +801,14 @@ function toggleEditCategory(idx) {
 async function saveCategoryEdit(idx) {
   const name = editCategoryName.value.trim()
   if (!name) return
-  if (name === 'Skulder') { await confirm("'Skulder' är reserverat och kan inte användas.", { label: 'OK', style: 'primary' }); return }
+  if (name === 'Skulder') { await confirm('Reserverat namn', { label: 'OK', style: 'primary', description: "'Skulder' är reserverat och kan inte användas." }); return }
   store.saveEditCategory(idx, name)
   editingCategory.value = null
 }
 
 async function deleteCategorySwipe(idx) {
   if (store.categories.length === 1) return
-  const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
+  const ok = await confirm('Ta bort kategorin?', { description: 'Utgifter i den här kategorin flyttas till den första kategorin.' })
   if (ok) {
     store.deleteCategory(idx)
     if (editingCategory.value === idx) editingCategory.value = null
@@ -816,8 +816,8 @@ async function deleteCategorySwipe(idx) {
 }
 
 async function deleteCategoryFromEdit(idx) {
-  if (store.categories.length === 1) { await confirm('Minst en kategori krävs.', { label: 'OK', style: 'primary' }); return }
-  const ok = await confirm('Ta bort kategorin? Utgifter i den här kategorin flyttas till den första kategorin.')
+  if (store.categories.length === 1) { await confirm('Kan inte ta bort', { label: 'OK', style: 'primary', description: 'Minst en kategori krävs.' }); return }
+  const ok = await confirm('Ta bort kategorin?', { description: 'Utgifter i den här kategorin flyttas till den första kategorin.' })
   if (ok) {
     store.deleteCategory(idx)
     editingCategory.value = null
@@ -850,7 +850,7 @@ function toggleEditExpense(globalIndex) {
 
 async function saveExpenseEdit(globalIndex) {
   if (!editForm.name || !editForm.amount || editForm.amount <= 0) {
-    await confirm('Vänligen fyll i giltigt namn och belopp.', { label: 'OK', style: 'primary' })
+    await confirm('Ogiltigt värde', { label: 'OK', style: 'primary', description: 'Vänligen fyll i giltigt namn och belopp.' })
     return
   }
   store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category, editForm.date)
@@ -860,7 +860,7 @@ async function saveExpenseEdit(globalIndex) {
 async function addCategory() {
   const name = newCategoryName.value.trim()
   if (!name) return
-  if (name === 'Skulder') { await confirm("'Skulder' är reserverat och kan inte läggas till.", { label: 'OK', style: 'primary' }); return }
+  if (name === 'Skulder') { await confirm('Reserverat namn', { label: 'OK', style: 'primary', description: "'Skulder' är reserverat och kan inte läggas till." }); return }
   store.addCategory(name)
   newCategoryName.value = ''
   showAddFeedback('category')
@@ -880,12 +880,12 @@ function addExpense() {
 }
 
 async function deleteExpense(idx) {
-  const ok = await confirm('Ta bort utgiften?')
+  const ok = await confirm('Ta bort utgiften?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) store.deleteExpense(idx)
 }
 
 async function deleteExpenseFromEdit(globalIndex) {
-  const ok = await confirm('Ta bort utgiften?')
+  const ok = await confirm('Ta bort utgiften?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) {
     store.deleteExpense(globalIndex)
     editingExpense.value = null
@@ -903,7 +903,7 @@ function addIncome() {
 }
 
 async function deleteIncome(idx) {
-  const ok = await confirm('Ta bort inkomsten?')
+  const ok = await confirm('Ta bort inkomsten?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) store.deleteIncome(idx)
 }
 
@@ -918,12 +918,12 @@ function addDebt() {
 }
 
 async function deleteDebt(idx) {
-  const ok = await confirm('Ta bort skulden?')
+  const ok = await confirm('Ta bort skulden?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) store.deleteDebt(idx)
 }
 
 async function deleteDebtFromEdit(idx) {
-  const ok = await confirm('Ta bort skulden?')
+  const ok = await confirm('Ta bort skulden?', { description: 'Åtgärden kan inte ångras.' })
   if (ok) {
     store.deleteDebt(idx)
     editingDebt.value = null
@@ -947,8 +947,8 @@ function saveDebtEdit(idx) {
 
 async function exportData() {
   const ok = await confirm(
-    'Filen sparas på din enhet som en JSON-fil. Importera den igen med Importera-knappen om du byter enhet eller vill återställa din data.',
-    { label: 'Exportera', style: 'primary' }
+    'Exportera data?',
+    { label: 'Exportera', style: 'primary', description: 'Filen sparas på din enhet som en JSON-fil. Importera den igen med Importera-knappen om du byter enhet eller vill återställa din data.' }
   )
   if (!ok) return
   store.exportData()
@@ -958,8 +958,8 @@ async function exportData() {
 
 async function triggerImport() {
   const ok = await confirm(
-    'Välj en tidigare exporterad MurvBudget-fil (.json). All nuvarande data på den här enheten ersätts med innehållet i filen.',
-    { label: 'Välj fil', style: 'primary' }
+    'Importera data?',
+    { label: 'Välj fil', style: 'primary', description: 'Välj en tidigare exporterad MurvBudget-fil (.json). All nuvarande data på den här enheten ersätts med innehållet i filen.' }
   )
   if (ok) importFileRef.value?.click()
 }
@@ -974,7 +974,7 @@ function importFile(event) {
       const required = ['income', 'expenses', 'categories']
       const missing = required.filter(k => !Array.isArray(data[k]))
       if (missing.length) {
-        await confirm(`Filen saknar obligatoriska fält: ${missing.join(', ')}. Kontrollera att det är en giltig MurvBudget-fil.`, { label: 'OK', style: 'primary' })
+        await confirm('Ogiltig fil', { label: 'OK', style: 'primary', description: `Filen saknar obligatoriska fält: ${missing.join(', ')}. Kontrollera att det är en giltig MurvBudget-fil.` })
         event.target.value = ''
         return
       }
@@ -982,18 +982,18 @@ function importFile(event) {
       const expensesInvalid = data.expenses.some(ex => typeof ex.name !== 'string' || typeof ex.amount !== 'number' || typeof ex.category !== 'string')
       const categoriesInvalid = data.categories.some(c => typeof c !== 'string')
       if (incomeInvalid || expensesInvalid || categoriesInvalid) {
-        await confirm('Filen innehåller ogiltiga poster. Kontrollera att det är en giltig MurvBudget-fil.', { label: 'OK', style: 'primary' })
+        await confirm('Ogiltig fil', { label: 'OK', style: 'primary', description: 'Filen innehåller ogiltiga poster. Kontrollera att det är en giltig MurvBudget-fil.' })
         event.target.value = ''
         return
       }
-      const ok = await confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')
+      const ok = await confirm('Ersätt all data?', { description: 'All nuvarande data på den här enheten ersätts med innehållet i filen.' })
       if (ok) {
         store.importData(data)
         statusMsg.value = 'Data importerad!'
         setTimeout(() => { statusMsg.value = '' }, 3000)
       }
     } catch {
-      await confirm('Fel vid import av data. Kontrollera att filen är korrekt JSON.', { label: 'OK', style: 'primary' })
+      await confirm('Fel vid import', { label: 'OK', style: 'primary', description: 'Kunde inte läsa filen. Kontrollera att det är korrekt JSON.' })
     }
     event.target.value = ''
   }
@@ -1001,7 +1001,7 @@ function importFile(event) {
 }
 
 async function loadTestData() {
-  const ok = await confirm('Detta kommer att ersätta all nuvarande data. Fortsätt?')
+  const ok = await confirm('Ladda testdata?', { description: 'All nuvarande data ersätts med exempeldata.' })
   if (!ok) return
   const result = await store.loadTestData()
   if (result) {
