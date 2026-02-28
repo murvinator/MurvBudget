@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
@@ -73,9 +73,13 @@ function fmt(n) {
   return n.toLocaleString('sv-SE')
 }
 
-onMounted(() => {
+function runAnimation() {
   animateCount(store.totalIncome,    (v) => (displayIncome.value = v))
   animateCount(store.totalExpenses,  (v) => (displayExpenses.value = v))
   animateCount(store.remaining,      (v) => (displayRemaining.value = v))
-})
+}
+
+onMounted(runAnimation)
+
+watch([() => store.totalIncome, () => store.totalExpenses, () => store.remaining], runAnimation)
 </script>
