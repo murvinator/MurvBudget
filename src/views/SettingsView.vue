@@ -145,23 +145,25 @@
               </template>
               <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
             </SwipeToDelete>
-            <div v-show="editingIncome === idx" class="expense-edit-form">
-              <div class="edit-form-content">
-                <div class="edit-input-group">
-                  <label>Namn</label>
-                  <input type="text" v-model="editIncomeForm.name">
-                </div>
-                <div class="edit-input-group">
-                  <label>Belopp</label>
-                  <input type="number" v-model.number="editIncomeForm.amount">
-                </div>
-                <div class="edit-actions">
-                  <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
-                  <button class="cancel-edit-btn" @click="editingIncome = null">Avbryt</button>
-                  <button class="delete-edit-btn" @click="deleteIncomeFromEdit(idx)">Radera</button>
+            <CollapseTransition>
+              <div v-if="editingIncome === idx" class="expense-edit-form">
+                <div class="edit-form-content">
+                  <div class="edit-input-group">
+                    <label>Namn</label>
+                    <input type="text" v-model="editIncomeForm.name">
+                  </div>
+                  <div class="edit-input-group">
+                    <label>Belopp</label>
+                    <input type="number" v-model.number="editIncomeForm.amount">
+                  </div>
+                  <div class="edit-actions">
+                    <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
+                    <button class="cancel-edit-btn" @click="editingIncome = null">Avbryt</button>
+                    <button class="delete-edit-btn" @click="deleteIncomeFromEdit(idx)">Radera</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </CollapseTransition>
           </div>
         </div></CollapseTransition>
       </div>
@@ -224,34 +226,36 @@
                     <span class="expense-amount">{{ fmt(expense.amount) }} kr</span>
                   </div>
                 </SwipeToDelete>
-                <div v-show="editingExpense === expense.globalIndex" class="expense-edit-form">
-                  <div class="edit-form-content">
-                    <div class="edit-input-group">
-                      <label>Namn</label>
-                      <input type="text" v-model="editForm.name">
-                    </div>
-                    <div class="edit-input-group">
-                      <label>Belopp</label>
-                      <input type="number" v-model.number="editForm.amount">
-                    </div>
-                    <div class="edit-input-group">
-                      <label>Kategori</label>
-                      <select v-model="editForm.category">
-                        <option value="">Ingen kategori</option>
-                        <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
-                      </select>
-                    </div>
-                    <div class="edit-input-group">
-                      <label>Dag (valfritt)</label>
-                      <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
-                    </div>
-                    <div class="edit-actions">
-                      <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
-                      <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
-                      <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                <CollapseTransition>
+                  <div v-if="editingExpense === expense.globalIndex" class="expense-edit-form">
+                    <div class="edit-form-content">
+                      <div class="edit-input-group">
+                        <label>Namn</label>
+                        <input type="text" v-model="editForm.name">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Belopp</label>
+                        <input type="number" v-model.number="editForm.amount">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Kategori</label>
+                        <select v-model="editForm.category">
+                          <option value="">Ingen kategori</option>
+                          <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
+                        </select>
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Dag (valfritt)</label>
+                        <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
+                      </div>
+                      <div class="edit-actions">
+                        <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
+                        <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
+                        <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </CollapseTransition>
               </div>
             </div>
           </template>
@@ -290,34 +294,36 @@
                     </div>
                   </SwipeToDelete>
 
-                  <div v-show="editingExpense === expense.globalIndex" class="expense-edit-form">
-                    <div class="edit-form-content">
-                      <div class="edit-input-group">
-                        <label>Namn</label>
-                        <input type="text" v-model="editForm.name">
-                      </div>
-                      <div class="edit-input-group">
-                        <label>Belopp</label>
-                        <input type="number" v-model.number="editForm.amount">
-                      </div>
-                      <div class="edit-input-group">
-                        <label>Kategori</label>
-                        <select v-model="editForm.category">
-                          <option value="">Ingen kategori</option>
-                          <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
-                        </select>
-                      </div>
-                      <div class="edit-input-group">
-                        <label>Dag (valfritt)</label>
-                        <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
-                      </div>
-                      <div class="edit-actions">
-                        <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
-                        <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
-                        <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                  <CollapseTransition>
+                    <div v-if="editingExpense === expense.globalIndex" class="expense-edit-form">
+                      <div class="edit-form-content">
+                        <div class="edit-input-group">
+                          <label>Namn</label>
+                          <input type="text" v-model="editForm.name">
+                        </div>
+                        <div class="edit-input-group">
+                          <label>Belopp</label>
+                          <input type="number" v-model.number="editForm.amount">
+                        </div>
+                        <div class="edit-input-group">
+                          <label>Kategori</label>
+                          <select v-model="editForm.category">
+                            <option value="">Ingen kategori</option>
+                            <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
+                          </select>
+                        </div>
+                        <div class="edit-input-group">
+                          <label>Dag (valfritt)</label>
+                          <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
+                        </div>
+                        <div class="edit-actions">
+                          <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
+                          <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
+                          <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </CollapseTransition>
                 </div>
               </div>
             </template>
@@ -412,19 +418,21 @@
               </template>
               <div class="expense-amount">{{ fmt(debt.amount) }} kr</div>
             </SwipeToDelete>
-            <div v-show="editingDebt === idx" class="expense-edit-form">
-              <div class="edit-form-content">
-                <div class="edit-input-group">
-                  <label>Belopp</label>
-                  <input type="number" v-model.number="editDebtAmount">
-                </div>
-                <div class="edit-actions">
-                  <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
-                  <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
-                  <button class="delete-edit-btn" @click="deleteDebtFromEdit(idx)">Radera</button>
+            <CollapseTransition>
+              <div v-if="editingDebt === idx" class="expense-edit-form">
+                <div class="edit-form-content">
+                  <div class="edit-input-group">
+                    <label>Belopp</label>
+                    <input type="number" v-model.number="editDebtAmount">
+                  </div>
+                  <div class="edit-actions">
+                    <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
+                    <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
+                    <button class="delete-edit-btn" @click="deleteDebtFromEdit(idx)">Radera</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </CollapseTransition>
           </div>
         </div></CollapseTransition>
       </div>
@@ -587,7 +595,6 @@ import AuthModal from '../components/AuthModal.vue'
 
 const store = useBudgetStore()
 const authStore = useAuthStore()
-const goBack = inject('goBack')
 const confirm = inject('confirm')
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
@@ -1126,10 +1133,6 @@ async function loadTestData() {
   }
 }
 
-
-function swish() {
-  window.location.href = 'https://app.swish.nu/1/p/sw/?sw=46701484473&amt=10.0&msg=Cool%20app&edit=amt,msg'
-}
 
 function fmt(n) {
   return (n || 0).toLocaleString('sv-SE')
@@ -1769,11 +1772,13 @@ function fmt(n) {
   text-align: center;
   outline: none;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .salary-day-input::-webkit-inner-spin-button,
 .salary-day-input::-webkit-outer-spin-button {
   -webkit-appearance: none;
+  appearance: none;
 }
 
 /* Category drag-to-reorder rows */

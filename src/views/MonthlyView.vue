@@ -23,7 +23,7 @@
     <div class="monthly-toggle-all">
       <span class="monthly-section-title">{{ store.displayMonthName }}</span>
       <span class="monthly-paid-count">{{ paidCount }} av {{ totalCount }} betalt</span>
-      <button class="toggle-all-btn" @click="toggleAll">
+      <button v-if="hasCategorizedExpenses" class="toggle-all-btn" @click="toggleAll">
         {{ allExpanded ? 'Dölj alla' : 'Visa alla' }}
       </button>
     </div>
@@ -188,6 +188,10 @@ const uncategorizedExpenses = computed(() =>
     .map((e, index) => ({ ...e, index }))
     .filter((e) => !e.category || !store.categories.includes(e.category))
     .sort((a, b) => b.amount - a.amount)
+)
+
+const hasCategorizedExpenses = computed(() =>
+  store.expenses.some((e) => e.category && store.categories.includes(e.category))
 )
 
 function isPaid(index) {
