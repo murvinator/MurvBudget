@@ -114,6 +114,86 @@
                 </div>
               </div>
             </div></CollapseTransition>
+
+            <!-- Sub-settings for flex widget -->
+            <CollapseTransition><div v-if="expandedWidgets[widget.id] && widget.id === 'flex'" class="widget-sub-settings">
+              <div class="chart-type-section">
+                <div class="chart-type-label">Stil</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="opt in flexStyleOptions"
+                    :key="opt.value"
+                    :class="['segment-btn', { active: (store.overviewSettings.widgetSettings?.flex?.style || 'default') === opt.value }]"
+                    @click="store.setWidgetSetting('flex', 'style', opt.value)"
+                  >{{ opt.label }}</button>
+                </div>
+              </div>
+              <div class="chart-type-section chart-type-section--last chart-type-section--toggle">
+                <div class="chart-type-label">Visa staplar</div>
+                <input
+                  type="checkbox"
+                  class="ios-toggle"
+                  :checked="store.overviewSettings.widgetSettings?.flex?.showBars !== false"
+                  @change="store.setWidgetSetting('flex', 'showBars', $event.target.checked)"
+                >
+              </div>
+            </div></CollapseTransition>
+
+            <!-- Sub-settings for checklist widget -->
+            <CollapseTransition><div v-if="expandedWidgets[widget.id] && widget.id === 'checklist'" class="widget-sub-settings">
+              <div class="chart-type-section chart-type-section--last">
+                <div class="chart-type-label">Storlek</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="opt in sizeOptions"
+                    :key="opt.value"
+                    :class="['segment-btn', { active: (store.overviewSettings.widgetSettings?.checklist?.size || 'default') === opt.value }]"
+                    @click="store.setWidgetSetting('checklist', 'size', opt.value)"
+                  >{{ opt.label }}</button>
+                </div>
+              </div>
+            </div></CollapseTransition>
+
+            <!-- Sub-settings for savings widget -->
+            <CollapseTransition><div v-if="expandedWidgets[widget.id] && widget.id === 'savings'" class="widget-sub-settings">
+              <div class="chart-type-section chart-type-section--last">
+                <div class="chart-type-label">Storlek</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="opt in sizeOptions"
+                    :key="opt.value"
+                    :class="['segment-btn', { active: (store.overviewSettings.widgetSettings?.savings?.size || 'default') === opt.value }]"
+                    @click="store.setWidgetSetting('savings', 'size', opt.value)"
+                  >{{ opt.label }}</button>
+                </div>
+              </div>
+            </div></CollapseTransition>
+
+            <!-- Sub-settings for categories widget -->
+            <CollapseTransition><div v-if="expandedWidgets[widget.id] && widget.id === 'categories'" class="widget-sub-settings">
+              <div class="chart-type-section">
+                <div class="chart-type-label">Storlek</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="opt in sizeOptions"
+                    :key="opt.value"
+                    :class="['segment-btn', { active: (store.overviewSettings.widgetSettings?.categories?.size || 'default') === opt.value }]"
+                    @click="store.setWidgetSetting('categories', 'size', opt.value)"
+                  >{{ opt.label }}</button>
+                </div>
+              </div>
+              <div class="chart-type-section chart-type-section--last">
+                <div class="chart-type-label">Visa antal</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="opt in maxItemOptions"
+                    :key="opt.value"
+                    :class="['segment-btn', { active: (store.overviewSettings.widgetSettings?.categories?.maxItems ?? 0) === opt.value }]"
+                    @click="store.setWidgetSetting('categories', 'maxItems', opt.value)"
+                  >{{ opt.label }}</button>
+                </div>
+              </div>
+            </div></CollapseTransition>
           </div>
         </div></CollapseTransition>
       </div>
@@ -763,9 +843,10 @@ const WIDGET_LABELS = {
   checklist:  'Checklista',
   savings:    'Sparkvot',
   categories: 'Kategorier',
+  flex:       'Flex',
 }
 
-const WIDGETS_WITH_SETTINGS = ['summary', 'chart']
+const WIDGETS_WITH_SETTINGS = ['summary', 'chart', 'flex', 'checklist', 'savings', 'categories']
 
 // Collapsible sub-settings state (all start closed)
 const expandedWidgets = reactive({})
@@ -872,6 +953,22 @@ const chartTypeOptions = [
   { value: 'doughnut', label: 'Munk' },
   { value: 'bar', label: 'Stapel' },
   { value: 'stackedBar', label: 'Staplad' },
+]
+
+const flexStyleOptions = [
+  { value: 'compact', label: 'Kompakt' },
+  { value: 'default', label: 'Standard' },
+]
+
+const sizeOptions = [
+  { value: 'compact', label: 'Kompakt' },
+  { value: 'default', label: 'Standard' },
+]
+
+const maxItemOptions = [
+  { value: 3,  label: '3' },
+  { value: 5,  label: '5' },
+  { value: 0,  label: 'Alla' },
 ]
 
 const summaryStyleOptions = [
@@ -1302,6 +1399,13 @@ function fmt(n) {
 
 .chart-type-section--last {
   border-bottom: 0.5px solid var(--separator);
+}
+
+.chart-type-section--toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
 }
 
 .overview-toggle-label {

@@ -1,8 +1,8 @@
 <template>
-  <div class="category-breakdown-card">
+  <div class="category-breakdown-card" :class="{ 'cb--compact': size === 'compact' }">
     <div class="cb-title">Kategorier</div>
-    <template v-if="categories.length > 0">
-      <div v-for="cat in categories" :key="cat.name" class="cb-row">
+    <template v-if="displayCategories.length > 0">
+      <div v-for="cat in displayCategories" :key="cat.name" class="cb-row">
         <div class="cb-row-header">
           <span class="cb-name">{{ cat.name }}</span>
           <span class="cb-amount">{{ fmt(cat.total) }} kr</span>
@@ -11,6 +11,7 @@
           <div class="cb-bar-fill" :style="{ width: cat.pct + '%', background: cat.color }"></div>
         </div>
       </div>
+      <p v-if="hiddenCount > 0" class="cb-more">+{{ hiddenCount }} till</p>
     </template>
     <p v-else class="cb-empty">Inga utgifter registrerade</p>
   </div>
@@ -21,6 +22,9 @@ import { computed } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
+
+const size     = computed(() => store.overviewSettings.widgetSettings?.categories?.size || 'default')
+const maxItems = computed(() => store.overviewSettings.widgetSettings?.categories?.maxItems ?? 0)
 
 const COLORS = [
   'var(--system-blue)',
@@ -49,6 +53,16 @@ const categories = computed(() => {
     })
     .filter(c => c.total > 0)
     .sort((a, b) => b.total - a.total)
+})
+
+const displayCategories = computed(() => {
+  if (maxItems.value === 0) return categories.value
+  return categories.value.slice(0, maxItems.value)
+})
+
+const hiddenCount = computed(() => {
+  if (maxItems.value === 0) return 0
+  return Math.max(0, categories.value.length - maxItems.value)
 })
 
 function fmt(n) {
@@ -115,5 +129,34 @@ function fmt(n) {
   font-size: 14px;
   color: var(--text-secondary);
   margin: 0;
+}
+
+.cb-more {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 4px 0 0;
+  text-align: right;
+}
+
+.cb--compact {
+  padding: 14px 20px;
+}
+
+.cb--compact .cb-title {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.cb--compact .cb-row {
+  margin-bottom: 8px;
+}
+
+.cb--compact .cb-name,
+.cb--compact .cb-amount {
+  font-size: 13px;
+}
+
+.cb--compact .cb-bar-track {
+  height: 4px;
 }
 </style>

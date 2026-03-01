@@ -7,6 +7,7 @@
       <ChecklistProgress v-else-if="widget.id === 'checklist'" @navigate="emit('navigate', $event)" />
       <SavingsRate       v-else-if="widget.id === 'savings'" />
       <CategoryBreakdown v-else-if="widget.id === 'categories'" />
+      <FlexWidget        v-else-if="widget.id === 'flex'" @navigate="emit('navigate', $event)" />
     </template>
   </div>
 </template>
@@ -20,6 +21,7 @@ import DebtSummary from '../components/DebtSummary.vue'
 import ChecklistProgress from '../components/ChecklistProgress.vue'
 import SavingsRate from '../components/SavingsRate.vue'
 import CategoryBreakdown from '../components/CategoryBreakdown.vue'
+import FlexWidget from '../components/FlexWidget.vue'
 
 const store = useBudgetStore()
 const emit = defineEmits(['navigate'])

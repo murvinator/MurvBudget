@@ -38,7 +38,14 @@ export const useBudgetStore = defineStore('budget', {
         { id: 'checklist',  visible: true },
         { id: 'savings',    visible: true },
         { id: 'categories', visible: true },
+        { id: 'flex',       visible: true },
       ],
+      widgetSettings: {
+        flex:       { style: 'default', showBars: true },
+        checklist:  { size: 'default' },
+        savings:    { size: 'default' },
+        categories: { size: 'default', maxItems: 0 },
+      },
     },
   }),
 
@@ -88,6 +95,12 @@ export const useBudgetStore = defineStore('budget', {
     // ── Overview Settings ────────────────────────────────────────────────────
     setOverviewSetting(key, value) {
       this.overviewSettings[key] = value
+    },
+
+    setWidgetSetting(widgetId, key, value) {
+      if (!this.overviewSettings.widgetSettings) this.overviewSettings.widgetSettings = {}
+      if (!this.overviewSettings.widgetSettings[widgetId]) this.overviewSettings.widgetSettings[widgetId] = {}
+      this.overviewSettings.widgetSettings[widgetId][key] = value
     },
 
     // ── Income ──────────────────────────────────────────────────────────────
@@ -410,7 +423,7 @@ export const useBudgetStore = defineStore('budget', {
         }
       }
       // Migrate widgetOrder
-      const ALL_WIDGET_IDS = ['summary', 'chart', 'debts', 'checklist', 'savings', 'categories']
+      const ALL_WIDGET_IDS = ['summary', 'chart', 'debts', 'checklist', 'savings', 'categories', 'flex']
       if (!this.overviewSettings.widgetOrder?.length) {
         this.overviewSettings.widgetOrder = [
           { id: 'summary',    visible: this.overviewSettings.showSummaryCards ?? true },
@@ -419,11 +432,31 @@ export const useBudgetStore = defineStore('budget', {
           { id: 'checklist',  visible: true },
           { id: 'savings',    visible: true },
           { id: 'categories', visible: true },
+          { id: 'flex',       visible: true },
         ]
       } else {
         for (const id of ALL_WIDGET_IDS) {
           if (!this.overviewSettings.widgetOrder.find(w => w.id === id)) {
             this.overviewSettings.widgetOrder.push({ id, visible: true })
+          }
+        }
+      }
+      // Ensure widgetSettings exists and all defaults are populated
+      if (!this.overviewSettings.widgetSettings) this.overviewSettings.widgetSettings = {}
+      const defaultWidgetSettings = {
+        flex:       { style: 'default', showBars: true },
+        checklist:  { size: 'default' },
+        savings:    { size: 'default' },
+        categories: { size: 'default', maxItems: 0 },
+      }
+      for (const [id, defaults] of Object.entries(defaultWidgetSettings)) {
+        if (!this.overviewSettings.widgetSettings[id]) {
+          this.overviewSettings.widgetSettings[id] = { ...defaults }
+        } else {
+          for (const [k, v] of Object.entries(defaults)) {
+            if (this.overviewSettings.widgetSettings[id][k] === undefined) {
+              this.overviewSettings.widgetSettings[id][k] = v
+            }
           }
         }
       }
