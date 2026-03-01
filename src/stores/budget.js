@@ -21,14 +21,34 @@ export const useBudgetStore = defineStore('budget', {
     variableActuals: {},
     variableExpenses: [],
     variableExpenseTransactions: {},
+    savings: [],
+    savingsDeposits: {},
+    monthlyChecklistTracking: {},
+    finansOrder: ['debts', 'savings', 'flex'],
+    checklistSettings: {
+      showAmounts: true,
+      showDates: true,
+      autoCollapseCompleted: false,
+      showSummary: true,
+      sortOrder: 'manual',
+    },
+    finansViewSettings: {
+      flexShowBars: true,
+      flexShowEstimates: true,
+      debtsShowProgress: true,
+      savingsShowPct: true,
+      savingsShowRate: false,
+    },
     salaryDay: null,
     salaryMonthOffset: false,
+    tempMonthlyIncome: {},
     overviewSettings: {
       showSummaryCards: true,
       showVariableMini: true,
       showChart: true,
       showDebts: true,
       chartType: 'pie',
+      chartColorScheme: 'colorful',
       cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
       summaryStyle: 'default',
       widgetOrder: [
@@ -50,7 +70,17 @@ export const useBudgetStore = defineStore('budget', {
   }),
 
   getters: {
-    totalIncome: (state) => state.income.reduce((sum, i) => sum + i.amount, 0),
+    totalIncome: (state) => {
+      const mk = `${new Date().getFullYear()}-${new Date().getMonth()}`
+      const overrides = state.tempMonthlyIncome?.[mk]
+      // Guard: if old format (number) or empty, ignore
+      if (!overrides || typeof overrides !== 'object') {
+        return state.income.reduce((sum, i) => sum + i.amount, 0)
+      }
+      return state.income.reduce((sum, i) => {
+        return sum + (overrides[i.name] !== undefined ? overrides[i.name] : i.amount)
+      }, 0)
+    },
     totalExpenses: (state) => {
       const now = new Date()
       const mk = `${now.getFullYear()}-${now.getMonth()}`
@@ -63,9 +93,12 @@ export const useBudgetStore = defineStore('budget', {
       }, 0)
     },
     remaining: (state) => {
-      const income = state.income.reduce((sum, i) => sum + i.amount, 0)
       const now = new Date()
       const mk = `${now.getFullYear()}-${now.getMonth()}`
+      const overrides = state.tempMonthlyIncome?.[mk]
+      const income = (overrides && typeof overrides === 'object')
+        ? state.income.reduce((sum, i) => sum + (overrides[i.name] !== undefined ? overrides[i.name] : i.amount), 0)
+        : state.income.reduce((sum, i) => sum + i.amount, 0)
       const expenses = state.expenses.reduce((sum, e) => {
         if (e.variable) {
           const actual = state.variableActuals?.[mk]?.[e.name]
@@ -134,6 +167,27 @@ export const useBudgetStore = defineStore('budget', {
       this.expenses[index] = item
     },
 
+    // ── Temp Monthly Income ───────────────────────────────────────────────────
+    // Sets or clears a per-income-source override for a given month.
+    // amount = null clears the override for that income source.
+    setTempMonthlyIncome(monthKey, incomeName, amount) {
+      if (!this.tempMonthlyIncome) this.tempMonthlyIncome = {}
+      if (!this.tempMonthlyIncome[monthKey] || typeof this.tempMonthlyIncome[monthKey] !== 'object') {
+        this.tempMonthlyIncome[monthKey] = {}
+      }
+      if (amount === null || amount === undefined) {
+        delete this.tempMonthlyIncome[monthKey][incomeName]
+        if (Object.keys(this.tempMonthlyIncome[monthKey]).length === 0) {
+          delete this.tempMonthlyIncome[monthKey]
+        }
+      } else {
+        this.tempMonthlyIncome[monthKey][incomeName] = parseInt(amount)
+      }
+    },
+    clearTempMonthlyIncome(monthKey) {
+      if (this.tempMonthlyIncome) delete this.tempMonthlyIncome[monthKey]
+    },
+
     // ── Variable Actuals ─────────────────────────────────────────────────────
     setVariableActual(expenseName, amount) {
       const mk = this.currentMonthKey
@@ -164,6 +218,17 @@ export const useBudgetStore = defineStore('budget', {
     reorderCategories(newOrder) {
       this.categories = newOrder
     },
+    setFinansOrder(newOrder) {
+      this.finansOrder = newOrder
+    },
+    setChecklistSetting(key, value) {
+      if (!this.checklistSettings) this.checklistSettings = {}
+      this.checklistSettings[key] = value
+    },
+    setFinansViewSetting(key, value) {
+      if (!this.finansViewSettings) this.finansViewSettings = {}
+      this.finansViewSettings[key] = value
+    },
     saveEditCategory(index, newName) {
       const oldName = this.categories[index]
       if (!oldName || !newName || newName === oldName) return
@@ -191,9 +256,9 @@ export const useBudgetStore = defineStore('budget', {
     },
 
     // ── Debts ────────────────────────────────────────────────────────────────
-    addDebt(name, amount) {
+    addDebt(name, amount, date) {
       const id = genId('debt')
-      this.debts.push({ id, name, amount: parseInt(amount) })
+      this.debts.push({ id, name, amount: parseInt(amount), date: date || null })
       this.debtPayments[id] = []
     },
     deleteDebt(index) {
@@ -232,6 +297,68 @@ export const useBudgetStore = defineStore('budget', {
       if (p) debt.amount = (debt.amount || 0) + p.amount
     },
 
+    // ── Savings Goals ────────────────────────────────────────────────────────
+    setSavingsGoal(name, target, date) {
+      const id = genId('sav')
+      if (!this.savings) this.savings = []
+      if (!this.savingsDeposits) this.savingsDeposits = {}
+      this.savings.push({ id, name, target: parseInt(target), current: 0, date: date || null })
+      this.savingsDeposits[id] = []
+    },
+    editSavingsGoal(index, name, target) {
+      if (this.savings[index]) {
+        this.savings[index].name = name
+        this.savings[index].target = parseInt(target)
+      }
+    },
+    deleteSavingsGoal(index) {
+      const removed = this.savings.splice(index, 1)[0]
+      if (removed?.id) delete this.savingsDeposits[removed.id]
+    },
+    addSavingsDeposit(goalIndex, amount, note) {
+      const goal = this.savings[goalIndex]
+      if (!goal) return
+      if (!this.savingsDeposits[goal.id]) this.savingsDeposits[goal.id] = []
+      const amt = parseInt(amount)
+      this.savingsDeposits[goal.id].push({ amount: amt, note: note || '', date: new Date().toISOString() })
+      goal.current = (goal.current || 0) + amt
+    },
+    deleteSavingsDeposit(goalIndex, depositIndex) {
+      const goal = this.savings[goalIndex]
+      if (!goal) return
+      const deposits = this.savingsDeposits[goal.id] || []
+      const d = deposits.splice(depositIndex, 1)[0]
+      if (d) goal.current = Math.max(0, (goal.current || 0) - d.amount)
+    },
+
+    // ── Debt Monthly Payment ─────────────────────────────────────────────────
+    setDebtMonthlyPayment(debtIndex, amount) {
+      if (!this.debts[debtIndex]) return
+      if (!amount || parseInt(amount) <= 0) {
+        delete this.debts[debtIndex].monthlyPayment
+      } else {
+        this.debts[debtIndex].monthlyPayment = parseInt(amount)
+      }
+    },
+    toggleDebtMonthlyPayment(debtId, paid) {
+      if (!this.monthlyStatus['current']) this.monthlyStatus['current'] = {}
+      this.monthlyStatus['current']['debt-' + debtId] = paid
+    },
+
+    // ── Savings Monthly Payment ──────────────────────────────────────────────
+    setSavingsMonthlyPayment(index, amount) {
+      if (!this.savings[index]) return
+      if (!amount || parseInt(amount) <= 0) {
+        delete this.savings[index].monthlyPayment
+      } else {
+        this.savings[index].monthlyPayment = parseInt(amount)
+      }
+    },
+    toggleSavingsMonthlyPayment(savingsId, paid) {
+      if (!this.monthlyStatus['current']) this.monthlyStatus['current'] = {}
+      this.monthlyStatus['current']['savings-' + savingsId] = paid
+    },
+
     // ── Variable Transactions ────────────────────────────────────────────────
     addVariableTransaction(expenseName, amount, note) {
       const monthKey = this.currentMonthKey
@@ -262,6 +389,16 @@ export const useBudgetStore = defineStore('budget', {
     },
     resetCurrentMonth() {
       this.monthlyStatus['current'] = {}
+      if (this.monthlyChecklistTracking) this.monthlyChecklistTracking['current'] = {}
+    },
+
+    setChecklistTracking(key, date) {
+      if (!this.monthlyChecklistTracking['current']) this.monthlyChecklistTracking['current'] = {}
+      if (date) {
+        this.monthlyChecklistTracking['current'][key] = date
+      } else {
+        delete this.monthlyChecklistTracking['current'][key]
+      }
     },
 
     // ── Data ─────────────────────────────────────────────────────────────────
@@ -277,6 +414,8 @@ export const useBudgetStore = defineStore('budget', {
         variableActuals: this.variableActuals,
         variableExpenses: this.variableExpenses,
         variableExpenseTransactions: this.variableExpenseTransactions,
+        savings: this.savings,
+        savingsDeposits: this.savingsDeposits,
       }, null, 2)
       const blob = new Blob([dataStr], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -314,6 +453,9 @@ export const useBudgetStore = defineStore('budget', {
       this.variableActuals = data.variableActuals || {}
       this.variableExpenses = data.variableExpenses || []
       this.variableExpenseTransactions = data.variableExpenseTransactions || {}
+      this.savings = data.savings || []
+      this.savingsDeposits = data.savingsDeposits || {}
+      this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
 
       // Migrate debts
       if (data.debts) {
@@ -390,6 +532,8 @@ export const useBudgetStore = defineStore('budget', {
         variableActuals: {},
         variableExpenses: [],
         variableExpenseTransactions: {},
+        savings: [],
+        savingsDeposits: {},
       })
       localStorage.removeItem('murvbudget-last-cloud-sync')
     },
@@ -398,6 +542,22 @@ export const useBudgetStore = defineStore('budget', {
     migrateData() {
       // Ensure variableActuals exists
       if (!this.variableActuals) this.variableActuals = {}
+      // Ensure savings exists
+      if (!this.savings) this.savings = []
+      if (!this.savingsDeposits) this.savingsDeposits = {}
+      if (!this.monthlyChecklistTracking) this.monthlyChecklistTracking = {}
+      if (!this.finansOrder) {
+        this.finansOrder = ['debts', 'savings', 'flex']
+      } else if (!this.finansOrder.includes('flex')) {
+        this.finansOrder = [...this.finansOrder, 'flex']
+      }
+      if (!this.checklistSettings) {
+        this.checklistSettings = { showAmounts: true, showDates: true, autoCollapseCompleted: false, showSummary: true, sortOrder: 'manual' }
+      }
+      if (!this.finansViewSettings) {
+        this.finansViewSettings = { flexShowBars: true, flexShowEstimates: true, debtsShowProgress: true, savingsShowPct: true, savingsShowRate: false }
+      }
+      this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
       // Ensure all debts have ids
       this.debts = this.debts.map((d) => ({ ...d, id: d.id || genId('debt') }))
       // Ensure debtPayments keys are ids not names

@@ -6,6 +6,9 @@
       <div class="card-main">
         <h4>{{ incomeLabel }}</h4>
         <div class="amount">{{ fmt(displayIncome) }} kr</div>
+        <div v-if="tempDiff !== 0" class="temp-badge">
+          {{ tempDiff > 0 ? '+' : '' }}{{ fmt(tempDiff) }} kr denna månad
+        </div>
         <svg class="card-chevron" :class="{ 'card-chevron--open': openCard === 0 }"
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
           <polyline points="6 9 12 15 18 9"/>
@@ -16,9 +19,18 @@
           <div class="detail-sep" />
           <div v-for="item in store.income" :key="item.name" class="detail-row">
             <span class="detail-name">{{ item.name }}</span>
-            <span class="detail-amount">{{ fmt(item.amount) }} kr</span>
+            <span class="detail-amount">
+              <span v-if="tempOverrides[item.name] !== undefined" class="detail-original">{{ fmt(item.amount) }}</span>
+              {{ fmt(tempOverrides[item.name] !== undefined ? tempOverrides[item.name] : item.amount) }} kr
+            </span>
           </div>
           <div v-if="store.income.length === 0" class="detail-empty">Ingen inkomst tillagd</div>
+          <div v-if="tempDiff !== 0" class="detail-row detail-row--temp">
+            <span class="detail-name temp-label">Tillfällig justering</span>
+            <span class="detail-amount" :class="tempDiff > 0 ? 'temp-pos' : 'temp-neg'">
+              {{ tempDiff > 0 ? '+' : '' }}{{ fmt(tempDiff) }} kr
+            </span>
+          </div>
         </div>
       </CollapseTransition>
     </div>
@@ -39,8 +51,9 @@
           <div v-for="(exp, i) in topExpenses" :key="exp.name" class="detail-row">
             <span class="detail-rank">{{ i + 1 }}</span>
             <span class="detail-name">{{ exp.name }}</span>
-            <span v-if="exp.category" class="detail-cat">{{ exp.category }}</span>
-            <span class="detail-amount">{{ fmt(exp.amount) }} kr</span>
+            <span v-if="exp.variable" class="detail-cat detail-cat--flex">Flex</span>
+            <span v-else-if="exp.category" class="detail-cat">{{ exp.category }}</span>
+            <span class="detail-amount"><span v-if="exp.variable" class="detail-tilde">~</span>{{ fmt(exp.amount) }} kr</span>
           </div>
           <div v-if="store.expenses.length === 0" class="detail-empty">Inga utgifter tillagda</div>
           <div v-else-if="store.expenses.length > 5" class="detail-more">
@@ -113,13 +126,16 @@ const sizeClass = computed(() => {
 })
 
 const GRADIENTS = {
-  'blue':        'linear-gradient(135deg, #007AFF, #007AFF)',
-  'blue-purple': 'linear-gradient(135deg, #007AFF, #AF52DE)',
-  'orange-pink': 'linear-gradient(135deg, #FF9500, #FF2D92)',
-  'green-teal':  'linear-gradient(135deg, #34C759, #5AC8FA)',
-  'red-orange':  'linear-gradient(135deg, #FF3B30, #FF9500)',
-  'indigo-blue': 'linear-gradient(135deg, #5856D6, #007AFF)',
-  'pink-red':    'linear-gradient(135deg, #FF2D92, #FF3B30)',
+  'blue':             'linear-gradient(135deg, #007AFF, #007AFF)',
+  'blue-purple':      'linear-gradient(135deg, #007AFF, #AF52DE)',
+  'orange-pink':      'linear-gradient(135deg, #FF9500, #FF2D92)',
+  'green-teal':       'linear-gradient(135deg, #34C759, #5AC8FA)',
+  'red-orange':       'linear-gradient(135deg, #FF3B30, #FF9500)',
+  'indigo-blue':      'linear-gradient(135deg, #5856D6, #007AFF)',
+  'pink-red':         'linear-gradient(135deg, #FF2D92, #FF3B30)',
+  'muted-blue-slate': 'linear-gradient(135deg, #4A90C4, #7B6BAE)',
+  'muted-amber':      'linear-gradient(135deg, #C48A2E, #B05C5C)',
+  'muted-green-teal': 'linear-gradient(135deg, #5CAB7D, #3A8A8A)',
 }
 const DEFAULT_COLORS = ['blue-purple', 'orange-pink', 'green-teal']
 
@@ -176,7 +192,20 @@ const incomeLabel = computed(() =>
   store.income.length === 1 ? 'Inkomst' : 'Inkomster'
 )
 
-// ── Top 5 expenses ───────────────────────────────────────────
+// ── Temp income indicator ─────────────────────────────────────
+const tempOverrides = computed(() => {
+  const mk = `${new Date().getFullYear()}-${new Date().getMonth()}`
+  const ov = store.tempMonthlyIncome?.[mk]
+  return (ov && typeof ov === 'object') ? ov : {}
+})
+
+const normalTotalIncome = computed(() =>
+  store.income.reduce((sum, i) => sum + i.amount, 0)
+)
+
+const tempDiff = computed(() => store.totalIncome - normalTotalIncome.value)
+
+// ── Top 5 expenses (including flex with estimate label) ──────
 const topExpenses = computed(() =>
   [...store.expenses].sort((a, b) => b.amount - a.amount).slice(0, 5)
 )
@@ -342,6 +371,46 @@ function fmt(n) {
   opacity: 1;
   font-size: 15px;
   font-weight: 700;
+}
+
+/* ── Temp income indicator ────────────────────────────────── */
+.temp-badge {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-top: 3px;
+  letter-spacing: -0.1px;
+}
+
+.detail-original {
+  text-decoration: line-through;
+  opacity: 0.45;
+  font-size: 12px;
+  margin-right: 3px;
+}
+
+.detail-row--temp {
+  border-top: 0.5px solid currentColor;
+  opacity: 0.85;
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.temp-label {
+  font-style: italic;
+}
+
+.temp-pos { color: inherit; }
+.temp-neg { opacity: 0.7; }
+
+.detail-cat--flex {
+  background: rgba(255,255,255,0.28);
+}
+
+.detail-tilde {
+  opacity: 0.6;
+  font-size: 11px;
+  margin-right: 1px;
 }
 
 /* ── Neutral card: tint detail-cat differently ────────────── */

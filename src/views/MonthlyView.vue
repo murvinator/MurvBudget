@@ -1,9 +1,6 @@
 <template>
   <div>
-    <!-- Transparent backdrop to close flex edit on outside click -->
-    <div v-if="editingVariable" class="flex-edit-backdrop" @click="editingVariable = null"></div>
-    <!-- Grand total summary (#53/#55) -->
-    <div class="monthly-summary">
+    <div v-if="store.checklistSettings?.showSummary !== false" class="monthly-summary">
       <div class="monthly-stat">
         <div class="monthly-stat-label">Totalt</div>
         <div class="monthly-stat-value">{{ fmt(grandTotal) }} kr</div>
@@ -25,7 +22,7 @@
     <div class="monthly-toggle-all">
       <span class="monthly-section-title">{{ store.displayMonthName }}</span>
       <span class="monthly-paid-count">{{ paidCount }} av {{ totalCount }} betalt</span>
-      <button v-if="hasCategorizedExpenses" class="toggle-all-btn" @click="toggleAll">
+      <button v-if="hasCollapsibleSections" class="toggle-all-btn" @click="toggleAll">
         {{ allExpanded ? 'Dölj alla' : 'Visa alla' }}
       </button>
     </div>
@@ -134,69 +131,106 @@
       </template>
     </template>
 
-    <!-- Flex section -->
-    <template v-if="variableExpenses.length > 0">
-      <div class="flex-section">
-        <div class="flex-section-label">
-          <span class="flex-dot"></span>
-          Flex
-        </div>
-
-        <div class="flex-cards">
-          <div
-            v-for="expense in variableExpenses"
-            :key="expense.name"
-            class="flex-card"
-            :class="{
-              'flex-card--confirmed': hasActual(expense.name),
-              'flex-card--editing': editingVariable === expense.name
-            }"
-          >
-            <!-- Edit state -->
-            <template v-if="editingVariable === expense.name">
-              <div class="flex-card-editing" @click.stop>
-                <div class="flex-card-editing-name">{{ expense.name }}</div>
-                <input
-                  type="number"
-                  class="flex-edit-input"
-                  v-model.number="variableEditValue"
-                  inputmode="numeric"
-                  step="1"
-                  @keyup.enter="saveVariableActual(expense.name)"
-                >
-                <div class="flex-edit-actions">
-                  <button class="flex-cancel-btn" @click.stop="editingVariable = null">Avbryt</button>
-                  <button v-if="hasActual(expense.name)" class="flex-reset-btn" @click.stop="resetVariableActual(expense.name)">Återställ</button>
-                  <button class="flex-save-btn" @click.stop="saveVariableActual(expense.name)">Spara</button>
-                </div>
-              </div>
-            </template>
-
-            <!-- Display state — tap to edit -->
-            <template v-else>
-              <div class="flex-card-row" @click="openVariableEdit(expense)">
-                <div class="flex-card-left">
-                  <span class="flex-card-name">{{ expense.name }}</span>
-                  <span v-if="!hasActual(expense.name)" class="flex-card-hint">Tryck för att bekräfta belopp</span>
-                </div>
-                <div class="flex-card-amount" :class="{ 'flex-card-amount--estimate': !hasActual(expense.name) }">
-                  <span v-if="!hasActual(expense.name)" class="flex-tilde">~</span>{{ fmt(variableAmount(expense)) }}<span class="flex-currency"> kr</span>
-                </div>
-              </div>
-            </template>
+    <!-- Debt payments section (debts with monthlyPayment) -->
+    <template v-if="debtPaymentItems.length > 0">
+      <div class="checklist-section">
+        <div
+          class="category-header collapsible-header"
+          :class="{ 'category-header--expanded': !debtSectionCollapsed }"
+          @click="debtSectionCollapsed = !debtSectionCollapsed"
+        >
+          <div class="category-header-label">
+            <svg class="category-special-icon category-special-icon--debt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <h3>Skulder och lån</h3>
           </div>
+          <svg class="chevron" :class="{ collapsed: debtSectionCollapsed }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
         </div>
-
-        <div class="flex-total-row">
-          <span>Totalt Flex</span>
-          <span>{{ fmt(variableTotal) }} kr</span>
-        </div>
+        <CollapseTransition>
+          <div v-if="!debtSectionCollapsed" class="category-list">
+            <div
+              v-for="item in debtPaymentItems"
+              :key="item.id"
+              class="expense-item"
+              :class="{ paid: isDebtPaid(item.id) }"
+              style="cursor: pointer"
+              @click="toggleDebtPayment(item)"
+            >
+              <div class="expense-info">
+                <div class="expense-name">{{ item.name }}</div>
+              </div>
+              <div class="expense-amount">{{ fmt(item.monthlyPayment) }} kr</div>
+              <input
+                type="checkbox"
+                class="checkbox"
+                :checked="isDebtPaid(item.id)"
+                @change.stop="toggleDebtPayment(item)"
+                @click.stop
+              >
+            </div>
+          </div>
+        </CollapseTransition>
       </div>
     </template>
 
-    <div v-if="store.expenses.length > 0" class="month-controls">
+    <!-- Savings payments section (savings goals with monthlyPayment) -->
+    <template v-if="savingsPaymentItems.length > 0">
+      <div class="checklist-section">
+        <div
+          class="category-header collapsible-header"
+          :class="{ 'category-header--expanded': !savingsSectionCollapsed }"
+          @click="savingsSectionCollapsed = !savingsSectionCollapsed"
+        >
+          <div class="category-header-label">
+            <svg class="category-special-icon category-special-icon--savings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <h3>Sparande</h3>
+          </div>
+          <svg class="chevron" :class="{ collapsed: savingsSectionCollapsed }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+        <CollapseTransition>
+          <div v-if="!savingsSectionCollapsed" class="category-list">
+            <div
+              v-for="item in savingsPaymentItems"
+              :key="item.id"
+              class="expense-item"
+              :class="{ paid: isSavingsPaid(item.id) }"
+              style="cursor: pointer"
+              @click="toggleSavingsPayment(item)"
+            >
+              <div class="expense-info">
+                <div class="expense-name">{{ item.name }}</div>
+              </div>
+              <div class="expense-amount">{{ fmt(item.monthlyPayment) }} kr</div>
+              <input
+                type="checkbox"
+                class="checkbox"
+                :checked="isSavingsPaid(item.id)"
+                @change.stop="toggleSavingsPayment(item)"
+                @click.stop
+              >
+            </div>
+          </div>
+        </CollapseTransition>
+      </div>
+    </template>
+
+    <br>
+    <br>  
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <!-- <div v-if="store.expenses.length > 0 || debtPaymentItems.length > 0" class="month-controls">
       <button class="reset-btn" @click="resetMonth">Återställ checkboxar</button>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -207,6 +241,7 @@ import CollapseTransition from '../components/CollapseTransition.vue'
 
 const store = useBudgetStore()
 const confirm = inject('confirm')
+const emit = defineEmits(['navigate'])
 
 const COLLAPSED_KEY = 'murvbudget-monthly-collapsed'
 
@@ -238,11 +273,31 @@ function toggleCategory(category) {
   } catch {}
 }
 
+function loadSpecialCollapsed(key) {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(COLLAPSED_KEY) || '{}')
+    return saved[key] !== false
+  } catch {
+    return true
+  }
+}
+
+function saveSpecialCollapsed(key, value) {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(COLLAPSED_KEY) || '{}')
+    saved[key] = value
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify(saved))
+  } catch {}
+}
+
 function categoryExpenses(category) {
-  return store.expenses
+  const items = store.expenses
     .map((e, index) => ({ ...e, index }))
     .filter((e) => e.category === category && !e.variable)
-    .sort((a, b) => b.amount - a.amount)
+  const sortOrder = store.checklistSettings?.sortOrder || 'manual'
+  if (sortOrder === 'amount') return [...items].sort((a, b) => b.amount - a.amount)
+  if (sortOrder === 'date') return [...items].sort((a, b) => (a.date || 99) - (b.date || 99))
+  return items
 }
 
 const uncategorizedExpenses = computed(() =>
@@ -256,45 +311,72 @@ const hasCategorizedExpenses = computed(() =>
   store.expenses.some((e) => !e.variable && e.category && store.categories.includes(e.category))
 )
 
-// Variable expenses
-const variableExpenses = computed(() =>
-  store.expenses.filter((e) => e.variable)
+// Debt payment items (debts with monthlyPayment set)
+const debtPaymentItems = computed(() =>
+  store.debts
+    .map((d, i) => ({ ...d, debtIndex: i }))
+    .filter(d => d.monthlyPayment > 0)
 )
 
-function hasActual(name) {
-  return store.variableActuals?.[store.currentMonthKey]?.[name] !== undefined
+function isDebtPaid(debtId) {
+  return !!(store.monthlyStatus['current']?.['debt-' + debtId])
 }
 
-function variableAmount(expense) {
-  const actual = store.variableActuals?.[store.currentMonthKey]?.[expense.name]
-  return actual !== undefined ? actual : expense.amount
-}
-
-const variableTotal = computed(() =>
-  variableExpenses.value.reduce((sum, e) => sum + variableAmount(e), 0)
-)
-
-// Inline editing for variable actuals
-const editingVariable = ref(null)
-const variableEditValue = ref(null)
-
-function openVariableEdit(expense) {
-  editingVariable.value = expense.name
-  variableEditValue.value = variableAmount(expense)
-}
-
-function saveVariableActual(name) {
-  const val = variableEditValue.value
-  if (val !== null && val >= 0) {
-    store.setVariableActual(name, val)
+function toggleDebtPayment(item) {
+  const nowPaid = !isDebtPaid(item.id)
+  store.toggleDebtMonthlyPayment(item.id, nowPaid)
+  if (nowPaid) {
+    store.addDebtPayment(item.debtIndex, item.monthlyPayment, 'Månadsbetalning')
+    const payments = store.debtPayments[item.id] || []
+    const date = payments[payments.length - 1]?.date
+    if (date) store.setChecklistTracking('debt-' + item.id, date)
+  } else {
+    const trackedDate = store.monthlyChecklistTracking?.['current']?.['debt-' + item.id]
+    if (trackedDate) {
+      const payments = store.debtPayments[item.id] || []
+      const idx = payments.findIndex(p => p.date === trackedDate)
+      if (idx !== -1) store.deleteDebtPayment(item.debtIndex, idx)
+      store.setChecklistTracking('debt-' + item.id, null)
+    }
   }
-  editingVariable.value = null
 }
 
-function resetVariableActual(name) {
-  store.setVariableActual(name, null)
-  editingVariable.value = null
+const debtSectionCollapsed = ref(loadSpecialCollapsed('__debt'))
+watch(debtSectionCollapsed, (v) => saveSpecialCollapsed('__debt', v))
+
+// Savings payment items (savings goals with monthlyPayment set)
+const savingsPaymentItems = computed(() =>
+  store.savings
+    .map((s, i) => ({ ...s, savingsIndex: i }))
+    .filter(s => s.monthlyPayment > 0)
+)
+
+const savingsSectionCollapsed = ref(loadSpecialCollapsed('__savings'))
+watch(savingsSectionCollapsed, (v) => saveSpecialCollapsed('__savings', v))
+
+function isSavingsPaid(savingsId) {
+  return !!(store.monthlyStatus['current']?.['savings-' + savingsId])
 }
+
+function toggleSavingsPayment(item) {
+  const nowPaid = !isSavingsPaid(item.id)
+  store.toggleSavingsMonthlyPayment(item.id, nowPaid)
+  if (nowPaid) {
+    store.addSavingsDeposit(item.savingsIndex, item.monthlyPayment, 'Månadsinsättning')
+    const deposits = store.savingsDeposits[item.id] || []
+    const date = deposits[deposits.length - 1]?.date
+    if (date) store.setChecklistTracking('savings-' + item.id, date)
+  } else {
+    const trackedDate = store.monthlyChecklistTracking?.['current']?.['savings-' + item.id]
+    if (trackedDate) {
+      const deposits = store.savingsDeposits[item.id] || []
+      const idx = deposits.findIndex(d => d.date === trackedDate)
+      if (idx !== -1) store.deleteSavingsDeposit(item.savingsIndex, idx)
+      store.setChecklistTracking('savings-' + item.id, null)
+    }
+  }
+}
+
 
 function isPaid(index) {
   return !!(store.monthlyStatus['current']?.[index])
@@ -302,6 +384,16 @@ function isPaid(index) {
 
 function togglePaid(index) {
   store.toggleMonthlyPayment(index, !isPaid(index))
+  if (store.checklistSettings?.autoCollapseCompleted) {
+    const exp = store.expenses[index]
+    if (exp?.category) {
+      const catExps = categoryExpenses(exp.category)
+      if (catExps.every(e => isPaid(e.index))) {
+        collapsedCategories[exp.category] = true
+        try { sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories })) } catch {}
+      }
+    }
+  }
 }
 
 function categoryTotal(category) {
@@ -332,47 +424,68 @@ const grandTotal = computed(() => {
   const fixedTotal = store.expenses
     .filter((e) => !e.variable)
     .reduce((sum, e) => sum + e.amount, 0)
-  return fixedTotal + variableTotal.value
+  const debtTotal = debtPaymentItems.value.reduce((sum, d) => sum + d.monthlyPayment, 0)
+  const savingsTotal = savingsPaymentItems.value.reduce((sum, s) => sum + s.monthlyPayment, 0)
+  return fixedTotal + debtTotal + savingsTotal
 })
 
-const grandPaid = computed(() =>
-  store.expenses.reduce((sum, e, i) => {
+const grandPaid = computed(() => {
+  const expensesPaid = store.expenses.reduce((sum, e, i) => {
     if (e.variable) return sum
     return sum + (isPaid(i) ? e.amount : 0)
   }, 0)
-)
+  const debtsPaid = debtPaymentItems.value.reduce((sum, d) => {
+    return sum + (isDebtPaid(d.id) ? d.monthlyPayment : 0)
+  }, 0)
+  const savingsPaid = savingsPaymentItems.value.reduce((sum, s) => {
+    return sum + (isSavingsPaid(s.id) ? s.monthlyPayment : 0)
+  }, 0)
+  return expensesPaid + debtsPaid + savingsPaid
+})
 
 const grandRemaining = computed(() => grandTotal.value - grandPaid.value)
 
-const paidCount = computed(() =>
-  store.expenses.reduce((n, e, i) => n + (!e.variable && isPaid(i) ? 1 : 0), 0)
+const paidCount = computed(() => {
+  const expCount = store.expenses.reduce((n, e, i) => n + (!e.variable && isPaid(i) ? 1 : 0), 0)
+  const debtCount = debtPaymentItems.value.reduce((n, d) => n + (isDebtPaid(d.id) ? 1 : 0), 0)
+  const savingsCount = savingsPaymentItems.value.reduce((n, s) => n + (isSavingsPaid(s.id) ? 1 : 0), 0)
+  return expCount + debtCount + savingsCount
+})
+
+const totalCount = computed(() =>
+  store.expenses.filter((e) => !e.variable).length +
+  debtPaymentItems.value.length +
+  savingsPaymentItems.value.length
 )
 
-const totalCount = computed(() => store.expenses.filter((e) => !e.variable).length)
-
-const allCollapsed = computed(() =>
-  store.categories
-    .filter((cat) => categoryExpenses(cat).length > 0)
-    .every((cat) => collapsedCategories[cat])
+const hasCollapsibleSections = computed(() =>
+  hasCategorizedExpenses.value ||
+  debtPaymentItems.value.length > 0 ||
+  savingsPaymentItems.value.length > 0
 )
 
-const allExpanded = computed(() =>
-  store.categories
+const allExpanded = computed(() => {
+  const catsExpanded = store.categories
     .filter((cat) => categoryExpenses(cat).length > 0)
     .every((cat) => !collapsedCategories[cat])
-)
+  const debtOk = debtPaymentItems.value.length === 0 || !debtSectionCollapsed.value
+  const savingsOk = savingsPaymentItems.value.length === 0 || !savingsSectionCollapsed.value
+  return catsExpanded && debtOk && savingsOk
+})
 
 function toggleAll() {
   const expand = !allExpanded.value
   for (const cat of store.categories) {
-    if (categoryExpenses(cat).length > 0) {
-      collapsedCategories[cat] = !expand
-    }
+    if (categoryExpenses(cat).length > 0) collapsedCategories[cat] = !expand
   }
+  if (debtPaymentItems.value.length > 0) debtSectionCollapsed.value = !expand
+  if (savingsPaymentItems.value.length > 0) savingsSectionCollapsed.value = !expand
   try {
     sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
   } catch {}
 }
+
+defineExpose({ toggleAllSections: toggleAll })
 
 async function resetMonth() {
   const ok = await confirm('Återställ checkboxar?', { label: 'Återställ', style: 'destructive', description: 'Alla utgifter markeras som ej betalda.' })
@@ -494,215 +607,30 @@ function fmt(n) {
   margin-bottom: 60px;
 }
 
-/* ── Flex section ──────────────────────────────────────── */
-.flex-section {
-  margin-top: 28px;
-}
-
-.flex-section-label {
+.category-header-label {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 0 4px 10px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--system-blue);
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
+  gap: 8px;
+  padding-left: 20px;
 }
 
-.flex-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--system-blue);
+.category-header-label h3 {
+  padding-left: 0;
+  text-transform: none;
+}
+
+.category-special-icon {
+  width: 17px;
+  height: 17px;
   flex-shrink: 0;
 }
 
-/* Backdrop for closing flex edit on outside click */
-.flex-edit-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-}
-
-/* Cards */
-.flex-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.flex-card {
-  background: var(--card-bg);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
-  position: relative;
-}
-
-.flex-card--editing {
-  z-index: 11;
-}
-
-/* Display row */
-.flex-card-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 15px 18px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.flex-card-row:active {
-  opacity: 0.7;
-}
-
-.flex-card-left {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
-  min-width: 0;
-}
-
-.flex-card-name {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.flex-card-hint {
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
-.flex-card-amount {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--system-blue);
-  white-space: nowrap;
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-}
-
-.flex-card-amount--estimate {
-  color: var(--text-tertiary);
-}
-
-.flex-tilde {
-  font-size: 15px;
-  opacity: 0.65;
-}
-
-.flex-currency {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-/* Edit state */
-.flex-card-editing {
-  padding: 14px 16px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.flex-card-editing-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.flex-edit-input {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid var(--system-blue);
-  border-radius: 12px;
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 22px;
-  font-weight: 700;
-  outline: none;
-  text-align: right;
-  -moz-appearance: textfield;
-  appearance: textfield;
-  box-sizing: border-box;
-}
-
-.flex-edit-input::-webkit-inner-spin-button,
-.flex-edit-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.flex-edit-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.flex-save-btn {
-  flex: 1;
-  padding: 11px;
-  border: none;
-  border-radius: 12px;
-  background: var(--system-blue);
-  color: #fff;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.flex-save-btn:active { opacity: 0.7; }
-
-.flex-cancel-btn {
-  flex: 1;
-  padding: 11px;
-  border: 1px solid var(--separator);
-  border-radius: 12px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.flex-cancel-btn:active { opacity: 0.6; }
-
-.flex-reset-btn {
-  flex: 1;
-  padding: 11px;
-  border: 1px solid var(--separator);
-  border-radius: 12px;
-  background: transparent;
+.category-special-icon--debt {
   color: var(--system-orange);
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
-.flex-reset-btn:active { opacity: 0.6; }
-
-/* Total row */
-.flex-total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 6px 0;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-tertiary);
+.category-special-icon--savings {
+  color: var(--system-green);
 }
+
 </style>

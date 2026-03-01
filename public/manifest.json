@@ -1,6 +1,6 @@
 {
-  "name": "BudgetApp",
-  "short_name": "BudgetApp",
+  "name": "Budget",
+  "short_name": "Budget",
   "description": "Personlig budgethantering – enkel och lokal",
   "start_url": "/",
   "display": "standalone",
