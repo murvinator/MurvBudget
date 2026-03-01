@@ -35,6 +35,7 @@
 
     <DebtPaymentModal />
     <ConfirmSheet ref="confirmSheetRef" />
+    <SalaryDaySheet ref="salaryDaySheetRef" />
   </div>
 </template>
 
@@ -46,6 +47,7 @@ import AppHeader from './components/AppHeader.vue'
 import TabBar from './components/TabBar.vue'
 import DebtPaymentModal from './components/DebtPaymentModal.vue'
 import ConfirmSheet from './components/ConfirmSheet.vue'
+import SalaryDaySheet from './components/SalaryDaySheet.vue'
 import SplashScreen from './components/SplashScreen.vue'
 import OnboardingScreen from './components/OnboardingScreen.vue'
 import OverviewView from './views/OverviewView.vue'
@@ -55,6 +57,7 @@ import SettingsView from './views/SettingsView.vue'
 const store = useBudgetStore()
 const authStore = useAuthStore()
 const confirmSheetRef = ref(null)
+const salaryDaySheetRef = ref(null)
 const activeViewRef = ref(null)
 
 const splashDone = ref(sessionStorage.getItem('splashShown') === '1')
@@ -94,6 +97,61 @@ function showView(name) {
   }
   currentView.value = name
   window.scrollTo(0, 0)
+  if (name === 'monthly') {
+    checkSalaryDayPopup()
+  }
+}
+
+const SALARY_POPUP_KEY = 'murvbudget-salary-popup-shown'
+
+function getSalaryPopupId() {
+  const today = new Date()
+  return `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`
+}
+
+async function checkSalaryDayPopup() {
+  const salaryDay = store.salaryDay
+  if (!salaryDay) return
+  const today = new Date()
+  if (today.getDate() !== salaryDay) return
+
+  const popupId = getSalaryPopupId()
+  if (localStorage.getItem(SALARY_POPUP_KEY) === popupId) return
+
+  // Mark as shown before awaiting to prevent double-show
+  localStorage.setItem(SALARY_POPUP_KEY, popupId)
+
+  const currentOverrides = store.tempMonthlyIncome?.[store.currentMonthKey] ?? {}
+  const result = await salaryDaySheetRef.value?.show(store.income, currentOverrides, store.salaryDay)
+  applySalarySheetResult(result)
+}
+
+async function showSalaryDayManually() {
+  const currentOverrides = store.tempMonthlyIncome?.[store.currentMonthKey] ?? {}
+  const result = await salaryDaySheetRef.value?.show(store.income, currentOverrides, store.salaryDay, 'income-only')
+  applySalarySheetResult(result)
+}
+
+function applySalarySheetResult(result) {
+  if (!result) return
+
+  // Apply pay day change if edited
+  if (result.salaryDay && result.salaryDay !== store.salaryDay) {
+    store.salaryDay = result.salaryDay
+  }
+
+  // Save per-income overrides — clear if reverted to original, set if changed
+  for (const item of store.income) {
+    const newAmount = result.amounts[item.name]
+    if (newAmount !== item.amount) {
+      store.setTempMonthlyIncome(store.currentMonthKey, item.name, newAmount)
+    } else {
+      store.setTempMonthlyIncome(store.currentMonthKey, item.name, null)
+    }
+  }
+  if (result.resetChecklist) {
+    store.resetCurrentMonth()
+  }
 }
 
 function goBack() {
@@ -129,6 +187,7 @@ const showOnboarding = ref(computeShowOnboarding())
 provide('goBack', goBack)
 provide('confirm', (msg, opts) => confirmSheetRef.value?.show(msg, opts))
 provide('localDataTs', localDataTs)
+provide('showSalarySheet', showSalaryDayManually)
 
 function hasStoreData() {
   return store.income.length > 0 || store.expenses.length > 0 ||

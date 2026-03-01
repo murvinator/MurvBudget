@@ -23,6 +23,7 @@ export const useBudgetStore = defineStore('budget', {
     variableExpenseTransactions: {},
     salaryDay: null,
     salaryMonthOffset: false,
+    tempMonthlyIncome: {},
     overviewSettings: {
       showSummaryCards: true,
       showVariableMini: true,
@@ -50,7 +51,17 @@ export const useBudgetStore = defineStore('budget', {
   }),
 
   getters: {
-    totalIncome: (state) => state.income.reduce((sum, i) => sum + i.amount, 0),
+    totalIncome: (state) => {
+      const mk = `${new Date().getFullYear()}-${new Date().getMonth()}`
+      const overrides = state.tempMonthlyIncome?.[mk]
+      // Guard: if old format (number) or empty, ignore
+      if (!overrides || typeof overrides !== 'object') {
+        return state.income.reduce((sum, i) => sum + i.amount, 0)
+      }
+      return state.income.reduce((sum, i) => {
+        return sum + (overrides[i.name] !== undefined ? overrides[i.name] : i.amount)
+      }, 0)
+    },
     totalExpenses: (state) => {
       const now = new Date()
       const mk = `${now.getFullYear()}-${now.getMonth()}`
@@ -63,9 +74,12 @@ export const useBudgetStore = defineStore('budget', {
       }, 0)
     },
     remaining: (state) => {
-      const income = state.income.reduce((sum, i) => sum + i.amount, 0)
       const now = new Date()
       const mk = `${now.getFullYear()}-${now.getMonth()}`
+      const overrides = state.tempMonthlyIncome?.[mk]
+      const income = (overrides && typeof overrides === 'object')
+        ? state.income.reduce((sum, i) => sum + (overrides[i.name] !== undefined ? overrides[i.name] : i.amount), 0)
+        : state.income.reduce((sum, i) => sum + i.amount, 0)
       const expenses = state.expenses.reduce((sum, e) => {
         if (e.variable) {
           const actual = state.variableActuals?.[mk]?.[e.name]
@@ -132,6 +146,27 @@ export const useBudgetStore = defineStore('budget', {
       if (date) item.date = parseInt(date)
       if (variable) item.variable = true
       this.expenses[index] = item
+    },
+
+    // ── Temp Monthly Income ───────────────────────────────────────────────────
+    // Sets or clears a per-income-source override for a given month.
+    // amount = null clears the override for that income source.
+    setTempMonthlyIncome(monthKey, incomeName, amount) {
+      if (!this.tempMonthlyIncome) this.tempMonthlyIncome = {}
+      if (!this.tempMonthlyIncome[monthKey] || typeof this.tempMonthlyIncome[monthKey] !== 'object') {
+        this.tempMonthlyIncome[monthKey] = {}
+      }
+      if (amount === null || amount === undefined) {
+        delete this.tempMonthlyIncome[monthKey][incomeName]
+        if (Object.keys(this.tempMonthlyIncome[monthKey]).length === 0) {
+          delete this.tempMonthlyIncome[monthKey]
+        }
+      } else {
+        this.tempMonthlyIncome[monthKey][incomeName] = parseInt(amount)
+      }
+    },
+    clearTempMonthlyIncome(monthKey) {
+      if (this.tempMonthlyIncome) delete this.tempMonthlyIncome[monthKey]
     },
 
     // ── Variable Actuals ─────────────────────────────────────────────────────

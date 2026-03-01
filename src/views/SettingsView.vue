@@ -210,40 +210,89 @@
             <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp" step="1" inputmode="numeric">
             <button :class="{ 'btn-added': addFeedback.income }" @click="addIncome">{{ addFeedback.income ? 'Tillagt' : 'Lägg till' }}</button>
           </div>
-          <div
-            v-for="(income, idx) in store.income"
-            :key="idx"
-            class="expense-item-wrapper"
-          >
-            <SwipeToDelete @delete="deleteIncome(idx)">
-              <template #fixed>
-                <div
-                  class="expense-name"
-                  :class="{ editing: editingIncome === idx }"
-                  @click="toggleEditIncome(idx)"
-                >{{ income.name }}</div>
-              </template>
-              <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
-            </SwipeToDelete>
-            <CollapseTransition>
-              <div v-if="editingIncome === idx" class="expense-edit-form">
-                <div class="edit-form-content">
-                  <div class="edit-input-group">
-                    <label>Namn</label>
-                    <input type="text" v-model="editIncomeForm.name">
-                  </div>
-                  <div class="edit-input-group">
-                    <label>Belopp</label>
-                    <input type="number" v-model.number="editIncomeForm.amount" step="1" inputmode="numeric">
-                  </div>
-                  <div class="edit-actions">
-                    <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
-                    <button class="cancel-edit-btn" @click="editingIncome = null">Avbryt</button>
-                    <button class="delete-edit-btn" @click="deleteIncomeFromEdit(idx)">Radera</button>
+          <div :class="['income-item-list', { 'income-item-list--has-banner': hasTempIncome }]">
+            <div
+              v-for="(income, idx) in store.income"
+              :key="idx"
+              class="expense-item-wrapper"
+            >
+              <SwipeToDelete @delete="deleteIncome(idx)">
+                <template #fixed>
+                  <div
+                    class="expense-name"
+                    :class="{ editing: editingIncome === idx }"
+                    @click="toggleEditIncome(idx)"
+                  >{{ income.name }}</div>
+                </template>
+                <div class="expense-amount" style="color: var(--system-green)">{{ fmt(income.amount) }} kr</div>
+              </SwipeToDelete>
+              <CollapseTransition>
+                <div v-if="editingIncome === idx" class="expense-edit-form">
+                  <div class="edit-form-content">
+                    <div class="edit-input-group">
+                      <label>Namn</label>
+                      <input type="text" v-model="editIncomeForm.name">
+                    </div>
+                    <div class="edit-input-group">
+                      <label>Belopp</label>
+                      <input type="number" v-model.number="editIncomeForm.amount" step="1" inputmode="numeric">
+                    </div>
+                    <div class="edit-actions">
+                      <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
+                      <button class="cancel-edit-btn" @click="editingIncome = null">Avbryt</button>
+                      <button class="delete-edit-btn" @click="deleteIncomeFromEdit(idx)">Radera</button>
+                    </div>
                   </div>
                 </div>
+              </CollapseTransition>
+            </div>
+          </div>
+
+          <!-- Manual trigger button — only when no temp override active -->
+          <button
+            v-if="store.income.length > 0 && !hasTempIncome"
+            class="adjust-income-btn"
+            @click="showSalarySheet()"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Justera inkomst tillfälligt
+          </button>
+
+          <!-- Temp income banner -->
+          <div v-if="hasTempIncome" class="temp-income-banner">
+            <div class="temp-income-banner-top">
+              <span class="temp-income-title">Tillfällig justering – {{ store.currentMonthName }}</span>
+              <div class="temp-income-btns">
+                <button class="temp-income-edit-btn" @click="showSalarySheet()">Redigera</button>
+                <button class="temp-income-clear-btn" @click="clearTempIncome">Rensa</button>
               </div>
-            </CollapseTransition>
+            </div>
+            <div
+              v-for="item in store.income"
+              :key="item.name"
+              class="temp-income-row"
+            >
+              <template v-if="tempOverridesNow[item.name] !== undefined">
+                <span class="temp-income-name">{{ item.name }}</span>
+                <span class="temp-income-amounts">
+                  <span class="temp-income-orig">{{ fmt(item.amount) }} kr</span>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 8 13 8"/><polyline points="9 4 13 8 9 12"/></svg>
+                  <input
+                    type="number"
+                    class="temp-income-input"
+                    :value="tempOverridesNow[item.name]"
+                    inputmode="numeric"
+                    step="1"
+                    @change="updateTempIncome(item.name, $event.target.value)"
+                  />
+                  <span class="temp-income-kr">kr</span>
+                </span>
+              </template>
+            </div>
           </div>
         </div></CollapseTransition>
       </div>
@@ -761,6 +810,7 @@ import AuthModal from '../components/AuthModal.vue'
 const store = useBudgetStore()
 const authStore = useAuthStore()
 const confirm = inject('confirm')
+const showSalarySheet = inject('showSalarySheet', () => {})
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
 const SECTIONS = ['overview', 'income', 'expenses', 'categories', 'debts', 'salary', 'account']
@@ -1073,6 +1123,26 @@ const addFeedback = reactive({})
 function showAddFeedback(key) {
   addFeedback[key] = true
   setTimeout(() => { addFeedback[key] = false }, 2000)
+}
+
+// Temp income overrides (for current month)
+const tempOverridesNow = computed(() => {
+  const mk = store.currentMonthKey
+  const ov = store.tempMonthlyIncome?.[mk]
+  return (ov && typeof ov === 'object') ? ov : {}
+})
+
+const hasTempIncome = computed(() => Object.keys(tempOverridesNow.value).length > 0)
+
+function clearTempIncome() {
+  store.clearTempMonthlyIncome(store.currentMonthKey)
+}
+
+function updateTempIncome(incomeName, rawValue) {
+  const val = parseInt(rawValue)
+  if (!isNaN(val) && val >= 0) {
+    store.setTempMonthlyIncome(store.currentMonthKey, incomeName, val)
+  }
 }
 
 // Income editing state
@@ -1623,6 +1693,149 @@ function fmt(n) {
   .segment-btn.active {
     box-shadow: 0 2px 10px rgba(0, 122, 255, 0.55);
   }
+}
+
+/* ── Income list wrapper — hides last separator when banner shown ─ */
+.income-item-list--has-banner > .expense-item-wrapper:last-child :deep(.swipe-row) {
+  border-bottom: none;
+}
+
+/* ── Manual adjust button ─────────────────────────────────── */
+.adjust-income-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-top: 0.5px solid var(--separator);
+  color: var(--system-blue, #007aff);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.adjust-income-btn:active { opacity: 0.6; }
+
+/* ── Temp income banner ──────────────────────────────────── */
+.temp-income-banner {
+  margin-top: 12px;
+  background: rgba(255, 149, 0, 0.08);
+  border: 1px solid rgba(255, 149, 0, 0.25);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.temp-income-banner-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 0.5px solid rgba(255, 149, 0, 0.2);
+  flex-wrap: wrap;
+}
+
+.temp-income-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--system-orange, #ff9500);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.temp-income-btns {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.temp-income-edit-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--system-blue, #007aff);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.temp-income-clear-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--system-red, #ff3b30);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.temp-income-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 0.5px solid rgba(255, 149, 0, 0.12);
+}
+
+.temp-income-row:last-child {
+  border-bottom: none;
+}
+
+.temp-income-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.temp-income-amounts {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+}
+
+.temp-income-orig {
+  font-size: 13px;
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.temp-income-input {
+  width: 72px;
+  border: none;
+  background: transparent;
+  color: var(--system-orange, #ff9500);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  padding: 2px 0;
+}
+
+.temp-income-input::-webkit-inner-spin-button,
+.temp-income-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.temp-income-kr {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
 }
 
 /* Labeled field layout for add-expense form */

@@ -6,6 +6,9 @@
       <div class="card-main">
         <h4>{{ incomeLabel }}</h4>
         <div class="amount">{{ fmt(displayIncome) }} kr</div>
+        <div v-if="tempDiff !== 0" class="temp-badge">
+          {{ tempDiff > 0 ? '+' : '' }}{{ fmt(tempDiff) }} kr denna månad
+        </div>
         <svg class="card-chevron" :class="{ 'card-chevron--open': openCard === 0 }"
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
           <polyline points="6 9 12 15 18 9"/>
@@ -16,9 +19,18 @@
           <div class="detail-sep" />
           <div v-for="item in store.income" :key="item.name" class="detail-row">
             <span class="detail-name">{{ item.name }}</span>
-            <span class="detail-amount">{{ fmt(item.amount) }} kr</span>
+            <span class="detail-amount">
+              <span v-if="tempOverrides[item.name] !== undefined" class="detail-original">{{ fmt(item.amount) }}</span>
+              {{ fmt(tempOverrides[item.name] !== undefined ? tempOverrides[item.name] : item.amount) }} kr
+            </span>
           </div>
           <div v-if="store.income.length === 0" class="detail-empty">Ingen inkomst tillagd</div>
+          <div v-if="tempDiff !== 0" class="detail-row detail-row--temp">
+            <span class="detail-name temp-label">Tillfällig justering</span>
+            <span class="detail-amount" :class="tempDiff > 0 ? 'temp-pos' : 'temp-neg'">
+              {{ tempDiff > 0 ? '+' : '' }}{{ fmt(tempDiff) }} kr
+            </span>
+          </div>
         </div>
       </CollapseTransition>
     </div>
@@ -175,6 +187,19 @@ function toggleCard(idx) {
 const incomeLabel = computed(() =>
   store.income.length === 1 ? 'Inkomst' : 'Inkomster'
 )
+
+// ── Temp income indicator ─────────────────────────────────────
+const tempOverrides = computed(() => {
+  const mk = `${new Date().getFullYear()}-${new Date().getMonth()}`
+  const ov = store.tempMonthlyIncome?.[mk]
+  return (ov && typeof ov === 'object') ? ov : {}
+})
+
+const normalTotalIncome = computed(() =>
+  store.income.reduce((sum, i) => sum + i.amount, 0)
+)
+
+const tempDiff = computed(() => store.totalIncome - normalTotalIncome.value)
 
 // ── Top 5 expenses ───────────────────────────────────────────
 const topExpenses = computed(() =>
@@ -343,6 +368,36 @@ function fmt(n) {
   font-size: 15px;
   font-weight: 700;
 }
+
+/* ── Temp income indicator ────────────────────────────────── */
+.temp-badge {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-top: 3px;
+  letter-spacing: -0.1px;
+}
+
+.detail-original {
+  text-decoration: line-through;
+  opacity: 0.45;
+  font-size: 12px;
+  margin-right: 3px;
+}
+
+.detail-row--temp {
+  border-top: 0.5px solid currentColor;
+  opacity: 0.85;
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.temp-label {
+  font-style: italic;
+}
+
+.temp-pos { color: inherit; }
+.temp-neg { opacity: 0.7; }
 
 /* ── Neutral card: tint detail-cat differently ────────────── */
 /* When cardStyle returns neutral, currentColor is --text-primary,
