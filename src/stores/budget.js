@@ -18,6 +18,7 @@ export const useBudgetStore = defineStore('budget', {
     monthlyStatus: {},
     debts: [],
     debtPayments: {},
+    variableActuals: {},
     variableExpenses: [],
     variableExpenseTransactions: {},
     salaryDay: null,
@@ -43,10 +44,28 @@ export const useBudgetStore = defineStore('budget', {
 
   getters: {
     totalIncome: (state) => state.income.reduce((sum, i) => sum + i.amount, 0),
-    totalExpenses: (state) => state.expenses.reduce((sum, e) => sum + e.amount, 0),
+    totalExpenses: (state) => {
+      const now = new Date()
+      const mk = `${now.getFullYear()}-${now.getMonth()}`
+      return state.expenses.reduce((sum, e) => {
+        if (e.variable) {
+          const actual = state.variableActuals?.[mk]?.[e.name]
+          return sum + (actual !== undefined ? actual : e.amount)
+        }
+        return sum + e.amount
+      }, 0)
+    },
     remaining: (state) => {
       const income = state.income.reduce((sum, i) => sum + i.amount, 0)
-      const expenses = state.expenses.reduce((sum, e) => sum + e.amount, 0)
+      const now = new Date()
+      const mk = `${now.getFullYear()}-${now.getMonth()}`
+      const expenses = state.expenses.reduce((sum, e) => {
+        if (e.variable) {
+          const actual = state.variableActuals?.[mk]?.[e.name]
+          return sum + (actual !== undefined ? actual : e.amount)
+        }
+        return sum + e.amount
+      }, 0)
       return income - expenses
     },
     currentMonthKey: () => {
@@ -86,18 +105,31 @@ export const useBudgetStore = defineStore('budget', {
     },
 
     // ── Expenses ─────────────────────────────────────────────────────────────
-    addExpense(name, amount, category = null, date = null) {
+    addExpense(name, amount, category = null, date = null, variable = false) {
       const item = { name, amount: parseInt(amount), category: category || null }
       if (date) item.date = parseInt(date)
+      if (variable) item.variable = true
       this.expenses.push(item)
     },
     deleteExpense(index) {
       this.expenses.splice(index, 1)
     },
-    saveEditExpense(index, name, amount, category, date = null) {
+    saveEditExpense(index, name, amount, category, date = null, variable = false) {
       const item = { name, amount: parseInt(amount), category: category || null }
       if (date) item.date = parseInt(date)
+      if (variable) item.variable = true
       this.expenses[index] = item
+    },
+
+    // ── Variable Actuals ─────────────────────────────────────────────────────
+    setVariableActual(expenseName, amount) {
+      const mk = this.currentMonthKey
+      if (!this.variableActuals[mk]) this.variableActuals[mk] = {}
+      if (amount === null || amount === undefined) {
+        delete this.variableActuals[mk][expenseName]
+      } else {
+        this.variableActuals[mk][expenseName] = parseInt(amount)
+      }
     },
 
     // ── Categories ───────────────────────────────────────────────────────────
@@ -229,6 +261,7 @@ export const useBudgetStore = defineStore('budget', {
         monthlyStatus: this.monthlyStatus,
         debts: this.debts,
         debtPayments: this.debtPayments,
+        variableActuals: this.variableActuals,
         variableExpenses: this.variableExpenses,
         variableExpenseTransactions: this.variableExpenseTransactions,
       }, null, 2)
@@ -265,6 +298,7 @@ export const useBudgetStore = defineStore('budget', {
       this.income = data.income || []
       this.categories = (data.categories || []).filter((c) => c !== 'Skulder')
       this.monthlyStatus = data.monthlyStatus || {}
+      this.variableActuals = data.variableActuals || {}
       this.variableExpenses = data.variableExpenses || []
       this.variableExpenseTransactions = data.variableExpenseTransactions || {}
 
@@ -340,6 +374,7 @@ export const useBudgetStore = defineStore('budget', {
         monthlyStatus: {},
         debts: [],
         debtPayments: {},
+        variableActuals: {},
         variableExpenses: [],
         variableExpenseTransactions: {},
       })
@@ -348,6 +383,8 @@ export const useBudgetStore = defineStore('budget', {
 
     // Backwards compat: called once on app mount to migrate legacy localStorage data
     migrateData() {
+      // Ensure variableActuals exists
+      if (!this.variableActuals) this.variableActuals = {}
       // Ensure all debts have ids
       this.debts = this.debts.map((d) => ({ ...d, id: d.id || genId('debt') }))
       // Ensure debtPayments keys are ids not names

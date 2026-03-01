@@ -132,6 +132,62 @@
       </template>
     </template>
 
+    <!-- Flex section -->
+    <template v-if="variableExpenses.length > 0">
+      <div class="flex-section">
+        <div class="flex-section-label">
+          <span class="flex-dot"></span>
+          Flex
+        </div>
+
+        <div class="flex-cards">
+          <div
+            v-for="expense in variableExpenses"
+            :key="expense.name"
+            class="flex-card"
+            :class="{ 'flex-card--confirmed': hasActual(expense.name) }"
+          >
+            <!-- Edit state -->
+            <template v-if="editingVariable === expense.name">
+              <div class="flex-card-editing">
+                <div class="flex-card-editing-name">{{ expense.name }}</div>
+                <input
+                  type="number"
+                  class="flex-edit-input"
+                  v-model.number="variableEditValue"
+                  inputmode="numeric"
+                  step="1"
+                  @keyup.enter="saveVariableActual(expense.name)"
+                >
+                <div class="flex-edit-actions">
+                  <button class="flex-save-btn" @click.stop="saveVariableActual(expense.name)">Spara</button>
+                  <button class="flex-reset-btn" @click.stop="resetVariableActual(expense.name)">Återställ</button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Display state — tap to edit -->
+            <template v-else>
+              <div class="flex-card-row" @click="openVariableEdit(expense)">
+                <div class="flex-card-left">
+                  <span class="flex-card-name">{{ expense.name }}</span>
+                  <span v-if="!hasActual(expense.name)" class="flex-card-hint">Tryck för att bekräfta belopp</span>
+                </div>
+                <div class="flex-card-amount" :class="{ 'flex-card-amount--estimate': !hasActual(expense.name) }">
+                  <span v-if="!hasActual(expense.name)" class="flex-tilde">~</span>{{ fmt(variableAmount(expense)) }}<span class="flex-currency"> kr</span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div class="flex-total-row">
+          <span>Totalt Flex</span>
+          <span>{{ fmt(variableTotal) }} kr</span>
+        </div>
+      </div>
+    </template>
+
     <div v-if="store.expenses.length > 0" class="month-controls">
       <button class="reset-btn" @click="resetMonth">Återställ checkboxar</button>
     </div>
@@ -139,7 +195,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch, inject } from 'vue'
+import { computed, reactive, ref, watch, inject } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 import CollapseTransition from '../components/CollapseTransition.vue'
 
@@ -179,20 +235,60 @@ function toggleCategory(category) {
 function categoryExpenses(category) {
   return store.expenses
     .map((e, index) => ({ ...e, index }))
-    .filter((e) => e.category === category)
+    .filter((e) => e.category === category && !e.variable)
     .sort((a, b) => b.amount - a.amount)
 }
 
 const uncategorizedExpenses = computed(() =>
   store.expenses
     .map((e, index) => ({ ...e, index }))
-    .filter((e) => !e.category || !store.categories.includes(e.category))
+    .filter((e) => !e.variable && (!e.category || !store.categories.includes(e.category)))
     .sort((a, b) => b.amount - a.amount)
 )
 
 const hasCategorizedExpenses = computed(() =>
-  store.expenses.some((e) => e.category && store.categories.includes(e.category))
+  store.expenses.some((e) => !e.variable && e.category && store.categories.includes(e.category))
 )
+
+// Variable expenses
+const variableExpenses = computed(() =>
+  store.expenses.filter((e) => e.variable)
+)
+
+function hasActual(name) {
+  return store.variableActuals?.[store.currentMonthKey]?.[name] !== undefined
+}
+
+function variableAmount(expense) {
+  const actual = store.variableActuals?.[store.currentMonthKey]?.[expense.name]
+  return actual !== undefined ? actual : expense.amount
+}
+
+const variableTotal = computed(() =>
+  variableExpenses.value.reduce((sum, e) => sum + variableAmount(e), 0)
+)
+
+// Inline editing for variable actuals
+const editingVariable = ref(null)
+const variableEditValue = ref(null)
+
+function openVariableEdit(expense) {
+  editingVariable.value = expense.name
+  variableEditValue.value = variableAmount(expense)
+}
+
+function saveVariableActual(name) {
+  const val = variableEditValue.value
+  if (val !== null && val >= 0) {
+    store.setVariableActual(name, val)
+  }
+  editingVariable.value = null
+}
+
+function resetVariableActual(name) {
+  store.setVariableActual(name, null)
+  editingVariable.value = null
+}
 
 function isPaid(index) {
   return !!(store.monthlyStatus['current']?.[index])
@@ -226,21 +322,27 @@ function categoryAllPaid(category) {
   return paid > 0 && categoryRemaining(category) === 0
 }
 
-const grandTotal = computed(() =>
-  store.expenses.reduce((sum, e) => sum + e.amount, 0)
-)
+const grandTotal = computed(() => {
+  const fixedTotal = store.expenses
+    .filter((e) => !e.variable)
+    .reduce((sum, e) => sum + e.amount, 0)
+  return fixedTotal + variableTotal.value
+})
 
 const grandPaid = computed(() =>
-  store.expenses.reduce((sum, e, i) => sum + (isPaid(i) ? e.amount : 0), 0)
+  store.expenses.reduce((sum, e, i) => {
+    if (e.variable) return sum
+    return sum + (isPaid(i) ? e.amount : 0)
+  }, 0)
 )
 
 const grandRemaining = computed(() => grandTotal.value - grandPaid.value)
 
 const paidCount = computed(() =>
-  store.expenses.filter((_, i) => isPaid(i)).length
+  store.expenses.reduce((n, e, i) => n + (!e.variable && isPaid(i) ? 1 : 0), 0)
 )
 
-const totalCount = computed(() => store.expenses.length)
+const totalCount = computed(() => store.expenses.filter((e) => !e.variable).length)
 
 const allCollapsed = computed(() =>
   store.categories
@@ -384,5 +486,189 @@ function fmt(n) {
 /* Ensure reset button is always above the tab bar on small screens */
 .month-controls {
   margin-bottom: 60px;
+}
+
+/* ── Flex section ──────────────────────────────────────── */
+.flex-section {
+  margin-top: 28px;
+}
+
+.flex-section-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--system-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.flex-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--system-blue);
+  flex-shrink: 0;
+}
+
+/* Cards */
+.flex-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flex-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Display row */
+.flex-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 18px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.flex-card-row:active {
+  opacity: 0.7;
+}
+
+.flex-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.flex-card-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.flex-card-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.flex-card-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--system-blue);
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.flex-card-amount--estimate {
+  color: var(--text-tertiary);
+}
+
+.flex-tilde {
+  font-size: 15px;
+  opacity: 0.65;
+}
+
+.flex-currency {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Edit state */
+.flex-card-editing {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flex-card-editing-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.flex-edit-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--system-blue);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  outline: none;
+  text-align: right;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  box-sizing: border-box;
+}
+
+.flex-edit-input::-webkit-inner-spin-button,
+.flex-edit-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.flex-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.flex-save-btn {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 12px;
+  background: var(--system-blue);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.flex-save-btn:active { opacity: 0.7; }
+
+.flex-reset-btn {
+  flex: 1;
+  padding: 11px;
+  border: 1px solid var(--separator);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.flex-reset-btn:active { opacity: 0.6; }
+
+/* Total row */
+.flex-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 6px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
 }
 </style>

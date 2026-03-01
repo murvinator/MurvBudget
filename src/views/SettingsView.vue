@@ -175,31 +175,48 @@
           <svg class="chevron" :class="{ collapsed: collapsedSections['expenses'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <CollapseTransition><div v-if="!collapsedSections['expenses']" class="settings-content">
-          <div class="input-group">
-            <input type="text" v-model="newExpenseName" placeholder="Namn">
-            <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp" step="1" inputmode="numeric">
-          </div>
-          <div class="input-group input-group--labeled">
-            <div class="field-with-label">
-              <span class="field-label">Kategori</span>
-              <select v-model="newExpenseCategory">
-                <option value="">Ingen kategori</option>
-                <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
-              </select>
+
+          <!-- Add new expense form (hidden until triggered) -->
+          <button v-if="!showAddExpense" class="add-item-trigger" @click="showAddExpense = true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Lägg till utgift
+          </button>
+          <CollapseTransition>
+            <div v-if="showAddExpense" class="add-expense-form-wrap">
+              <div class="input-group">
+                <input type="text" v-model="newExpenseName" placeholder="Namn">
+                <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp" step="1" inputmode="numeric">
+              </div>
+              <div class="input-group input-group--labeled input-group--no-bottom-border">
+                <div class="field-with-label" :class="{ 'field-disabled': newExpenseVariable }">
+                  <span class="field-label">Kategori</span>
+                  <select v-model="newExpenseCategory" :disabled="newExpenseVariable">
+                    <option value="">Ingen kategori</option>
+                    <option v-for="cat in store.categories" :key="cat" :value="cat">{{ cat }}</option>
+                  </select>
+                </div>
+                <div class="field-with-label field-with-label--narrow" :class="{ 'field-disabled': newExpenseVariable }">
+                  <span class="field-label">Dag</span>
+                  <input type="number" v-model.number="newExpenseDate" placeholder="valfri" min="1" max="31" :disabled="newExpenseVariable">
+                </div>
+                <button class="add-expense-bottom-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">
+                  {{ addFeedback.expense ? '✓ Tillagt' : 'Lägg till' }}
+                </button>
+              </div>
+              <div class="add-form-toggle-row">
+                <span class="add-form-toggle-label">Flex – belopp varierar varje månad</span>
+                <input type="checkbox" class="ios-toggle" v-model="newExpenseVariable">
+              </div>
             </div>
-            <div class="field-with-label field-with-label--narrow">
-              <span class="field-label">Dag</span>
-              <input type="number" v-model.number="newExpenseDate" placeholder="valfritt" min="1" max="31">
-            </div>
-            <button class="add-expense-bottom-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">{{ addFeedback.expense ? 'Tillagt' : 'Lägg till' }}</button>
-          </div>
+          </CollapseTransition>
 
           <!-- Uncategorized expenses -->
           <template v-if="uncategorizedExpenses.length > 0">
-            <div class="category-header" style="margin-top: 16px;">
-              <h4 style="padding: 12px 16px; font-size: 16px; font-weight: 600; color: var(--text-secondary); margin: 0;">Utan kategori</h4>
+            <div class="expense-group-header expense-group-header--muted" @click="toggleExpenseGroup('uncategorized')">
+              Utan kategori
+              <svg class="group-chevron" :class="{ collapsed: collapsedExpenseGroups['uncategorized'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
-            <div class="category-list">
+            <CollapseTransition><div v-if="!collapsedExpenseGroups['uncategorized']" class="category-list">
               <div
                 v-for="expense in uncategorizedExpenses"
                 :key="expense.globalIndex"
@@ -223,7 +240,7 @@
                       </svg>
                       {{ expense.date }}
                     </span>
-                    <span class="expense-amount">{{ fmt(expense.amount) }} kr</span>
+                    <span class="expense-amount"><span v-if="expense.variable" class="variable-tilde">~</span>{{ fmt(expense.amount) }} kr</span>
                   </div>
                 </SwipeToDelete>
                 <CollapseTransition>
@@ -234,19 +251,23 @@
                         <input type="text" v-model="editForm.name">
                       </div>
                       <div class="edit-input-group">
-                        <label>Belopp</label>
+                        <label>{{ editForm.variable ? 'Belopp (uppskattning)' : 'Belopp' }}</label>
                         <input type="number" v-model.number="editForm.amount" step="1" inputmode="numeric">
                       </div>
-                      <div class="edit-input-group">
+                      <div v-if="!editForm.variable" class="edit-input-group">
                         <label>Kategori</label>
                         <select v-model="editForm.category">
                           <option value="">Ingen kategori</option>
                           <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
                         </select>
                       </div>
-                      <div class="edit-input-group">
+                      <div v-if="!editForm.variable" class="edit-input-group">
                         <label>Dag (valfritt)</label>
                         <input type="number" v-model.number="editForm.date" min="1" max="31" step="1" inputmode="numeric" placeholder="1–31">
+                      </div>
+                      <div class="edit-toggle-row">
+                        <label>Flex (belopp varierar)</label>
+                        <input type="checkbox" class="ios-toggle" v-model="editForm.variable">
                       </div>
                       <div class="edit-actions">
                         <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
@@ -257,16 +278,17 @@
                   </div>
                 </CollapseTransition>
               </div>
-            </div>
+            </div></CollapseTransition>
           </template>
 
           <!-- Expenses grouped by category -->
           <template v-for="cat in store.categories" :key="cat">
             <template v-if="expensesByCategory(cat).length > 0">
-              <div class="category-header" style="margin-top: 16px;">
-                <h4 style="padding: 12px 16px; font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; text-transform: capitalize;">{{ cat }}</h4>
+              <div class="expense-group-header" @click="toggleExpenseGroup(cat)">
+                {{ cat }}
+                <svg class="group-chevron" :class="{ collapsed: collapsedExpenseGroups[cat] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
-              <div class="category-list">
+              <CollapseTransition><div v-if="!collapsedExpenseGroups[cat]" class="category-list">
                 <div
                   v-for="expense in expensesByCategory(cat)"
                   :key="expense.globalIndex"
@@ -290,7 +312,7 @@
                         </svg>
                         {{ expense.date }}
                       </span>
-                      <span class="expense-amount">{{ fmt(expense.amount) }} kr</span>
+                      <span class="expense-amount"><span v-if="expense.variable" class="variable-tilde">~</span>{{ fmt(expense.amount) }} kr</span>
                     </div>
                   </SwipeToDelete>
 
@@ -302,19 +324,23 @@
                           <input type="text" v-model="editForm.name">
                         </div>
                         <div class="edit-input-group">
-                          <label>Belopp</label>
+                          <label>{{ editForm.variable ? 'Belopp (uppskattning)' : 'Belopp' }}</label>
                           <input type="number" v-model.number="editForm.amount" step="1" inputmode="numeric">
                         </div>
-                        <div class="edit-input-group">
+                        <div v-if="!editForm.variable" class="edit-input-group">
                           <label>Kategori</label>
                           <select v-model="editForm.category">
                             <option value="">Ingen kategori</option>
                             <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
                           </select>
                         </div>
-                        <div class="edit-input-group">
+                        <div v-if="!editForm.variable" class="edit-input-group">
                           <label>Dag (valfritt)</label>
                           <input type="number" v-model.number="editForm.date" min="1" max="31" step="1" inputmode="numeric" placeholder="1–31">
+                        </div>
+                        <div class="edit-toggle-row">
+                          <label>Flex (belopp varierar)</label>
+                          <input type="checkbox" class="ios-toggle" v-model="editForm.variable">
                         </div>
                         <div class="edit-actions">
                           <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
@@ -325,8 +351,57 @@
                     </div>
                   </CollapseTransition>
                 </div>
-              </div>
+              </div></CollapseTransition>
             </template>
+          </template>
+
+          <!-- Flex expenses -->
+          <template v-if="flexExpenses.length > 0">
+            <div class="expense-group-header expense-group-header--flex" @click="toggleExpenseGroup('flex')">
+              <span class="flex-header-dot"></span>Flex
+              <svg class="group-chevron" :class="{ collapsed: collapsedExpenseGroups['flex'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <CollapseTransition><div v-if="!collapsedExpenseGroups['flex']" class="category-list">
+              <div
+                v-for="expense in flexExpenses"
+                :key="expense.globalIndex"
+                class="expense-item-wrapper"
+              >
+                <SwipeToDelete @delete="deleteExpense(expense.globalIndex)">
+                  <template #fixed>
+                    <div
+                      class="expense-name"
+                      :class="{ editing: editingExpense === expense.globalIndex }"
+                      @click="toggleEditExpense(expense.globalIndex)"
+                    >{{ expense.name }}</div>
+                  </template>
+                  <span class="expense-amount"><span class="variable-tilde">~</span>{{ fmt(expense.amount) }} kr</span>
+                </SwipeToDelete>
+                <CollapseTransition>
+                  <div v-if="editingExpense === expense.globalIndex" class="expense-edit-form">
+                    <div class="edit-form-content">
+                      <div class="edit-input-group">
+                        <label>Namn</label>
+                        <input type="text" v-model="editForm.name">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Belopp (uppskattning)</label>
+                        <input type="number" v-model.number="editForm.amount" step="1" inputmode="numeric">
+                      </div>
+                      <div class="edit-toggle-row">
+                        <label>Flex (belopp varierar)</label>
+                        <input type="checkbox" class="ios-toggle" v-model="editForm.variable">
+                      </div>
+                      <div class="edit-actions">
+                        <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
+                        <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
+                        <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                      </div>
+                    </div>
+                  </div>
+                </CollapseTransition>
+              </div>
+            </div></CollapseTransition>
           </template>
         </div></CollapseTransition>
       </div>
@@ -872,6 +947,13 @@ const newExpenseName = ref('')
 const newExpenseAmount = ref(null)
 const newExpenseCategory = ref('')
 const newExpenseDate = ref(null)
+const newExpenseVariable = ref(false)
+const showAddExpense = ref(false)
+
+const collapsedExpenseGroups = reactive({})
+function toggleExpenseGroup(key) {
+  collapsedExpenseGroups[key] = !collapsedExpenseGroups[key]
+}
 const newIncomeName = ref('')
 const newIncomeAmount = ref(null)
 const newDebtName = ref('')
@@ -948,20 +1030,26 @@ async function deleteCategoryFromEdit(idx) {
 
 // Expense editing state
 const editingExpense = ref(null)
-const editForm = reactive({ name: '', amount: null, category: '', date: null })
+const editForm = reactive({ name: '', amount: null, category: '', date: null, variable: false })
 
 function expensesByCategory(cat) {
   return store.expenses
     .map((e, i) => ({ ...e, globalIndex: i }))
-    .filter((e) => e.category === cat)
+    .filter((e) => !e.variable && e.category === cat)
     .sort((a, b) => b.amount - a.amount)
 }
 
 const uncategorizedExpenses = computed(() =>
   store.expenses
     .map((e, i) => ({ ...e, globalIndex: i }))
-    .filter((e) => !e.category || !store.categories.includes(e.category))
+    .filter((e) => !e.variable && (!e.category || !store.categories.includes(e.category)))
     .sort((a, b) => b.amount - a.amount)
+)
+
+const flexExpenses = computed(() =>
+  store.expenses
+    .map((e, i) => ({ ...e, globalIndex: i }))
+    .filter((e) => e.variable)
 )
 
 function toggleEditExpense(globalIndex) {
@@ -975,6 +1063,7 @@ function toggleEditExpense(globalIndex) {
   editForm.amount = e.amount
   editForm.category = e.category
   editForm.date = e.date || null
+  editForm.variable = !!e.variable
 }
 
 async function saveExpenseEdit(globalIndex) {
@@ -982,7 +1071,9 @@ async function saveExpenseEdit(globalIndex) {
     await confirm('Ogiltigt värde', { label: 'OK', style: 'primary', description: 'Vänligen fyll i giltigt namn och belopp.' })
     return
   }
-  store.saveEditExpense(globalIndex, editForm.name, editForm.amount, editForm.category, editForm.date)
+  const cat = editForm.variable ? null : editForm.category
+  const date = editForm.variable ? null : editForm.date
+  store.saveEditExpense(globalIndex, editForm.name, editForm.amount, cat, date, editForm.variable)
   editingExpense.value = null
 }
 
@@ -1000,11 +1091,15 @@ function addExpense() {
   const name = newExpenseName.value.trim()
   const amount = newExpenseAmount.value
   if (!name || !amount || amount <= 0) return
-  store.addExpense(name, amount, newExpenseCategory.value || null, newExpenseDate.value)
+  const cat = newExpenseVariable.value ? null : (newExpenseCategory.value || null)
+  const date = newExpenseVariable.value ? null : newExpenseDate.value
+  store.addExpense(name, amount, cat, date, newExpenseVariable.value)
   newExpenseName.value = ''
   newExpenseAmount.value = null
   newExpenseDate.value = null
+  newExpenseVariable.value = false
   showAddFeedback('expense')
+  setTimeout(() => { showAddExpense.value = false }, 1200)
 }
 
 async function deleteExpense(idx) {
@@ -1806,5 +1901,137 @@ function fmt(n) {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Add item trigger button */
+.add-item-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: calc(100% - 32px);
+  margin: 20px 16px 12px;
+  padding: 11px 16px;
+  background: transparent;
+  border: 1.5px dashed var(--separator);
+  border-radius: 10px;
+  color: var(--system-blue);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.add-item-trigger svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.add-item-trigger:active {
+  opacity: 0.6;
+}
+
+.add-expense-form-wrap {
+  /* border-bottom comes from the toggle row */
+}
+
+/* Override bottom border on the second input row so toggle row is the closing separator */
+.add-expense-form-wrap .input-group--no-bottom-border {
+  border-bottom: none !important;
+}
+
+/* Field dimming when Flex is on (no layout shift) */
+.field-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* Flex toggle row — sits between the labeled row and the expense list, acts as closing separator */
+
+/* Expense group section headers */
+.expense-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 16px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.expense-group-header--muted {
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.expense-group-header--flex {
+  color: var(--system-blue);
+}
+
+.flex-header-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--system-blue);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Chevron for collapsible expense groups */
+.group-chevron {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  color: inherit;
+  opacity: 0.6;
+  transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.group-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.add-form-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 12px;
+  border-top: 0.5px solid var(--separator);
+  border-bottom: 0.5px solid var(--separator);
+}
+
+.add-form-toggle-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Variable expense toggle row in edit form (Flex row) */
+.edit-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  gap: 12px;
+}
+
+.edit-toggle-row label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ~ prefix for variable amounts */
+.variable-tilde {
+  color: var(--text-tertiary);
+  font-size: 0.9em;
+  margin-right: 1px;
 }
 </style>
