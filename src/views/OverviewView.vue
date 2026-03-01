@@ -9,7 +9,11 @@
       <CategoryBreakdown v-else-if="widget.id === 'categories'" />
       <FlexWidget        v-else-if="widget.id === 'flex'" @navigate="emit('navigate', $event)" />
     </template>
-  </div>
+  </div>  
+    <br>
+    <br>
+    <br>
+    <br>
 </template>
 
 <script setup>

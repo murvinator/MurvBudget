@@ -1,11 +1,11 @@
 <template>
   <div class="finans-view">
 
-    <!-- ══════════════════════════════════════════════════════════
-         SECTION 1 — Skulder & Lån
-    ═══════════════════════════════════════════════════════════ -->
-    <div class="finans-section">
-      <div class="finans-section-header">
+    <template v-for="sectionId in store.finansOrder" :key="sectionId">
+
+    <!-- Skulder & Lån -->
+    <div v-if="sectionId === 'debts'" class="finans-section">
+      <div class="finans-section-header" @click="toggleSection('debts')">
         <div class="finans-section-title-group">
           <svg class="finans-section-icon finans-section-icon--debt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -13,9 +13,13 @@
           <span class="finans-section-title">Skulder och lån</span>
           <span class="finans-section-badge" v-if="store.debts.length > 0">{{ fmt(totalDebt) }} kr</span>
         </div>
+        <svg class="finans-chevron" :class="{ collapsed: collapsed.debts }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
       </div>
 
-      <div class="finans-section-body">
+      <CollapseTransition>
+      <div v-if="!collapsed.debts" class="finans-section-body">
 
           <!-- Debt list -->
           <div v-if="store.debts.length === 0" class="finans-empty">
@@ -23,8 +27,8 @@
             <button class="finans-empty-link" @click="emit('navigate', 'settings:debts')">Lägg till under Inställningar →</button>
           </div>
 
-          <div v-for="(debt, idx) in store.debts" :key="debt.id" class="debt-card">
-            <div class="debt-card-main" @click="toggleDebt(idx)">
+          <div v-for="debt in sortedDebts" :key="debt.id" class="debt-card">
+            <div class="debt-card-main" @click="toggleDebt(debt.id)">
               <div class="debt-card-info">
                 <div class="debt-name">{{ debt.name }}</div>
                 <div class="debt-meta">
@@ -33,7 +37,7 @@
               </div>
               <div class="debt-card-right">
                 <div class="debt-amount">{{ fmt(debt.amount) }} kr</div>
-                <svg class="debt-chevron" :class="{ expanded: openDebt === idx }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="debt-chevron" :class="{ expanded: openDebt === debt.id }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </div>
@@ -49,7 +53,7 @@
 
             <!-- Expanded: payment history + link to settings -->
             <CollapseTransition>
-              <div v-if="openDebt === idx" class="debt-expand">
+              <div v-if="openDebt === debt.id" class="debt-expand">
 
                 <!-- Payment history -->
                 <div class="debt-expand-section" v-if="debtPayments(debt).length > 0">
@@ -84,13 +88,12 @@
           </div>
 
       </div>
+      </CollapseTransition>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════
-         SECTION 2 — Sparande
-    ═══════════════════════════════════════════════════════════ -->
-    <div class="finans-section finans-section--last">
-      <div class="finans-section-header">
+    <!-- Sparande -->
+    <div v-else-if="sectionId === 'savings'" class="finans-section">
+      <div class="finans-section-header" @click="toggleSection('savings')">
         <div class="finans-section-title-group">
           <svg class="finans-section-icon finans-section-icon--savings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -98,24 +101,28 @@
           <span class="finans-section-title">Sparande</span>
           <span class="finans-section-badge" v-if="store.savings.length > 0">{{ store.savings.length }} mål</span>
         </div>
+        <svg class="finans-chevron" :class="{ collapsed: collapsed.savings }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
       </div>
 
-      <div class="finans-section-body">
+      <CollapseTransition>
+      <div v-if="!collapsed.savings" class="finans-section-body">
 
           <div v-if="store.savings.length === 0" class="finans-empty">
             Inga sparmål inlagda.
             <button class="finans-empty-link" @click="emit('navigate', 'settings:savings')">Lägg till under Inställningar →</button>
           </div>
 
-          <div v-for="(goal, idx) in store.savings" :key="goal.id" class="savings-card">
-            <div class="savings-card-main" @click="toggleSaving(idx)">
+          <div v-for="goal in sortedSavings" :key="goal.id" class="savings-card">
+            <div class="savings-card-main" @click="toggleSaving(goal.id)">
               <div class="savings-info">
                 <div class="savings-name">{{ goal.name }}</div>
                 <div class="savings-amounts">{{ fmt(goal.current) }} / {{ fmt(goal.target) }} kr</div>
               </div>
               <div class="savings-card-right">
                 <span class="savings-pct">{{ savingsPct(goal) }}%</span>
-                <svg class="debt-chevron" :class="{ expanded: openSaving === idx }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="debt-chevron" :class="{ expanded: openSaving === goal.id }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </div>
@@ -134,7 +141,7 @@
 
             <!-- Expanded -->
             <CollapseTransition>
-              <div v-if="openSaving === idx" class="debt-expand">
+              <div v-if="openSaving === goal.id" class="debt-expand">
 
                 <!-- Deposit history -->
                 <div class="debt-expand-section" v-if="savingsDeposits(goal).length > 0">
@@ -169,18 +176,29 @@
           </div>
 
       </div>
+      </CollapseTransition>
     </div>
 
+    </template>
   </div>
+    
+  <br>
+  <br>
+  <br>
+  <br>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 import CollapseTransition from '../components/CollapseTransition.vue'
 
 const store = useBudgetStore()
 const emit = defineEmits(['navigate'])
+
+// ── Section collapse ──────────────────────────────────────────────────────────
+const collapsed = reactive({ debts: false, savings: false })
+function toggleSection(key) { collapsed[key] = !collapsed[key] }
 
 // ── Formatting ────────────────────────────────────────────────────────────────
 function fmt(n) { return (n || 0).toLocaleString('sv-SE') }
@@ -189,13 +207,19 @@ function formatDate(dateStr) { return new Date(dateStr).toLocaleDateString('sv-S
 // ══ DEBTS ═════════════════════════════════════════════════════════════════════
 const openDebt = ref(null)
 
+const sortedDebts = computed(() =>
+  [...store.debts].sort((a, b) => b.amount - a.amount)
+)
 const totalDebt = computed(() => store.debts.reduce((sum, d) => sum + d.amount, 0))
 
 // ══ SAVINGS ═══════════════════════════════════════════════════════════════════
+const sortedSavings = computed(() =>
+  [...store.savings].sort((a, b) => b.target - a.target)
+)
 const totalSavings = computed(() => store.savings.reduce((sum, s) => sum + (s.current || 0), 0))
 
-function toggleDebt(idx) {
-  openDebt.value = openDebt.value === idx ? null : idx
+function toggleDebt(id) {
+  openDebt.value = openDebt.value === id ? null : id
 }
 
 function debtPayments(debt) {
@@ -223,6 +247,10 @@ function debtPaidPct(debt) {
 // ══ SAVINGS ═══════════════════════════════════════════════════════════════════
 const openSaving = ref(null)
 
+function toggleSaving(id) {
+  openSaving.value = openSaving.value === id ? null : id
+}
+
 function savingsPct(goal) {
   if (!goal.target) return 0
   return Math.round(((goal.current || 0) / goal.target) * 100)
@@ -236,9 +264,6 @@ function reversedDeposits(goal) {
   return savingsDeposits(goal).map((d, i) => ({ d, origIdx: i })).reverse()
 }
 
-function toggleSaving(idx) {
-  openSaving.value = openSaving.value === idx ? null : idx
-}
 
 
 </script>

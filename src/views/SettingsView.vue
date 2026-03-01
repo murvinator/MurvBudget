@@ -13,7 +13,11 @@
 
     <div class="settings-root">
 
-      <!-- Översiktsinställningar -->
+      <!-- ── Flikar-grupp start ─────────────────── -->
+      <div class="settings-view-group">
+        <p class="settings-view-group-label">Meny</p>
+
+      <!-- Översikt -->
       <div class="settings-section">
         <div class="section-toggle" @click="toggleSection('overview')">
           <h3>Översikt</h3>
@@ -197,6 +201,107 @@
           </div>
         </div></CollapseTransition>
       </div>
+
+      <!-- Checklista -->
+      <div class="settings-section">
+        <div class="section-toggle" @click="toggleSection('checklist')">
+          <h3>Checklista</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['checklist'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <CollapseTransition><div v-if="!collapsedSections['checklist']" class="settings-content">
+          <div ref="checklistCatListRef">
+            <div
+              v-for="(cat, idx) in store.categories"
+              :key="cat"
+              class="cat-order-row"
+              :class="{ 'widget-dragging': checklistCatDragIdx === idx }"
+            >
+              <SwipeToDelete @delete="deleteCategorySwipe(idx)">
+                <template #fixed>
+                  <div class="cat-row-inner">
+                    <div
+                      class="widget-drag-handle"
+                      :class="{ 'handle-hidden': editingCategory !== null }"
+                      @pointerdown="startChecklistCatDrag(idx, $event)"
+                      @touchstart.stop
+                      title="Dra för att ändra ordning"
+                    >
+                      <svg viewBox="0 0 10 16" fill="currentColor">
+                        <circle cx="3" cy="3"  r="1.5"/>
+                        <circle cx="7" cy="3"  r="1.5"/>
+                        <circle cx="3" cy="8"  r="1.5"/>
+                        <circle cx="7" cy="8"  r="1.5"/>
+                        <circle cx="3" cy="13" r="1.5"/>
+                        <circle cx="7" cy="13" r="1.5"/>
+                      </svg>
+                    </div>
+                    <span
+                      class="widget-order-label"
+                      @click="toggleEditCategory(idx)"
+                    >{{ cat }}</span>
+                  </div>
+                </template>
+              </SwipeToDelete>
+              <CollapseTransition>
+                <div v-if="editingCategory === idx" class="widget-sub-settings">
+                  <div class="edit-form-content" style="padding: 16px 16px 8px;">
+                    <div class="edit-input-group">
+                      <label>Namn</label>
+                      <input type="text" v-model="editCategoryName">
+                    </div>
+                    <div class="edit-actions">
+                      <button class="save-edit-btn" @click="saveCategoryEdit(idx)">Spara</button>
+                      <button class="cancel-edit-btn" @click="editingCategory = null">Avbryt</button>
+                      <button class="delete-edit-btn" @click="deleteCategoryFromEdit(idx)">Radera</button>
+                    </div>
+                  </div>
+                </div>
+              </CollapseTransition>
+            </div>
+          </div>
+        </div></CollapseTransition>
+      </div>
+
+      <!-- Ekonomi-vy -->
+      <div class="settings-section">
+        <div class="section-toggle" @click="toggleSection('ekonomi')">
+          <h3>Ekonomi</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['ekonomi'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <CollapseTransition><div v-if="!collapsedSections['ekonomi']" class="settings-content">
+          <div ref="ekonomiListRef">
+            <div
+              v-for="(sectionId, idx) in store.finansOrder"
+              :key="sectionId"
+              class="cat-order-row"
+              :class="{ 'widget-dragging': ekonomiDragIdx === idx }"
+            >
+              <div class="ekonomi-plain-row">
+                <div class="cat-row-inner">
+                  <div
+                    class="widget-drag-handle"
+                    @pointerdown="startEkonomiDrag(idx, $event)"
+                    @touchstart.stop
+                    title="Dra för att ändra ordning"
+                  >
+                    <svg viewBox="0 0 10 16" fill="currentColor">
+                      <circle cx="3" cy="3"  r="1.5"/>
+                      <circle cx="7" cy="3"  r="1.5"/>
+                      <circle cx="3" cy="8"  r="1.5"/>
+                      <circle cx="7" cy="8"  r="1.5"/>
+                      <circle cx="3" cy="13" r="1.5"/>
+                      <circle cx="7" cy="13" r="1.5"/>
+                    </svg>
+                  </div>
+                  <span class="widget-order-label">{{ FINANS_SECTION_LABELS[sectionId] }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></CollapseTransition>
+      </div>
+
+      </div><!-- /settings-view-group -->
 
       <!-- Inkomster -->
       <div class="settings-section">
@@ -695,18 +800,18 @@
             </div>
           </CollapseTransition>
           <div
-            v-for="(debt, idx) in store.debts"
+            v-for="debt in sortedDebts"
             :key="debt.id"
             class="expense-item-wrapper"
           >
-            <SwipeToDelete @delete="deleteDebt(idx)">
+            <SwipeToDelete @delete="deleteDebt(debt.storeIdx)">
               <template #fixed>
-                <div class="expense-name" @click="toggleEditDebt(idx)">{{ debt.name }}</div>
+                <div class="expense-name" @click="toggleEditDebt(debt.storeIdx)">{{ debt.name }}</div>
               </template>
-              <div class="expense-amount" style="cursor: pointer" @click="toggleEditDebt(idx)">{{ fmt(debt.amount) }} kr</div>
+              <div class="expense-amount" style="cursor: pointer" @click="toggleEditDebt(debt.storeIdx)">{{ fmt(debt.amount) }} kr</div>
             </SwipeToDelete>
             <CollapseTransition>
-              <div v-if="editingDebt === idx" class="expense-edit-form">
+              <div v-if="editingDebt === debt.storeIdx" class="expense-edit-form">
                 <div class="edit-form-content">
                   <div class="edit-input-group">
                     <label>Namn</label>
@@ -725,9 +830,9 @@
                     <input type="number" v-model.number="editDebtMonthlyPayment" step="1" inputmode="numeric" placeholder="" @focus="$event.target.select()">
                   </div>
                   <div class="edit-actions">
-                    <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
+                    <button class="save-edit-btn" @click="saveDebtEdit(debt.storeIdx)">Spara</button>
                     <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
-                    <button class="delete-edit-btn" @click="deleteDebtFromEdit(idx)">Radera</button>
+                    <button class="delete-edit-btn" @click="deleteDebtFromEdit(debt.storeIdx)">Radera</button>
                   </div>
                   <!-- Betalningshistorik -->
                   <div v-if="(store.debtPayments[debt.id] || []).length > 0" class="settings-payment-history">
@@ -742,7 +847,7 @@
                         <span class="settings-payment-note" v-if="p.note">{{ p.note }}</span>
                         <span class="settings-payment-date">{{ new Date(p.date).toLocaleDateString('sv-SE') }}</span>
                       </div>
-                      <button class="settings-payment-delete" @click="confirmDeleteDebtPayment(idx, p.origIdx)">
+                      <button class="settings-payment-delete" @click="confirmDeleteDebtPayment(debt.storeIdx, p.origIdx)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                         </svg>
@@ -796,18 +901,18 @@
             </div>
           </CollapseTransition>
           <div
-            v-for="(goal, idx) in store.savings"
+            v-for="goal in sortedSavings"
             :key="goal.id"
             class="expense-item-wrapper"
           >
-            <SwipeToDelete @delete="deleteSaving(idx)">
+            <SwipeToDelete @delete="deleteSaving(goal.storeIdx)">
               <template #fixed>
-                <div class="expense-name" @click="toggleEditSaving(idx)">{{ goal.name }}</div>
+                <div class="expense-name" @click="toggleEditSaving(goal.storeIdx)">{{ goal.name }}</div>
               </template>
-              <div class="expense-amount" style="cursor: pointer" @click="toggleEditSaving(idx)">{{ fmt(goal.current) }} / {{ fmt(goal.target) }} kr</div>
+              <div class="expense-amount" style="cursor: pointer" @click="toggleEditSaving(goal.storeIdx)">{{ fmt(goal.current) }} / {{ fmt(goal.target) }} kr</div>
             </SwipeToDelete>
             <CollapseTransition>
-              <div v-if="editingSaving === idx" class="expense-edit-form">
+              <div v-if="editingSaving === goal.storeIdx" class="expense-edit-form">
                 <div class="edit-form-content">
                   <div class="edit-input-group">
                     <label>Namn</label>
@@ -826,9 +931,9 @@
                     <input type="number" v-model.number="editSavingMonthlyPayment" step="1" inputmode="numeric" placeholder="" @focus="$event.target.select()">
                   </div>
                   <div class="edit-actions">
-                    <button class="save-edit-btn" @click="saveSavingEdit(idx)">Spara</button>
+                    <button class="save-edit-btn" @click="saveSavingEdit(goal.storeIdx)">Spara</button>
                     <button class="cancel-edit-btn" @click="editingSaving = null">Avbryt</button>
-                    <button class="delete-edit-btn" @click="deleteSavingFromEdit(idx)">Radera</button>
+                    <button class="delete-edit-btn" @click="deleteSavingFromEdit(goal.storeIdx)">Radera</button>
                   </div>
                   <!-- Insättningshistorik -->
                   <div v-if="(store.savingsDeposits[goal.id] || []).length > 0" class="settings-payment-history">
@@ -843,7 +948,7 @@
                         <span class="settings-payment-note" v-if="d.note">{{ d.note }}</span>
                         <span class="settings-payment-date">{{ new Date(d.date).toLocaleDateString('sv-SE') }}</span>
                       </div>
-                      <button class="settings-payment-delete" @click="confirmDeleteSavingsDeposit(idx, d.origIdx)">
+                      <button class="settings-payment-delete" @click="confirmDeleteSavingsDeposit(goal.storeIdx, d.origIdx)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                         </svg>
@@ -1009,6 +1114,8 @@
       </button> -->
     </div>
   </div>
+    <br>
+    <br>
 
   <AuthModal ref="authModalRef" />
 </template>
@@ -1027,7 +1134,7 @@ const confirm = inject('confirm')
 const showSalarySheet = inject('showSalarySheet', () => {})
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
-const SECTIONS = ['overview', 'income', 'expenses', 'flex', 'categories', 'debts', 'savings', 'salary', 'account']
+const SECTIONS = ['overview', 'checklist', 'ekonomi', 'income', 'expenses', 'flex', 'categories', 'debts', 'savings', 'salary', 'account']
 
 const authModalRef = ref(null)
 const deleteExpanded = ref(false)
@@ -1173,6 +1280,14 @@ function onDragEnd() {
 }
 
 // Category drag-to-reorder
+// Sorted views for display (store order unchanged)
+const sortedDebts = computed(() =>
+  store.debts.map((d, i) => ({ ...d, storeIdx: i })).sort((a, b) => b.amount - a.amount)
+)
+const sortedSavings = computed(() =>
+  store.savings.map((s, i) => ({ ...s, storeIdx: i })).sort((a, b) => b.target - a.target)
+)
+
 const catListRef = ref(null)
 const catDragIdx = ref(null)
 
@@ -1210,6 +1325,86 @@ function onCatDragEnd() {
   document.removeEventListener('pointermove', onCatDragMove)
   document.removeEventListener('pointerup', onCatDragEnd)
   document.removeEventListener('pointercancel', onCatDragEnd)
+}
+
+// Checklista section — same categories, separate drag refs
+const checklistCatListRef = ref(null)
+const checklistCatDragIdx = ref(null)
+
+function startChecklistCatDrag(idx, event) {
+  if (editingCategory.value !== null) return
+  event.preventDefault()
+  checklistCatDragIdx.value = idx
+  document.addEventListener('pointermove', onChecklistCatDragMove, { passive: false })
+  document.addEventListener('pointerup', onChecklistCatDragEnd)
+  document.addEventListener('pointercancel', onChecklistCatDragEnd)
+}
+
+function onChecklistCatDragMove(event) {
+  if (checklistCatDragIdx.value === null) return
+  event.preventDefault()
+  const y = event.clientY
+  const rows = checklistCatListRef.value?.querySelectorAll('.cat-order-row')
+  if (!rows || rows.length === 0) { checklistCatDragIdx.value = null; return }
+  let newIdx = rows.length - 1
+  for (let i = 0; i < rows.length; i++) {
+    const rect = rows[i].getBoundingClientRect()
+    if (y < rect.top + rect.height / 2) { newIdx = i; break }
+  }
+  if (newIdx !== checklistCatDragIdx.value) {
+    const cats = [...store.categories]
+    const [item] = cats.splice(checklistCatDragIdx.value, 1)
+    cats.splice(newIdx, 0, item)
+    store.reorderCategories(cats)
+    checklistCatDragIdx.value = newIdx
+  }
+}
+
+function onChecklistCatDragEnd() {
+  checklistCatDragIdx.value = null
+  document.removeEventListener('pointermove', onChecklistCatDragMove)
+  document.removeEventListener('pointerup', onChecklistCatDragEnd)
+  document.removeEventListener('pointercancel', onChecklistCatDragEnd)
+}
+
+// Ekonomi section — drag to reorder finansOrder
+const FINANS_SECTION_LABELS = { debts: 'Skulder och lån', savings: 'Sparande' }
+const ekonomiListRef = ref(null)
+const ekonomiDragIdx = ref(null)
+
+function startEkonomiDrag(idx, event) {
+  event.preventDefault()
+  ekonomiDragIdx.value = idx
+  document.addEventListener('pointermove', onEkonomiDragMove, { passive: false })
+  document.addEventListener('pointerup', onEkonomiDragEnd)
+  document.addEventListener('pointercancel', onEkonomiDragEnd)
+}
+
+function onEkonomiDragMove(event) {
+  if (ekonomiDragIdx.value === null) return
+  event.preventDefault()
+  const y = event.clientY
+  const rows = ekonomiListRef.value?.querySelectorAll('.cat-order-row')
+  if (!rows || rows.length === 0) { ekonomiDragIdx.value = null; return }
+  let newIdx = rows.length - 1
+  for (let i = 0; i < rows.length; i++) {
+    const rect = rows[i].getBoundingClientRect()
+    if (y < rect.top + rect.height / 2) { newIdx = i; break }
+  }
+  if (newIdx !== ekonomiDragIdx.value) {
+    const order = [...store.finansOrder]
+    const [item] = order.splice(ekonomiDragIdx.value, 1)
+    order.splice(newIdx, 0, item)
+    store.setFinansOrder(order)
+    ekonomiDragIdx.value = newIdx
+  }
+}
+
+function onEkonomiDragEnd() {
+  ekonomiDragIdx.value = null
+  document.removeEventListener('pointermove', onEkonomiDragMove)
+  document.removeEventListener('pointerup', onEkonomiDragEnd)
+  document.removeEventListener('pointercancel', onEkonomiDragEnd)
 }
 
 const chartTypeOptions = [
@@ -1644,7 +1839,10 @@ async function deleteSavingFromEdit(idx) {
 
 async function confirmDeleteDebtPayment(debtIdx, origIdx) {
   const ok = await confirm('Ta bort betalning?', { label: 'Ta bort', style: 'destructive', description: 'Beloppet återförs till skuldens saldo. Åtgärden kan inte ångras.' })
-  if (ok) store.deleteDebtPayment(debtIdx, origIdx)
+  if (ok) {
+    store.deleteDebtPayment(debtIdx, origIdx)
+    editDebtAmount.value = store.debts[debtIdx].amount
+  }
 }
 
 async function confirmDeleteSavingsDeposit(goalIdx, origIdx) {
@@ -2582,6 +2780,41 @@ function fmt(n) {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Ekonomi drag rows — same visual weight as SwipeToDelete rows */
+.ekonomi-plain-row {
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--separator);
+}
+.cat-order-row:last-child .ekonomi-plain-row {
+  border-bottom: none;
+}
+.cat-order-row.widget-dragging .ekonomi-plain-row {
+  background: rgba(120, 120, 128, 0.1);
+  border-bottom-color: transparent;
+}
+
+/* Flikar group wrapper */
+.settings-view-group {
+  border: 1px solid var(--separator);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-view-group > .settings-section {
+  margin-bottom: 0;
+}
+.settings-view-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-tertiary);
+  margin: 0 0 2px 4px;
 }
 
 /* Add item trigger button */

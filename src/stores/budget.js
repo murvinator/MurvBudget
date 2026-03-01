@@ -24,6 +24,7 @@ export const useBudgetStore = defineStore('budget', {
     savings: [],
     savingsDeposits: {},
     monthlyChecklistTracking: {},
+    finansOrder: ['debts', 'savings'],
     salaryDay: null,
     salaryMonthOffset: false,
     tempMonthlyIncome: {},
@@ -201,6 +202,9 @@ export const useBudgetStore = defineStore('budget', {
     },
     reorderCategories(newOrder) {
       this.categories = newOrder
+    },
+    setFinansOrder(newOrder) {
+      this.finansOrder = newOrder
     },
     saveEditCategory(index, newName) {
       const oldName = this.categories[index]
@@ -519,6 +523,7 @@ export const useBudgetStore = defineStore('budget', {
       if (!this.savings) this.savings = []
       if (!this.savingsDeposits) this.savingsDeposits = {}
       if (!this.monthlyChecklistTracking) this.monthlyChecklistTracking = {}
+      if (!this.finansOrder || this.finansOrder.length !== 2) this.finansOrder = ['debts', 'savings']
       this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
       // Ensure all debts have ids
       this.debts = this.debts.map((d) => ({ ...d, id: d.id || genId('debt') }))

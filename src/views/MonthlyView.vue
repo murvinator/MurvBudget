@@ -310,9 +310,16 @@
       </div>
     </template>
 
-    <div v-if="store.expenses.length > 0 || debtPaymentItems.length > 0" class="month-controls">
+    <br>
+    <br>  
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <!-- <div v-if="store.expenses.length > 0 || debtPaymentItems.length > 0" class="month-controls">
       <button class="reset-btn" @click="resetMonth">Återställ checkboxar</button>
-    </div>
+    </div> -->
   </div>
 </template>
 
