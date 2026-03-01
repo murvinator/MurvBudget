@@ -179,9 +179,96 @@
       </CollapseTransition>
     </div>
 
+    <!-- Flex-utgifter -->
+    <div v-else-if="sectionId === 'flex' && variableExpenses.length > 0" class="finans-section">
+      <div class="finans-section-header" @click="toggleSection('flex')">
+        <div class="finans-section-title-group">
+          <svg class="finans-section-icon finans-section-icon--flex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span class="finans-section-title">Flex-utgifter</span>
+          <span class="finans-section-badge">{{ variableExpenses.length }} poster</span>
+        </div>
+        <svg class="finans-chevron" :class="{ collapsed: collapsed.flex }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+
+      <CollapseTransition>
+        <div v-if="!collapsed.flex" class="finans-section-body">
+          <!-- Month navigator -->
+          <div class="month-nav">
+            <button class="month-nav-btn" @click="stepMonth(-1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="month-nav-label">{{ flexMonthName }}</span>
+            <button class="month-nav-btn" @click="stepMonth(1)" :disabled="flexMonthOffset === 0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+          <div
+            v-for="expense in variableExpenses"
+            :key="expense.name"
+            class="flex-item-card"
+          >
+            <!-- Edit state -->
+            <template v-if="editingFlex === expense.name">
+              <div class="flex-edit-wrap" @click.stop>
+                <div class="flex-edit-name">{{ expense.name }}</div>
+                <input
+                  type="number"
+                  class="flex-edit-num"
+                  v-model.number="flexEditValue"
+                  inputmode="numeric"
+                  step="1"
+                  @focus="$event.target.select()"
+                  @keyup.enter="saveFlexActual(expense.name)"
+                >
+                <div class="flex-edit-row">
+                  <button class="btn-cancel" @click="editingFlex = null">Avbryt</button>
+                  <button v-if="hasFlexActual(expense.name)" class="btn-reset" @click="resetFlexActual(expense.name)">Återställ</button>
+                  <button class="btn-save" @click="saveFlexActual(expense.name)">Spara</button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Display state -->
+            <template v-else>
+              <div class="flex-item-row" @click="openFlexEdit(expense)">
+                <div class="flex-item-left">
+                  <span class="flex-item-name">{{ expense.name }}</span>
+                  <span class="flex-item-sub" v-if="!hasFlexActual(expense.name)">Tryck för att ange faktiskt belopp</span>
+                  <span class="flex-item-sub flex-item-sub--confirmed" v-else>Bekräftat</span>
+                </div>
+                <div class="flex-item-amounts">
+                  <span class="flex-item-actual" :class="{ 'flex-item-actual--estimate': !hasFlexActual(expense.name) }">
+                    <span v-if="!hasFlexActual(expense.name)" class="flex-tilde">~</span>{{ fmt(variableAmount(expense)) }} kr
+                  </span>
+                  <span v-if="hasFlexActual(expense.name)" class="flex-item-budget">/ {{ fmt(expense.amount) }} kr</span>
+                </div>
+              </div>
+              <div class="flex-item-bar-track">
+                <div
+                  class="flex-item-bar-fill"
+                  :class="flexBarClass(expense)"
+                  :style="{ width: flexBarPct(expense) + '%' }"
+                ></div>
+              </div>
+            </template>
+          </div>
+
+          <div class="finans-total-row">
+            <span>Totalt Flex ({{ flexMonthName }})</span>
+            <span>{{ fmt(variableTotal) }} kr</span>
+          </div>
+        </div>
+      </CollapseTransition>
+    </div>
+
     </template>
   </div>
-    
+
   <br>
   <br>
   <br>
@@ -197,7 +284,7 @@ const store = useBudgetStore()
 const emit = defineEmits(['navigate'])
 
 // ── Section collapse ──────────────────────────────────────────────────────────
-const collapsed = reactive({ debts: false, savings: false })
+const collapsed = reactive({ debts: false, savings: false, flex: false })
 function toggleSection(key) { collapsed[key] = !collapsed[key] }
 
 // ── Formatting ────────────────────────────────────────────────────────────────
@@ -264,7 +351,85 @@ function reversedDeposits(goal) {
   return savingsDeposits(goal).map((d, i) => ({ d, origIdx: i })).reverse()
 }
 
+// ══ FLEX EXPENSES ═════════════════════════════════════════════════════════════
+const SWEDISH_MONTHS = [
+  'Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni',
+  'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December',
+]
 
+const flexMonthOffset = ref(0)
+
+const flexMonthKey = computed(() => {
+  const d = new Date()
+  d.setMonth(d.getMonth() + flexMonthOffset.value)
+  return `${d.getFullYear()}-${d.getMonth()}`
+})
+
+const flexMonthName = computed(() => {
+  const d = new Date()
+  d.setMonth(d.getMonth() + flexMonthOffset.value)
+  return `${SWEDISH_MONTHS[d.getMonth()]} ${d.getFullYear()}`
+})
+
+function stepMonth(dir) {
+  const next = flexMonthOffset.value + dir
+  if (next > 0) return
+  flexMonthOffset.value = next
+}
+
+const variableExpenses = computed(() =>
+  store.expenses.filter((e) => e.variable)
+)
+
+function hasFlexActual(name) {
+  return store.variableActuals?.[flexMonthKey.value]?.[name] !== undefined
+}
+
+function variableAmount(expense) {
+  const actual = store.variableActuals?.[flexMonthKey.value]?.[expense.name]
+  return actual !== undefined ? actual : expense.amount
+}
+
+const variableTotal = computed(() =>
+  variableExpenses.value.reduce((sum, e) => sum + variableAmount(e), 0)
+)
+
+function flexBarPct(expense) {
+  const budget = expense.amount
+  if (!budget) return 0
+  return Math.min((variableAmount(expense) / budget) * 100, 100)
+}
+
+function flexBarClass(expense) {
+  const pct = expense.amount ? (variableAmount(expense) / expense.amount) * 100 : 0
+  if (pct > 120) return 'flex-item-bar-fill--over'
+  if (pct > 100) return 'flex-item-bar-fill--warn'
+  return ''
+}
+
+const editingFlex = ref(null)
+const flexEditValue = ref(null)
+
+function openFlexEdit(expense) {
+  editingFlex.value = expense.name
+  flexEditValue.value = variableAmount(expense)
+}
+
+function saveFlexActual(name) {
+  const val = flexEditValue.value
+  if (val !== null && val >= 0) {
+    const mk = flexMonthKey.value
+    if (!store.variableActuals[mk]) store.variableActuals[mk] = {}
+    store.variableActuals[mk][name] = parseInt(val)
+  }
+  editingFlex.value = null
+}
+
+function resetFlexActual(name) {
+  const mk = flexMonthKey.value
+  if (store.variableActuals[mk]) delete store.variableActuals[mk][name]
+  editingFlex.value = null
+}
 
 </script>
 
@@ -887,5 +1052,183 @@ function reversedDeposits(goal) {
   font-size: 15px;
   font-weight: 600;
   color: var(--system-green);
+}
+
+/* ══ FLEX ICON ════════════════════════════════════════════════ */
+.finans-section-icon--flex { color: var(--system-blue); }
+
+/* ══ MONTH NAVIGATOR ══════════════════════════════════════════ */
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 8px;
+}
+
+.month-nav-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--system-gray5);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--system-blue);
+}
+
+.month-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.month-nav-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.month-nav-btn:not(:disabled):active { opacity: 0.6; }
+
+.month-nav-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ══ FLEX ITEM CARDS ══════════════════════════════════════════ */
+.flex-item-card {
+  border-bottom: 0.5px solid var(--separator);
+  padding: 14px 20px 12px;
+}
+
+.flex-item-card:last-child {
+  border-bottom: none;
+}
+
+.flex-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  margin-bottom: 8px;
+}
+
+.flex-item-row:active { opacity: 0.7; }
+
+.flex-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.flex-item-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.flex-item-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.flex-item-sub--confirmed {
+  color: var(--system-green);
+}
+
+.flex-item-amounts {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.flex-item-actual {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--system-blue);
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.flex-item-actual--estimate {
+  color: var(--text-tertiary);
+}
+
+.flex-tilde {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.flex-item-budget {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.flex-item-bar-track {
+  height: 4px;
+  background: var(--separator);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.flex-item-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--system-blue);
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.flex-item-bar-fill--warn { background: var(--system-orange); }
+.flex-item-bar-fill--over { background: var(--system-red); }
+
+/* ══ FLEX INLINE EDIT ═════════════════════════════════════════ */
+.flex-edit-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flex-edit-name {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+}
+
+.flex-edit-num {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--system-blue);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  outline: none;
+  text-align: right;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.flex-edit-num::-webkit-inner-spin-button,
+.flex-edit-num::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.flex-edit-row {
+  display: flex;
+  gap: 8px;
 }
 </style>

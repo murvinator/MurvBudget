@@ -106,7 +106,7 @@
 
             <!-- Sub-settings for chart widget -->
             <CollapseTransition><div v-if="expandedWidgets[widget.id] && widget.id === 'chart'" class="widget-sub-settings">
-              <div class="chart-type-section chart-type-section--last">
+              <div class="chart-type-section">
                 <div class="chart-type-label">Diagramtyp</div>
                 <div class="chart-type-segment">
                   <button
@@ -115,6 +115,22 @@
                     :class="['segment-btn', { active: store.overviewSettings.chartType === opt.value }]"
                     @click="store.setOverviewSetting('chartType', opt.value)"
                   >{{ opt.label }}</button>
+                </div>
+              </div>
+              <div class="chart-type-section chart-type-section--last">
+                <div class="chart-type-label">Färgtema</div>
+                <div class="chart-type-segment">
+                  <button
+                    v-for="scheme in chartColorSchemes"
+                    :key="scheme.value"
+                    :class="['segment-btn', 'preset-btn', { active: (store.overviewSettings.chartColorScheme || 'colorful') === scheme.value }]"
+                    @click="store.setOverviewSetting('chartColorScheme', scheme.value)"
+                  >
+                    <div class="preset-dots">
+                      <span v-for="c in scheme.colors" :key="c" class="preset-dot" :style="{ background: c }"></span>
+                    </div>
+                    <span>{{ scheme.label }}</span>
+                  </button>
                 </div>
               </div>
             </div></CollapseTransition>
@@ -216,47 +232,26 @@
               class="cat-order-row"
               :class="{ 'widget-dragging': checklistCatDragIdx === idx }"
             >
-              <SwipeToDelete @delete="deleteCategorySwipe(idx)">
-                <template #fixed>
-                  <div class="cat-row-inner">
-                    <div
-                      class="widget-drag-handle"
-                      :class="{ 'handle-hidden': editingCategory !== null }"
-                      @pointerdown="startChecklistCatDrag(idx, $event)"
-                      @touchstart.stop
-                      title="Dra för att ändra ordning"
-                    >
-                      <svg viewBox="0 0 10 16" fill="currentColor">
-                        <circle cx="3" cy="3"  r="1.5"/>
-                        <circle cx="7" cy="3"  r="1.5"/>
-                        <circle cx="3" cy="8"  r="1.5"/>
-                        <circle cx="7" cy="8"  r="1.5"/>
-                        <circle cx="3" cy="13" r="1.5"/>
-                        <circle cx="7" cy="13" r="1.5"/>
-                      </svg>
-                    </div>
-                    <span
-                      class="widget-order-label"
-                      @click="toggleEditCategory(idx)"
-                    >{{ cat }}</span>
+              <div class="ekonomi-plain-row">
+                <div class="cat-row-inner">
+                  <div
+                    class="widget-drag-handle"
+                    @pointerdown="startChecklistCatDrag(idx, $event)"
+                    @touchstart.stop
+                    title="Dra för att ändra ordning"
+                  >
+                    <svg viewBox="0 0 10 16" fill="currentColor">
+                      <circle cx="3" cy="3"  r="1.5"/>
+                      <circle cx="7" cy="3"  r="1.5"/>
+                      <circle cx="3" cy="8"  r="1.5"/>
+                      <circle cx="7" cy="8"  r="1.5"/>
+                      <circle cx="3" cy="13" r="1.5"/>
+                      <circle cx="7" cy="13" r="1.5"/>
+                    </svg>
                   </div>
-                </template>
-              </SwipeToDelete>
-              <CollapseTransition>
-                <div v-if="editingCategory === idx" class="widget-sub-settings">
-                  <div class="edit-form-content" style="padding: 16px 16px 8px;">
-                    <div class="edit-input-group">
-                      <label>Namn</label>
-                      <input type="text" v-model="editCategoryName">
-                    </div>
-                    <div class="edit-actions">
-                      <button class="save-edit-btn" @click="saveCategoryEdit(idx)">Spara</button>
-                      <button class="cancel-edit-btn" @click="editingCategory = null">Avbryt</button>
-                      <button class="delete-edit-btn" @click="deleteCategoryFromEdit(idx)">Radera</button>
-                    </div>
-                  </div>
+                  <span class="widget-order-label">{{ cat }}</span>
                 </div>
-              </CollapseTransition>
+              </div>
             </div>
           </div>
         </div></CollapseTransition>
@@ -707,36 +702,16 @@
               </div>
             </div>
           </CollapseTransition>
-          <div ref="catListRef">
+          <div>
             <div
               v-for="(cat, idx) in store.categories"
               :key="cat"
               class="cat-order-row"
-              :class="{ 'widget-dragging': catDragIdx === idx }"
             >
               <SwipeToDelete @delete="deleteCategorySwipe(idx)">
                 <template #fixed>
-                  <div class="cat-row-inner">
-                    <div
-                      class="widget-drag-handle"
-                      :class="{ 'handle-hidden': editingCategory !== null }"
-                      @pointerdown="startCatDrag(idx, $event)"
-                      @touchstart.stop
-                      title="Dra för att ändra ordning"
-                    >
-                      <svg viewBox="0 0 10 16" fill="currentColor">
-                        <circle cx="3" cy="3"  r="1.5"/>
-                        <circle cx="7" cy="3"  r="1.5"/>
-                        <circle cx="3" cy="8"  r="1.5"/>
-                        <circle cx="7" cy="8"  r="1.5"/>
-                        <circle cx="3" cy="13" r="1.5"/>
-                        <circle cx="7" cy="13" r="1.5"/>
-                      </svg>
-                    </div>
-                    <span
-                      class="widget-order-label"
-                      @click="toggleEditCategory(idx)"
-                    >{{ cat }}</span>
+                  <div class="cat-row-inner cat-row-inner--clickable" @click="toggleEditCategory(idx)">
+                    <span class="widget-order-label">{{ cat }}</span>
                   </div>
                 </template>
               </SwipeToDelete>
@@ -1288,45 +1263,6 @@ const sortedSavings = computed(() =>
   store.savings.map((s, i) => ({ ...s, storeIdx: i })).sort((a, b) => b.target - a.target)
 )
 
-const catListRef = ref(null)
-const catDragIdx = ref(null)
-
-function startCatDrag(idx, event) {
-  if (editingCategory.value !== null) return
-  event.preventDefault()
-  catDragIdx.value = idx
-  document.addEventListener('pointermove', onCatDragMove, { passive: false })
-  document.addEventListener('pointerup', onCatDragEnd)
-  document.addEventListener('pointercancel', onCatDragEnd)
-}
-
-function onCatDragMove(event) {
-  if (catDragIdx.value === null) return
-  event.preventDefault()
-  const y = event.clientY
-  const rows = catListRef.value?.querySelectorAll('.cat-order-row')
-  if (!rows || rows.length === 0) { catDragIdx.value = null; return }
-  let newIdx = rows.length - 1
-  for (let i = 0; i < rows.length; i++) {
-    const rect = rows[i].getBoundingClientRect()
-    if (y < rect.top + rect.height / 2) { newIdx = i; break }
-  }
-  if (newIdx !== catDragIdx.value) {
-    const cats = [...store.categories]
-    const [item] = cats.splice(catDragIdx.value, 1)
-    cats.splice(newIdx, 0, item)
-    store.reorderCategories(cats)
-    catDragIdx.value = newIdx
-  }
-}
-
-function onCatDragEnd() {
-  catDragIdx.value = null
-  document.removeEventListener('pointermove', onCatDragMove)
-  document.removeEventListener('pointerup', onCatDragEnd)
-  document.removeEventListener('pointercancel', onCatDragEnd)
-}
-
 // Checklista section — same categories, separate drag refs
 const checklistCatListRef = ref(null)
 const checklistCatDragIdx = ref(null)
@@ -1368,7 +1304,7 @@ function onChecklistCatDragEnd() {
 }
 
 // Ekonomi section — drag to reorder finansOrder
-const FINANS_SECTION_LABELS = { debts: 'Skulder och lån', savings: 'Sparande' }
+const FINANS_SECTION_LABELS = { debts: 'Skulder och lån', savings: 'Sparande', flex: 'Flex-utgifter' }
 const ekonomiListRef = ref(null)
 const ekonomiDragIdx = ref(null)
 
@@ -1406,6 +1342,11 @@ function onEkonomiDragEnd() {
   document.removeEventListener('pointerup', onEkonomiDragEnd)
   document.removeEventListener('pointercancel', onEkonomiDragEnd)
 }
+
+const chartColorSchemes = [
+  { value: 'colorful', label: 'Färgglad', colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE'] },
+  { value: 'muted',    label: 'Dämpad',   colors: ['#4A90C4', '#5CAB7D', '#C48A2E', '#B05C5C', '#7B6BAE'] },
+]
 
 const chartTypeOptions = [
   { value: 'pie', label: 'Tårta' },
@@ -2780,6 +2721,11 @@ function fmt(n) {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.cat-row-inner--clickable {
+  cursor: pointer;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Ekonomi drag rows — same visual weight as SwipeToDelete rows */

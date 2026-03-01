@@ -46,6 +46,11 @@ const COLORS = [
   '#5AC8FA', '#FFCC00', '#FF6482', '#30B0C7', '#32D74B',
 ]
 
+const COLORS_MUTED = [
+  '#4A90C4', '#5CAB7D', '#C48A2E', '#B05C5C', '#7B6BAE',
+  '#4A9AB0', '#B5A028', '#B05670', '#3A8A8A', '#5C9B5C',
+]
+
 const isStackedBar = computed(() => (store.overviewSettings?.chartType || 'pie') === 'stackedBar')
 
 const stackedLegendItems = ref([])
@@ -95,19 +100,21 @@ function buildChart() {
   const textColor = getTextColor()
   const labels = main.map((e) => e.name)
   const amounts = main.map((e) => e.amount)
-  const bgColors = main.map((_, i) => COLORS[i % COLORS.length])
+  const scheme = store.overviewSettings?.chartColorScheme || 'colorful'
+  const colors = scheme === 'muted' ? COLORS_MUTED : COLORS
+  const bgColors = main.map((_, i) => colors[i % colors.length])
   const grandTotal = amounts.reduce((s, v) => s + v, 0)
 
   if (chartType === 'stackedBar') {
     stackedLegendItems.value = main.map((e, i) => ({
       label: `${e.name}: ${((e.amount / grandTotal) * 100).toFixed(0)}%`,
-      color: COLORS[i % COLORS.length],
+      color: colors[i % colors.length],
     }))
 
     const datasets = main.map((e, i) => ({
       label: e.name,
       data: [e.amount],
-      backgroundColor: COLORS[i % COLORS.length],
+      backgroundColor: colors[i % colors.length],
       barThickness: 30,
     }))
 
@@ -251,6 +258,7 @@ onMounted(() => {
 watch(chartData, async () => { await nextTick(); buildChart() }, { deep: true })
 
 watch(() => store.overviewSettings?.chartType, () => { buildChart() })
+watch(() => store.overviewSettings?.chartColorScheme, () => { buildChart() })
 
 onUnmounted(() => {
   if (chartInstance) chartInstance.destroy()

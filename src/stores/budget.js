@@ -24,7 +24,7 @@ export const useBudgetStore = defineStore('budget', {
     savings: [],
     savingsDeposits: {},
     monthlyChecklistTracking: {},
-    finansOrder: ['debts', 'savings'],
+    finansOrder: ['debts', 'savings', 'flex'],
     salaryDay: null,
     salaryMonthOffset: false,
     tempMonthlyIncome: {},
@@ -34,6 +34,7 @@ export const useBudgetStore = defineStore('budget', {
       showChart: true,
       showDebts: true,
       chartType: 'pie',
+      chartColorScheme: 'colorful',
       cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
       summaryStyle: 'default',
       widgetOrder: [
@@ -523,7 +524,11 @@ export const useBudgetStore = defineStore('budget', {
       if (!this.savings) this.savings = []
       if (!this.savingsDeposits) this.savingsDeposits = {}
       if (!this.monthlyChecklistTracking) this.monthlyChecklistTracking = {}
-      if (!this.finansOrder || this.finansOrder.length !== 2) this.finansOrder = ['debts', 'savings']
+      if (!this.finansOrder) {
+        this.finansOrder = ['debts', 'savings', 'flex']
+      } else if (!this.finansOrder.includes('flex')) {
+        this.finansOrder = [...this.finansOrder, 'flex']
+      }
       this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
       // Ensure all debts have ids
       this.debts = this.debts.map((d) => ({ ...d, id: d.id || genId('debt') }))
