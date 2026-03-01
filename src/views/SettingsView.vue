@@ -127,7 +127,7 @@
         <CollapseTransition><div v-if="!collapsedSections['income']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newIncomeName" placeholder="Namn">
-            <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp">
+            <input type="number" v-model.number="newIncomeAmount" placeholder="Belopp" step="1" inputmode="numeric">
             <button :class="{ 'btn-added': addFeedback.income }" @click="addIncome">{{ addFeedback.income ? 'Tillagt' : 'Lägg till' }}</button>
           </div>
           <div
@@ -154,7 +154,7 @@
                   </div>
                   <div class="edit-input-group">
                     <label>Belopp</label>
-                    <input type="number" v-model.number="editIncomeForm.amount">
+                    <input type="number" v-model.number="editIncomeForm.amount" step="1" inputmode="numeric">
                   </div>
                   <div class="edit-actions">
                     <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
@@ -177,7 +177,7 @@
         <CollapseTransition><div v-if="!collapsedSections['expenses']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newExpenseName" placeholder="Namn">
-            <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp">
+            <input type="number" v-model.number="newExpenseAmount" placeholder="Belopp" step="1" inputmode="numeric">
           </div>
           <div class="input-group input-group--labeled">
             <div class="field-with-label">
@@ -235,7 +235,7 @@
                       </div>
                       <div class="edit-input-group">
                         <label>Belopp</label>
-                        <input type="number" v-model.number="editForm.amount">
+                        <input type="number" v-model.number="editForm.amount" step="1" inputmode="numeric">
                       </div>
                       <div class="edit-input-group">
                         <label>Kategori</label>
@@ -246,7 +246,7 @@
                       </div>
                       <div class="edit-input-group">
                         <label>Dag (valfritt)</label>
-                        <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
+                        <input type="number" v-model.number="editForm.date" min="1" max="31" step="1" inputmode="numeric" placeholder="1–31">
                       </div>
                       <div class="edit-actions">
                         <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
@@ -303,7 +303,7 @@
                         </div>
                         <div class="edit-input-group">
                           <label>Belopp</label>
-                          <input type="number" v-model.number="editForm.amount">
+                          <input type="number" v-model.number="editForm.amount" step="1" inputmode="numeric">
                         </div>
                         <div class="edit-input-group">
                           <label>Kategori</label>
@@ -314,7 +314,7 @@
                         </div>
                         <div class="edit-input-group">
                           <label>Dag (valfritt)</label>
-                          <input type="number" v-model.number="editForm.date" min="1" max="31" placeholder="1–31">
+                          <input type="number" v-model.number="editForm.date" min="1" max="31" step="1" inputmode="numeric" placeholder="1–31">
                         </div>
                         <div class="edit-actions">
                           <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
@@ -404,7 +404,7 @@
         <CollapseTransition><div v-if="!collapsedSections['debts']" class="settings-content">
           <div class="input-group">
             <input type="text" v-model="newDebtName" placeholder="Namn">
-            <input type="number" v-model.number="newDebtAmount" placeholder="Belopp">
+            <input type="number" v-model.number="newDebtAmount" placeholder="Belopp" step="1" inputmode="numeric">
             <button :class="{ 'btn-added': addFeedback.debt }" @click="addDebt">{{ addFeedback.debt ? 'Tillagt' : 'Lägg till' }}</button>
           </div>
           <div
@@ -423,7 +423,7 @@
                 <div class="edit-form-content">
                   <div class="edit-input-group">
                     <label>Belopp</label>
-                    <input type="number" v-model.number="editDebtAmount">
+                    <input type="number" v-model.number="editDebtAmount" step="1" inputmode="numeric">
                   </div>
                   <div class="edit-actions">
                     <button class="save-edit-btn" @click="saveDebtEdit(idx)">Spara</button>
@@ -457,6 +457,8 @@
               placeholder="1-31"
               min="1"
               max="31"
+              step="1"
+              inputmode="numeric"
               @input="store.salaryDay = $event.target.value ? parseInt($event.target.value) : null"
             >
           </div>
@@ -570,9 +572,8 @@
       </div>
 
       <div class="settings-footer">
-        <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget   <br>
+        <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget<br>
         © Jonathan Belloni 2026</a>
-      
       </div>
 
       <div class="settings-footer">
@@ -1106,7 +1107,7 @@ function importFile(event) {
         return
       }
       const incomeInvalid = data.income.some(i => typeof i.name !== 'string' || typeof i.amount !== 'number')
-      const expensesInvalid = data.expenses.some(ex => typeof ex.name !== 'string' || typeof ex.amount !== 'number' || typeof ex.category !== 'string')
+      const expensesInvalid = data.expenses.some(ex => typeof ex.name !== 'string' || typeof ex.amount !== 'number' || (ex.category !== null && typeof ex.category !== 'string'))
       const categoriesInvalid = data.categories.some(c => typeof c !== 'string')
       if (incomeInvalid || expensesInvalid || categoriesInvalid) {
         await confirm('Ogiltig fil', { label: 'OK', style: 'primary', description: 'Filen innehåller ogiltiga poster. Kontrollera att det är en giltig MurvBudget-fil.' })

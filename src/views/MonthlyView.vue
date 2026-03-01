@@ -30,7 +30,7 @@
 
     <!-- Uncategorized expenses — shown plainly above all categories -->
     <template v-if="uncategorizedExpenses.length > 0">
-      <div class="category-list" style="margin-bottom: 8px;">
+      <div class="uncategorized-list">
         <div
           v-for="expense in uncategorizedExpenses"
           :key="expense.index"
@@ -277,6 +277,18 @@ function fmt(n) {
 </script>
 
 <style scoped>
+.uncategorized-list {
+  margin-bottom: 8px;
+}
+
+.uncategorized-list :deep(.expense-item) {
+  background: transparent;
+}
+
+.uncategorized-list :deep(.expense-item:last-child) {
+  border-bottom: none;
+}
+
 .monthly-summary {
   display: flex;
   gap: 12px;
