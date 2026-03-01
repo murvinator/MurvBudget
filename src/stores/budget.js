@@ -18,6 +18,7 @@ export const useBudgetStore = defineStore('budget', {
     monthlyStatus: {},
     debts: [],
     debtPayments: {},
+    variableActuals: {},
     variableExpenses: [],
     variableExpenseTransactions: {},
     salaryDay: null,
@@ -37,16 +38,41 @@ export const useBudgetStore = defineStore('budget', {
         { id: 'checklist',  visible: true },
         { id: 'savings',    visible: true },
         { id: 'categories', visible: true },
+        { id: 'flex',       visible: true },
       ],
+      widgetSettings: {
+        flex:       { style: 'default', showBars: true },
+        checklist:  { size: 'default' },
+        savings:    { size: 'default' },
+        categories: { size: 'default', maxItems: 0 },
+      },
     },
   }),
 
   getters: {
     totalIncome: (state) => state.income.reduce((sum, i) => sum + i.amount, 0),
-    totalExpenses: (state) => state.expenses.reduce((sum, e) => sum + e.amount, 0),
+    totalExpenses: (state) => {
+      const now = new Date()
+      const mk = `${now.getFullYear()}-${now.getMonth()}`
+      return state.expenses.reduce((sum, e) => {
+        if (e.variable) {
+          const actual = state.variableActuals?.[mk]?.[e.name]
+          return sum + (actual !== undefined ? actual : e.amount)
+        }
+        return sum + e.amount
+      }, 0)
+    },
     remaining: (state) => {
       const income = state.income.reduce((sum, i) => sum + i.amount, 0)
-      const expenses = state.expenses.reduce((sum, e) => sum + e.amount, 0)
+      const now = new Date()
+      const mk = `${now.getFullYear()}-${now.getMonth()}`
+      const expenses = state.expenses.reduce((sum, e) => {
+        if (e.variable) {
+          const actual = state.variableActuals?.[mk]?.[e.name]
+          return sum + (actual !== undefined ? actual : e.amount)
+        }
+        return sum + e.amount
+      }, 0)
       return income - expenses
     },
     currentMonthKey: () => {
@@ -71,6 +97,12 @@ export const useBudgetStore = defineStore('budget', {
       this.overviewSettings[key] = value
     },
 
+    setWidgetSetting(widgetId, key, value) {
+      if (!this.overviewSettings.widgetSettings) this.overviewSettings.widgetSettings = {}
+      if (!this.overviewSettings.widgetSettings[widgetId]) this.overviewSettings.widgetSettings[widgetId] = {}
+      this.overviewSettings.widgetSettings[widgetId][key] = value
+    },
+
     // ── Income ──────────────────────────────────────────────────────────────
     addIncome(name, amount) {
       this.income.push({ name, amount: parseInt(amount) })
@@ -86,18 +118,31 @@ export const useBudgetStore = defineStore('budget', {
     },
 
     // ── Expenses ─────────────────────────────────────────────────────────────
-    addExpense(name, amount, category = null, date = null) {
+    addExpense(name, amount, category = null, date = null, variable = false) {
       const item = { name, amount: parseInt(amount), category: category || null }
       if (date) item.date = parseInt(date)
+      if (variable) item.variable = true
       this.expenses.push(item)
     },
     deleteExpense(index) {
       this.expenses.splice(index, 1)
     },
-    saveEditExpense(index, name, amount, category, date = null) {
+    saveEditExpense(index, name, amount, category, date = null, variable = false) {
       const item = { name, amount: parseInt(amount), category: category || null }
       if (date) item.date = parseInt(date)
+      if (variable) item.variable = true
       this.expenses[index] = item
+    },
+
+    // ── Variable Actuals ─────────────────────────────────────────────────────
+    setVariableActual(expenseName, amount) {
+      const mk = this.currentMonthKey
+      if (!this.variableActuals[mk]) this.variableActuals[mk] = {}
+      if (amount === null || amount === undefined) {
+        delete this.variableActuals[mk][expenseName]
+      } else {
+        this.variableActuals[mk][expenseName] = parseInt(amount)
+      }
     },
 
     // ── Categories ───────────────────────────────────────────────────────────
@@ -229,6 +274,7 @@ export const useBudgetStore = defineStore('budget', {
         monthlyStatus: this.monthlyStatus,
         debts: this.debts,
         debtPayments: this.debtPayments,
+        variableActuals: this.variableActuals,
         variableExpenses: this.variableExpenses,
         variableExpenseTransactions: this.variableExpenseTransactions,
       }, null, 2)
@@ -265,6 +311,7 @@ export const useBudgetStore = defineStore('budget', {
       this.income = data.income || []
       this.categories = (data.categories || []).filter((c) => c !== 'Skulder')
       this.monthlyStatus = data.monthlyStatus || {}
+      this.variableActuals = data.variableActuals || {}
       this.variableExpenses = data.variableExpenses || []
       this.variableExpenseTransactions = data.variableExpenseTransactions || {}
 
@@ -340,6 +387,7 @@ export const useBudgetStore = defineStore('budget', {
         monthlyStatus: {},
         debts: [],
         debtPayments: {},
+        variableActuals: {},
         variableExpenses: [],
         variableExpenseTransactions: {},
       })
@@ -348,6 +396,8 @@ export const useBudgetStore = defineStore('budget', {
 
     // Backwards compat: called once on app mount to migrate legacy localStorage data
     migrateData() {
+      // Ensure variableActuals exists
+      if (!this.variableActuals) this.variableActuals = {}
       // Ensure all debts have ids
       this.debts = this.debts.map((d) => ({ ...d, id: d.id || genId('debt') }))
       // Ensure debtPayments keys are ids not names
@@ -373,7 +423,7 @@ export const useBudgetStore = defineStore('budget', {
         }
       }
       // Migrate widgetOrder
-      const ALL_WIDGET_IDS = ['summary', 'chart', 'debts', 'checklist', 'savings', 'categories']
+      const ALL_WIDGET_IDS = ['summary', 'chart', 'debts', 'checklist', 'savings', 'categories', 'flex']
       if (!this.overviewSettings.widgetOrder?.length) {
         this.overviewSettings.widgetOrder = [
           { id: 'summary',    visible: this.overviewSettings.showSummaryCards ?? true },
@@ -382,11 +432,31 @@ export const useBudgetStore = defineStore('budget', {
           { id: 'checklist',  visible: true },
           { id: 'savings',    visible: true },
           { id: 'categories', visible: true },
+          { id: 'flex',       visible: true },
         ]
       } else {
         for (const id of ALL_WIDGET_IDS) {
           if (!this.overviewSettings.widgetOrder.find(w => w.id === id)) {
             this.overviewSettings.widgetOrder.push({ id, visible: true })
+          }
+        }
+      }
+      // Ensure widgetSettings exists and all defaults are populated
+      if (!this.overviewSettings.widgetSettings) this.overviewSettings.widgetSettings = {}
+      const defaultWidgetSettings = {
+        flex:       { style: 'default', showBars: true },
+        checklist:  { size: 'default' },
+        savings:    { size: 'default' },
+        categories: { size: 'default', maxItems: 0 },
+      }
+      for (const [id, defaults] of Object.entries(defaultWidgetSettings)) {
+        if (!this.overviewSettings.widgetSettings[id]) {
+          this.overviewSettings.widgetSettings[id] = { ...defaults }
+        } else {
+          for (const [k, v] of Object.entries(defaults)) {
+            if (this.overviewSettings.widgetSettings[id][k] === undefined) {
+              this.overviewSettings.widgetSettings[id][k] = v
+            }
           }
         }
       }

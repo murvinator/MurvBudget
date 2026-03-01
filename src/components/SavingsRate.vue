@@ -1,5 +1,5 @@
 <template>
-  <div class="savings-rate-card">
+  <div class="savings-rate-card" :class="{ 'sr--compact': size === 'compact' }">
     <div class="sr-title">Sparkvot</div>
     <div class="sr-ring-wrap">
       <svg viewBox="0 0 100 100" class="sr-svg">
@@ -43,6 +43,8 @@ import { computed } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
+
+const size = computed(() => store.overviewSettings.widgetSettings?.savings?.size || 'default')
 
 const rate = computed(() => {
   if (store.totalIncome === 0) return 0
@@ -101,6 +103,28 @@ function fmt(n) {
   width: 140px;
   height: 140px;
   margin: 8px 0 4px;
+}
+
+.sr--compact {
+  padding: 14px 20px;
+}
+
+.sr--compact .sr-ring-wrap {
+  width: 90px;
+  height: 90px;
+  margin: 4px 0 2px;
+}
+
+.sr--compact .sr-title {
+  font-size: 14px;
+}
+
+.sr--compact .sr-label {
+  font-size: 12px;
+}
+
+.sr--compact .sr-amount {
+  font-size: 15px;
 }
 
 .sr-svg {

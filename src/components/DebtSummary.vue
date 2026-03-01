@@ -49,7 +49,8 @@
                 v-model.number="payAmounts[idx]"
                 placeholder="Belopp"
                 min="0"
-                step="0.01"
+                step="1"
+                inputmode="numeric"
               >
             </div>
             <div class="edit-actions">
@@ -66,7 +67,7 @@
               >
                 <template v-if="editingPayment?.debtIdx === idx && editingPayment?.payIdx === origIdx">
                   <div class="payment-info">
-                    <input type="number" v-model.number="editingPayment.amount" min="0" step="0.01" style="width:80px; padding:4px 8px; border-radius:6px; border:1px solid var(--separator);">
+                    <input type="number" v-model.number="editingPayment.amount" min="0" step="1" inputmode="numeric" style="width:80px; padding:4px 8px; border-radius:6px; border:1px solid var(--separator);">
                   </div>
                   <div class="payment-actions">
                     <button @click="saveEditPayment">Spara</button>
@@ -133,7 +134,7 @@ function reversedPayments(debt) {
 }
 
 async function payDebt(idx) {
-  const amount = parseFloat(payAmounts[idx])
+  const amount = Math.round(parseFloat(payAmounts[idx]))
   if (isNaN(amount) || amount <= 0) {
     await confirm('Ogiltigt belopp', { label: 'OK', style: 'primary', description: 'Ange ett giltigt belopp.' })
     return
@@ -152,7 +153,7 @@ async function saveEditPayment() {
     await confirm('Ogiltigt belopp', { label: 'OK', style: 'primary', description: 'Ange ett giltigt belopp.' })
     return
   }
-  store.editDebtPayment(debtIdx, payIdx, amount, store.debtPayments[store.debts[debtIdx].id][payIdx]?.note || '')
+  store.editDebtPayment(debtIdx, payIdx, Math.round(amount), store.debtPayments[store.debts[debtIdx].id][payIdx]?.note || '')
   editingPayment.value = null
 }
 

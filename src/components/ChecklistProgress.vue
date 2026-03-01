@@ -1,12 +1,12 @@
 <template>
-  <div class="checklist-progress-card" @click="emit('navigate', 'monthly')">
+  <div class="checklist-progress-card" :class="{ 'cp--compact': size === 'compact' }" @click="emit('navigate', 'monthly')">
     <div class="cp-header">
       <span class="cp-title">Checklista</span>
       <span class="cp-month">{{ store.currentMonthName }}</span>
     </div>
     <div class="cp-stats">
       <span class="cp-count">{{ paidCount }} av {{ totalCount }} betalt</span>
-      <span class="cp-amounts">{{ fmt(paidAmount) }} / {{ fmt(totalAmount) }} kr</span>
+      <span v-if="size !== 'compact'" class="cp-amounts">{{ fmt(paidAmount) }} / {{ fmt(totalAmount) }} kr</span>
     </div>
     <div class="cp-bar-track">
       <div class="cp-bar-fill" :style="{ width: pct + '%', background: progressColor }"></div>
@@ -20,6 +20,8 @@ import { useBudgetStore } from '../stores/budget'
 
 const store = useBudgetStore()
 const emit = defineEmits(['navigate'])
+
+const size = computed(() => store.overviewSettings.widgetSettings?.checklist?.size || 'default')
 
 const paidCount = computed(() => {
   const status = store.monthlyStatus['current'] || {}
@@ -61,6 +63,26 @@ function fmt(n) {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: opacity 0.15s;
+}
+
+.cp--compact {
+  padding: 14px 20px;
+}
+
+.cp--compact .cp-header {
+  margin-bottom: 6px;
+}
+
+.cp--compact .cp-stats {
+  margin-bottom: 6px;
+}
+
+.cp--compact .cp-title {
+  font-size: 14px;
+}
+
+.cp--compact .cp-bar-track {
+  height: 4px;
 }
 
 .checklist-progress-card:active {
