@@ -1,5 +1,7 @@
 <template>
   <div>
+    <!-- Transparent backdrop to close flex edit on outside click -->
+    <div v-if="editingVariable" class="flex-edit-backdrop" @click="editingVariable = null"></div>
     <!-- Grand total summary (#53/#55) -->
     <div class="monthly-summary">
       <div class="monthly-stat">
@@ -145,11 +147,14 @@
             v-for="expense in variableExpenses"
             :key="expense.name"
             class="flex-card"
-            :class="{ 'flex-card--confirmed': hasActual(expense.name) }"
+            :class="{
+              'flex-card--confirmed': hasActual(expense.name),
+              'flex-card--editing': editingVariable === expense.name
+            }"
           >
             <!-- Edit state -->
             <template v-if="editingVariable === expense.name">
-              <div class="flex-card-editing">
+              <div class="flex-card-editing" @click.stop>
                 <div class="flex-card-editing-name">{{ expense.name }}</div>
                 <input
                   type="number"
@@ -160,8 +165,9 @@
                   @keyup.enter="saveVariableActual(expense.name)"
                 >
                 <div class="flex-edit-actions">
+                  <button class="flex-cancel-btn" @click.stop="editingVariable = null">Avbryt</button>
+                  <button v-if="hasActual(expense.name)" class="flex-reset-btn" @click.stop="resetVariableActual(expense.name)">Återställ</button>
                   <button class="flex-save-btn" @click.stop="saveVariableActual(expense.name)">Spara</button>
-                  <button class="flex-reset-btn" @click.stop="resetVariableActual(expense.name)">Återställ</button>
                 </div>
               </div>
             </template>
@@ -513,6 +519,13 @@ function fmt(n) {
   flex-shrink: 0;
 }
 
+/* Backdrop for closing flex edit on outside click */
+.flex-edit-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
 /* Cards */
 .flex-cards {
   display: flex;
@@ -525,6 +538,11 @@ function fmt(n) {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.flex-card--editing {
+  z-index: 11;
 }
 
 /* Display row */
@@ -645,13 +663,29 @@ function fmt(n) {
 
 .flex-save-btn:active { opacity: 0.7; }
 
-.flex-reset-btn {
+.flex-cancel-btn {
   flex: 1;
   padding: 11px;
   border: 1px solid var(--separator);
   border-radius: 12px;
   background: transparent;
   color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.flex-cancel-btn:active { opacity: 0.6; }
+
+.flex-reset-btn {
+  flex: 1;
+  padding: 11px;
+  border: 1px solid var(--separator);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--system-orange);
   font-family: inherit;
   font-size: 15px;
   font-weight: 500;
