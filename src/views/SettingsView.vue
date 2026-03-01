@@ -177,9 +177,10 @@
         <CollapseTransition><div v-if="!collapsedSections['expenses']" class="settings-content">
 
           <!-- Add new expense form (hidden until triggered) -->
-          <button v-if="!showAddExpense" class="add-item-trigger" @click="showAddExpense = true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Lägg till utgift
+          <button class="add-item-trigger" :class="{ 'add-item-trigger--cancel': showAddExpense }" @click="showAddExpense = !showAddExpense">
+            <svg v-if="!showAddExpense" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            {{ showAddExpense ? 'Avbryt' : 'Lägg till utgift' }}
           </button>
           <CollapseTransition>
             <div v-if="showAddExpense" class="add-expense-form-wrap">
@@ -199,13 +200,15 @@
                   <span class="field-label">Dag</span>
                   <input type="number" v-model.number="newExpenseDate" placeholder="valfri" min="1" max="31" :disabled="newExpenseVariable">
                 </div>
-                <button class="add-expense-bottom-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">
-                  {{ addFeedback.expense ? '✓ Tillagt' : 'Lägg till' }}
-                </button>
               </div>
               <div class="add-form-toggle-row">
                 <span class="add-form-toggle-label">Flex – belopp varierar varje månad</span>
                 <input type="checkbox" class="ios-toggle" v-model="newExpenseVariable">
+              </div>
+              <div class="add-form-submit-row">
+                <button class="add-form-submit-btn" :class="{ 'btn-added': addFeedback.expense }" @click="addExpense">
+                  {{ addFeedback.expense ? '✓ Tillagt' : 'Lägg till' }}
+                </button>
               </div>
             </div>
           </CollapseTransition>
@@ -950,9 +953,18 @@ const newExpenseDate = ref(null)
 const newExpenseVariable = ref(false)
 const showAddExpense = ref(false)
 
-const collapsedExpenseGroups = reactive({})
+const EXPENSE_GROUPS_KEY = 'murvbudget-expense-groups-collapsed'
+function loadExpenseGroupsCollapsed() {
+  try {
+    return JSON.parse(sessionStorage.getItem(EXPENSE_GROUPS_KEY) || '{}')
+  } catch { return {} }
+}
+const collapsedExpenseGroups = reactive(loadExpenseGroupsCollapsed())
 function toggleExpenseGroup(key) {
   collapsedExpenseGroups[key] = !collapsedExpenseGroups[key]
+  try {
+    sessionStorage.setItem(EXPENSE_GROUPS_KEY, JSON.stringify({ ...collapsedExpenseGroups }))
+  } catch {}
 }
 const newIncomeName = ref('')
 const newIncomeAmount = ref(null)
@@ -1555,8 +1567,32 @@ function fmt(n) {
   flex-shrink: 0;
 }
 
-.add-expense-bottom-btn {
-  align-self: flex-end;
+.add-form-submit-row {
+  padding: 10px 16px 14px;
+}
+
+.add-form-submit-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--system-blue);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s, background 0.2s;
+}
+
+.add-form-submit-btn:active {
+  opacity: 0.75;
+}
+
+.add-form-submit-btn.btn-added {
+  background: var(--system-green) !important;
+  pointer-events: none;
 }
 
 .btn-added {
@@ -1909,7 +1945,7 @@ function fmt(n) {
   align-items: center;
   gap: 7px;
   width: calc(100% - 32px);
-  margin: 20px 16px 12px;
+  margin: 20px 16px 18px;
   padding: 11px 16px;
   background: transparent;
   border: 1.5px dashed var(--separator);
@@ -1933,8 +1969,11 @@ function fmt(n) {
   opacity: 0.6;
 }
 
-.add-expense-form-wrap {
-  /* border-bottom comes from the toggle row */
+.add-item-trigger--cancel {
+  color: var(--text-secondary);
+  border-color: transparent;
+  margin-top: 17px;
+  margin-bottom: 8px;
 }
 
 /* Override bottom border on the second input row so toggle row is the closing separator */
@@ -1949,22 +1988,24 @@ function fmt(n) {
   transition: opacity 0.2s ease;
 }
 
-/* Flex toggle row — sits between the labeled row and the expense list, acts as closing separator */
-
 /* Expense group section headers */
 .expense-group-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 16px 16px 14px;
-  font-size: 12px;
+  padding: 9px 16px 8px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  margin-top: 10px;
+  border-top: 0.5px solid var(--separator);
+  border-bottom: 0.5px solid var(--separator);
+  background: rgba(120, 120, 128, 0.06);
 }
 
 .expense-group-header--muted {
@@ -2004,7 +2045,6 @@ function fmt(n) {
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px 12px;
-  border-top: 0.5px solid var(--separator);
   border-bottom: 0.5px solid var(--separator);
 }
 
