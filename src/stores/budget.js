@@ -21,6 +21,9 @@ export const useBudgetStore = defineStore('budget', {
     variableActuals: {},
     variableExpenses: [],
     variableExpenseTransactions: {},
+    savings: [],
+    savingsDeposits: {},
+    monthlyChecklistTracking: {},
     salaryDay: null,
     salaryMonthOffset: false,
     tempMonthlyIncome: {},
@@ -226,9 +229,9 @@ export const useBudgetStore = defineStore('budget', {
     },
 
     // ── Debts ────────────────────────────────────────────────────────────────
-    addDebt(name, amount) {
+    addDebt(name, amount, date) {
       const id = genId('debt')
-      this.debts.push({ id, name, amount: parseInt(amount) })
+      this.debts.push({ id, name, amount: parseInt(amount), date: date || null })
       this.debtPayments[id] = []
     },
     deleteDebt(index) {
@@ -267,6 +270,68 @@ export const useBudgetStore = defineStore('budget', {
       if (p) debt.amount = (debt.amount || 0) + p.amount
     },
 
+    // ── Savings Goals ────────────────────────────────────────────────────────
+    setSavingsGoal(name, target, date) {
+      const id = genId('sav')
+      if (!this.savings) this.savings = []
+      if (!this.savingsDeposits) this.savingsDeposits = {}
+      this.savings.push({ id, name, target: parseInt(target), current: 0, date: date || null })
+      this.savingsDeposits[id] = []
+    },
+    editSavingsGoal(index, name, target) {
+      if (this.savings[index]) {
+        this.savings[index].name = name
+        this.savings[index].target = parseInt(target)
+      }
+    },
+    deleteSavingsGoal(index) {
+      const removed = this.savings.splice(index, 1)[0]
+      if (removed?.id) delete this.savingsDeposits[removed.id]
+    },
+    addSavingsDeposit(goalIndex, amount, note) {
+      const goal = this.savings[goalIndex]
+      if (!goal) return
+      if (!this.savingsDeposits[goal.id]) this.savingsDeposits[goal.id] = []
+      const amt = parseInt(amount)
+      this.savingsDeposits[goal.id].push({ amount: amt, note: note || '', date: new Date().toISOString() })
+      goal.current = (goal.current || 0) + amt
+    },
+    deleteSavingsDeposit(goalIndex, depositIndex) {
+      const goal = this.savings[goalIndex]
+      if (!goal) return
+      const deposits = this.savingsDeposits[goal.id] || []
+      const d = deposits.splice(depositIndex, 1)[0]
+      if (d) goal.current = Math.max(0, (goal.current || 0) - d.amount)
+    },
+
+    // ── Debt Monthly Payment ─────────────────────────────────────────────────
+    setDebtMonthlyPayment(debtIndex, amount) {
+      if (!this.debts[debtIndex]) return
+      if (!amount || parseInt(amount) <= 0) {
+        delete this.debts[debtIndex].monthlyPayment
+      } else {
+        this.debts[debtIndex].monthlyPayment = parseInt(amount)
+      }
+    },
+    toggleDebtMonthlyPayment(debtId, paid) {
+      if (!this.monthlyStatus['current']) this.monthlyStatus['current'] = {}
+      this.monthlyStatus['current']['debt-' + debtId] = paid
+    },
+
+    // ── Savings Monthly Payment ──────────────────────────────────────────────
+    setSavingsMonthlyPayment(index, amount) {
+      if (!this.savings[index]) return
+      if (!amount || parseInt(amount) <= 0) {
+        delete this.savings[index].monthlyPayment
+      } else {
+        this.savings[index].monthlyPayment = parseInt(amount)
+      }
+    },
+    toggleSavingsMonthlyPayment(savingsId, paid) {
+      if (!this.monthlyStatus['current']) this.monthlyStatus['current'] = {}
+      this.monthlyStatus['current']['savings-' + savingsId] = paid
+    },
+
     // ── Variable Transactions ────────────────────────────────────────────────
     addVariableTransaction(expenseName, amount, note) {
       const monthKey = this.currentMonthKey
@@ -297,6 +362,16 @@ export const useBudgetStore = defineStore('budget', {
     },
     resetCurrentMonth() {
       this.monthlyStatus['current'] = {}
+      if (this.monthlyChecklistTracking) this.monthlyChecklistTracking['current'] = {}
+    },
+
+    setChecklistTracking(key, date) {
+      if (!this.monthlyChecklistTracking['current']) this.monthlyChecklistTracking['current'] = {}
+      if (date) {
+        this.monthlyChecklistTracking['current'][key] = date
+      } else {
+        delete this.monthlyChecklistTracking['current'][key]
+      }
     },
 
     // ── Data ─────────────────────────────────────────────────────────────────
@@ -312,6 +387,8 @@ export const useBudgetStore = defineStore('budget', {
         variableActuals: this.variableActuals,
         variableExpenses: this.variableExpenses,
         variableExpenseTransactions: this.variableExpenseTransactions,
+        savings: this.savings,
+        savingsDeposits: this.savingsDeposits,
       }, null, 2)
       const blob = new Blob([dataStr], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -349,6 +426,9 @@ export const useBudgetStore = defineStore('budget', {
       this.variableActuals = data.variableActuals || {}
       this.variableExpenses = data.variableExpenses || []
       this.variableExpenseTransactions = data.variableExpenseTransactions || {}
+      this.savings = data.savings || []
+      this.savingsDeposits = data.savingsDeposits || {}
+      this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
 
       // Migrate debts
       if (data.debts) {
@@ -425,6 +505,8 @@ export const useBudgetStore = defineStore('budget', {
         variableActuals: {},
         variableExpenses: [],
         variableExpenseTransactions: {},
+        savings: [],
+        savingsDeposits: {},
       })
       localStorage.removeItem('murvbudget-last-cloud-sync')
     },
@@ -433,6 +515,11 @@ export const useBudgetStore = defineStore('budget', {
     migrateData() {
       // Ensure variableActuals exists
       if (!this.variableActuals) this.variableActuals = {}
+      // Ensure savings exists
+      if (!this.savings) this.savings = []
+      if (!this.savingsDeposits) this.savingsDeposits = {}
+      if (!this.monthlyChecklistTracking) this.monthlyChecklistTracking = {}
+      this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
       // Ensure all debts have ids
       this.debts = this.debts.map((d) => ({ ...d, id: d.id || genId('debt') }))
       // Ensure debtPayments keys are ids not names

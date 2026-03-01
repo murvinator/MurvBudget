@@ -520,6 +520,21 @@ body {
 }
 
 .edit-actions { display: flex; gap: 10px; margin-top: 8px; }
+.edit-actions .delete-edit-btn { order: 1; }
+.edit-actions .cancel-edit-btn { order: 2; }
+.edit-actions .save-edit-btn   { order: 3; }
+
+/* Payment history inside settings edit forms */
+.settings-payment-history { border-top: 0.5px solid var(--separator); padding-top: 14px; }
+.settings-payment-history-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 8px; }
+.settings-payment-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--card-bg); border-radius: 8px; margin-bottom: 4px; }
+.settings-payment-info { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.settings-payment-amount { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.settings-payment-note { font-size: 12px; color: var(--text-secondary); }
+.settings-payment-date { font-size: 11px; color: var(--text-tertiary); }
+.settings-payment-delete { background: #FF3B30; border: none; padding: 7px 9px; border-radius: 8px; cursor: pointer; color: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+.settings-payment-delete svg { stroke: #ffffff; fill: none; }
+.settings-payment-delete:active { opacity: 0.6; }
 
 .cancel-edit-btn,
 .save-edit-btn,
@@ -719,17 +734,17 @@ body {
     border-radius: 20px;
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 1px 1px rgba(255, 59, 48, 0.15), 0 2px 8px rgba(255, 59, 48, 0.08);
-    border: 1px solid rgba(255, 59, 48, 0.2);
+    box-shadow: 0 1px 1px rgba(255, 110, 48, 0.15), 0 2px 8px rgba(255, 155, 48, 0.08);
+    border: 1px solid rgba(255, 145, 48, 0.2);
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     margin-bottom: 16px;
 }
 
-.debt-summary-component:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(255, 59, 48, 0.2), 0 4px 12px rgba(255, 59, 48, 0.12); }
+.debt-summary-component:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(255, 158, 48, 0.2), 0 4px 12px rgba(255, 138, 48, 0.12); }
 
 .debt-header-toggle {
     padding: 20px 24px;
-    background: rgba(255, 59, 48, 0.05);
+    background: rgba(255, 149, 0, 0.05);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -738,9 +753,9 @@ body {
     user-select: none;
 }
 
-.debt-header-toggle h3 { font-size: 20px; font-weight: 600; color: var(--system-red); margin: 0; padding: 0; border: none; background: none; }
+.debt-header-toggle h3 { font-size: 20px; font-weight: 600; color: var(--system-orange); margin: 0; padding: 0; border: none; background: none; }
 .debt-header-right { display: flex; align-items: center; gap: 12px; }
-.chevron-debt { width: 20px; height: 20px; color: var(--system-red); transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.chevron-debt { width: 20px; height: 20px; color: var(--system-orange); transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
 .debt-content { overflow: hidden; }
 
 .debt-total-container {
@@ -748,9 +763,9 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px;
-    background: rgba(255, 59, 48, 0.05);
+    background: rgba(255, 149, 0, 0.05);
     font-weight: 600;
-    color: var(--system-red);
+    color: var(--system-orange);
     font-size: 17px;
     border-top: 0.5px solid var(--separator);
 }
@@ -1084,6 +1099,18 @@ body {
 }
 .settings-content button:active { opacity: 0.8; }
 
+.settings-content .settings-payment-delete {
+    background: #FF3B30;
+    color: #ffffff;
+    min-height: unset;
+    padding: 7px 9px;
+    border-radius: 8px;
+}
+.settings-content .settings-payment-delete svg {
+    stroke: #ffffff;
+    fill: none;
+}
+
 .settings-content .expense-item,
 .settings-content .category-item {
     display: flex;
@@ -1129,6 +1156,17 @@ body {
 .settings-footer a:hover { opacity: 1; }
 .-link { background: none; border: none; cursor: pointer; color: var(--text-tertiary); font-size: 14px; font-weight: 500; opacity: 0.7; padding: 0; font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .about-link:hover, .about-link:active { opacity: 1; }
+
+
+.settings-version {
+    display: block;
+    margin-top: 8px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    opacity: 0.5;
+}
+
 
 .swish-footer { text-align: center; padding: 10px; margin-top: 20px; }
 

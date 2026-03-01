@@ -11,7 +11,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({ currentView: String })
 
-const viewTitles = { overview: 'Budget', monthly: 'Checklista' }
+const viewTitles = { overview: 'Budget', monthly: 'Checklista', finans: 'Ekonomi' }
 const smallTitle = computed(() => viewTitles[props.currentView] ?? 'MurvBudget')
 
 const scrollY = ref(0)

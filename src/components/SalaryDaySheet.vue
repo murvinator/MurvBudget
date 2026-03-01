@@ -6,7 +6,7 @@
 
           <!-- Header -->
           <div class="salary-body">
-            <p class="salary-title">Lönedag!</p>
+            <p class="salary-title">{{ fullMode ? 'Lönedag!' : 'Justera inkomsten'}}</p>
             <p class="salary-subtitle">Stäm av inkomsten inför den nya månaden</p>
           </div>
 

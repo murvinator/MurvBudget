@@ -3,7 +3,7 @@
     <template v-for="widget in visibleWidgets" :key="widget.id">
       <SummaryCards      v-if="widget.id === 'summary'" />
       <ExpenseChart      v-else-if="widget.id === 'chart'" @navigate="emit('navigate', $event)" />
-      <DebtSummary       v-else-if="widget.id === 'debts'" />
+      <DebtSummary       v-else-if="widget.id === 'debts'" @navigate="emit('navigate', $event)" />
       <ChecklistProgress v-else-if="widget.id === 'checklist'" @navigate="emit('navigate', $event)" />
       <SavingsRate       v-else-if="widget.id === 'savings'" />
       <CategoryBreakdown v-else-if="widget.id === 'categories'" />

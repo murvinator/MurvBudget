@@ -51,8 +51,9 @@
           <div v-for="(exp, i) in topExpenses" :key="exp.name" class="detail-row">
             <span class="detail-rank">{{ i + 1 }}</span>
             <span class="detail-name">{{ exp.name }}</span>
-            <span v-if="exp.category" class="detail-cat">{{ exp.category }}</span>
-            <span class="detail-amount">{{ fmt(exp.amount) }} kr</span>
+            <span v-if="exp.variable" class="detail-cat detail-cat--flex">Flex</span>
+            <span v-else-if="exp.category" class="detail-cat">{{ exp.category }}</span>
+            <span class="detail-amount"><span v-if="exp.variable" class="detail-tilde">~</span>{{ fmt(exp.amount) }} kr</span>
           </div>
           <div v-if="store.expenses.length === 0" class="detail-empty">Inga utgifter tillagda</div>
           <div v-else-if="store.expenses.length > 5" class="detail-more">
@@ -201,7 +202,7 @@ const normalTotalIncome = computed(() =>
 
 const tempDiff = computed(() => store.totalIncome - normalTotalIncome.value)
 
-// ── Top 5 expenses ───────────────────────────────────────────
+// ── Top 5 expenses (including flex with estimate label) ──────
 const topExpenses = computed(() =>
   [...store.expenses].sort((a, b) => b.amount - a.amount).slice(0, 5)
 )
@@ -398,6 +399,16 @@ function fmt(n) {
 
 .temp-pos { color: inherit; }
 .temp-neg { opacity: 0.7; }
+
+.detail-cat--flex {
+  background: rgba(255,255,255,0.28);
+}
+
+.detail-tilde {
+  opacity: 0.6;
+  font-size: 11px;
+  margin-right: 1px;
+}
 
 /* ── Neutral card: tint detail-cat differently ────────────── */
 /* When cardStyle returns neutral, currentColor is --text-primary,

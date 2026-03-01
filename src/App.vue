@@ -52,6 +52,7 @@ import SplashScreen from './components/SplashScreen.vue'
 import OnboardingScreen from './components/OnboardingScreen.vue'
 import OverviewView from './views/OverviewView.vue'
 import MonthlyView from './views/MonthlyView.vue'
+import FinansView from './views/FinansView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 const store = useBudgetStore()
@@ -70,6 +71,7 @@ const currentViewComponent = computed(() => {
   switch (currentView.value) {
     case 'overview': return OverviewView
     case 'monthly': return MonthlyView
+    case 'finans': return FinansView
     case 'settings': return SettingsView
     default: return OverviewView
   }
@@ -79,13 +81,23 @@ const viewTitle = computed(() => {
   switch (currentView.value) {
     case 'overview': return 'Budget'
     case 'monthly': return 'Checklista'
+    case 'finans': return 'Ekonomi'
     default: return 'MurvBudget'
   }
 })
 
+const pendingSettingsSection = ref(null)
+
 function showView(name) {
-  if (name === currentView.value) {
-    if (name === 'settings') {
+  let view = name
+  let section = null
+  if (name.includes(':')) {
+    [view, section] = name.split(':')
+  }
+  if (view === currentView.value) {
+    if (view === 'settings' && section) {
+      pendingSettingsSection.value = section
+    } else if (view === 'settings') {
       activeViewRef.value?.toggleAllSections?.()
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -95,9 +107,10 @@ function showView(name) {
   if (currentView.value !== 'settings') {
     lastView.value = currentView.value
   }
-  currentView.value = name
+  currentView.value = view
+  if (section) pendingSettingsSection.value = section
   window.scrollTo(0, 0)
-  if (name === 'monthly') {
+  if (view === 'monthly') {
     checkSalaryDayPopup()
   }
 }
@@ -188,6 +201,7 @@ provide('goBack', goBack)
 provide('confirm', (msg, opts) => confirmSheetRef.value?.show(msg, opts))
 provide('localDataTs', localDataTs)
 provide('showSalarySheet', showSalaryDayManually)
+provide('pendingSettingsSection', pendingSettingsSection)
 
 function hasStoreData() {
   return store.income.length > 0 || store.expenses.length > 0 ||

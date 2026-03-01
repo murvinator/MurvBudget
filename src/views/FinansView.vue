@@ -1,0 +1,866 @@
+<template>
+  <div class="finans-view">
+
+    <!-- ══════════════════════════════════════════════════════════
+         SECTION 1 — Skulder & Lån
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="finans-section">
+      <div class="finans-section-header">
+        <div class="finans-section-title-group">
+          <svg class="finans-section-icon finans-section-icon--debt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span class="finans-section-title">Skulder och lån</span>
+          <span class="finans-section-badge" v-if="store.debts.length > 0">{{ fmt(totalDebt) }} kr</span>
+        </div>
+      </div>
+
+      <div class="finans-section-body">
+
+          <!-- Debt list -->
+          <div v-if="store.debts.length === 0" class="finans-empty">
+            Inga skulder inlagda.
+            <button class="finans-empty-link" @click="emit('navigate', 'settings:debts')">Lägg till under Inställningar →</button>
+          </div>
+
+          <div v-for="(debt, idx) in store.debts" :key="debt.id" class="debt-card">
+            <div class="debt-card-main" @click="toggleDebt(idx)">
+              <div class="debt-card-info">
+                <div class="debt-name">{{ debt.name }}</div>
+                <div class="debt-meta">
+                  <span v-if="debt.monthlyPayment" class="debt-monthly-badge">{{ fmt(debt.monthlyPayment) }} kr/mån</span>
+                </div>
+              </div>
+              <div class="debt-card-right">
+                <div class="debt-amount">{{ fmt(debt.amount) }} kr</div>
+                <svg class="debt-chevron" :class="{ expanded: openDebt === idx }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Progress bar (only if there are payments) -->
+            <div v-if="debtHasPayments(debt)" class="debt-progress-wrap">
+              <div class="debt-progress-track">
+                <div class="debt-progress-fill" :style="{ width: debtPaidPct(debt) + '%' }"></div>
+              </div>
+              <span class="debt-progress-label">{{ Math.round(debtPaidPct(debt)) }}% betalt</span>
+            </div>
+
+            <!-- Expanded: payment history + link to settings -->
+            <CollapseTransition>
+              <div v-if="openDebt === idx" class="debt-expand">
+
+                <!-- Payment history -->
+                <div class="debt-expand-section" v-if="debtPayments(debt).length > 0">
+                  <div class="debt-expand-label">Betalningshistorik</div>
+                  <div class="payment-list">
+                    <div
+                      v-for="{ p, origIdx } in reversedDebtPayments(debt)"
+                      :key="origIdx"
+                      class="payment-row"
+                    >
+                      <div class="payment-row-info">
+                        <span class="payment-amount">{{ fmt(p.amount) }} kr</span>
+                        <span class="payment-note" v-if="p.note">{{ p.note }}</span>
+                        <span class="payment-date">{{ formatDate(p.date) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="debt-expand-section" v-else>
+                  <p class="debt-no-payments">Inga betalningar registrerade ännu.</p>
+                </div>
+
+              </div>
+            </CollapseTransition>
+          </div>
+
+          <!-- Total -->
+          <div v-if="store.debts.length > 0" class="finans-total-row">
+            <span>Totalt kvar</span>
+            <span>{{ fmt(totalDebt) }} kr</span>
+          </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SECTION 2 — Sparande
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="finans-section finans-section--last">
+      <div class="finans-section-header">
+        <div class="finans-section-title-group">
+          <svg class="finans-section-icon finans-section-icon--savings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          <span class="finans-section-title">Sparande</span>
+          <span class="finans-section-badge" v-if="store.savings.length > 0">{{ store.savings.length }} mål</span>
+        </div>
+      </div>
+
+      <div class="finans-section-body">
+
+          <div v-if="store.savings.length === 0" class="finans-empty">
+            Inga sparmål inlagda.
+            <button class="finans-empty-link" @click="emit('navigate', 'settings:savings')">Lägg till under Inställningar →</button>
+          </div>
+
+          <div v-for="(goal, idx) in store.savings" :key="goal.id" class="savings-card">
+            <div class="savings-card-main" @click="toggleSaving(idx)">
+              <div class="savings-info">
+                <div class="savings-name">{{ goal.name }}</div>
+                <div class="savings-amounts">{{ fmt(goal.current) }} / {{ fmt(goal.target) }} kr</div>
+              </div>
+              <div class="savings-card-right">
+                <span class="savings-pct">{{ savingsPct(goal) }}%</span>
+                <svg class="debt-chevron" :class="{ expanded: openSaving === idx }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="debt-progress-wrap">
+              <div class="debt-progress-track">
+                <div
+                  class="debt-progress-fill savings-progress-fill"
+                  :style="{ width: Math.min(savingsPct(goal), 100) + '%' }"
+                ></div>
+              </div>
+              <span class="debt-progress-label">{{ Math.min(savingsPct(goal), 100) }}% av mål</span>
+            </div>
+
+            <!-- Expanded -->
+            <CollapseTransition>
+              <div v-if="openSaving === idx" class="debt-expand">
+
+                <!-- Deposit history -->
+                <div class="debt-expand-section" v-if="savingsDeposits(goal).length > 0">
+                  <div class="debt-expand-label">Insättningshistorik</div>
+                  <div class="payment-list">
+                    <div
+                      v-for="{ d, origIdx } in reversedDeposits(goal)"
+                      :key="origIdx"
+                      class="payment-row"
+                    >
+                      <div class="payment-row-info">
+                        <span class="payment-amount">{{ fmt(d.amount) }} kr</span>
+                        <span class="payment-note" v-if="d.note">{{ d.note }}</span>
+                        <span class="payment-date">{{ formatDate(d.date) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="debt-expand-section" v-else>
+                  <p class="debt-no-payments">Inga insättningar registrerade ännu.</p>
+                </div>
+
+              </div>
+            </CollapseTransition>
+          </div>
+
+          <!-- Total -->
+          <div v-if="store.savings.length > 0" class="finans-total-row">
+            <span>Totalt sparande</span>
+            <span>{{ fmt(totalSavings) }} kr</span>
+          </div>
+
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { useBudgetStore } from '../stores/budget'
+import CollapseTransition from '../components/CollapseTransition.vue'
+
+const store = useBudgetStore()
+const emit = defineEmits(['navigate'])
+
+// ── Formatting ────────────────────────────────────────────────────────────────
+function fmt(n) { return (n || 0).toLocaleString('sv-SE') }
+function formatDate(dateStr) { return new Date(dateStr).toLocaleDateString('sv-SE') }
+
+// ══ DEBTS ═════════════════════════════════════════════════════════════════════
+const openDebt = ref(null)
+
+const totalDebt = computed(() => store.debts.reduce((sum, d) => sum + d.amount, 0))
+
+// ══ SAVINGS ═══════════════════════════════════════════════════════════════════
+const totalSavings = computed(() => store.savings.reduce((sum, s) => sum + (s.current || 0), 0))
+
+function toggleDebt(idx) {
+  openDebt.value = openDebt.value === idx ? null : idx
+}
+
+function debtPayments(debt) {
+  return store.debtPayments[debt.id] || []
+}
+
+function reversedDebtPayments(debt) {
+  return debtPayments(debt).map((p, i) => ({ p, origIdx: i })).reverse()
+}
+
+function debtHasPayments(debt) {
+  return debtPayments(debt).length > 0
+}
+
+function debtPaidPct(debt) {
+  const payments = debtPayments(debt)
+  const paid = payments.reduce((s, p) => s + p.amount, 0)
+  const original = debt.amount + paid
+  if (original === 0) return 0
+  return Math.min((paid / original) * 100, 100)
+}
+
+
+
+// ══ SAVINGS ═══════════════════════════════════════════════════════════════════
+const openSaving = ref(null)
+
+function savingsPct(goal) {
+  if (!goal.target) return 0
+  return Math.round(((goal.current || 0) / goal.target) * 100)
+}
+
+function savingsDeposits(goal) {
+  return store.savingsDeposits[goal.id] || []
+}
+
+function reversedDeposits(goal) {
+  return savingsDeposits(goal).map((d, i) => ({ d, origIdx: i })).reverse()
+}
+
+function toggleSaving(idx) {
+  openSaving.value = openSaving.value === idx ? null : idx
+}
+
+
+</script>
+
+<style scoped>
+.finans-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 40px;
+}
+
+/* ── Section shell ─────────────────────────────────────────── */
+.finans-section {
+  background: var(--card-bg);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.finans-section--last {
+  margin-bottom: 0;
+}
+
+.finans-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.finans-section-header:active {
+  opacity: 0.7;
+}
+
+.finans-section-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.finans-section-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--system-blue);
+  flex-shrink: 0;
+}
+
+.finans-section-icon--debt { color: var(--system-orange); }
+.finans-section-icon--savings { color: var(--system-green); }
+
+.finans-section-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.finans-section-badge {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: var(--system-gray5);
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.finans-chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+}
+
+.finans-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.finans-section-body {
+  border-top: 0.5px solid var(--separator);
+  padding: 0 0 8px;
+}
+
+.finans-empty {
+  padding: 20px;
+  font-size: 14px;
+  color: var(--text-tertiary);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.finans-empty-link {
+  background: transparent;
+  border: none;
+  color: var(--system-blue);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.finans-empty-link:active { opacity: 0.6; }
+
+/* ── Total row ─────────────────────────────────────────────── */
+.finans-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-top: 0.5px solid var(--separator);
+}
+
+/* ── Add section ───────────────────────────────────────────── */
+.finans-add-section {
+  padding: 16px 20px 8px;
+  border-top: 0.5px solid var(--separator);
+  margin-top: 8px;
+}
+
+.finans-add-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+
+.finans-add-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.finans-add-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.finans-add-input:focus {
+  border-color: var(--system-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.finans-add-input--narrow {
+  min-width: 90px;
+  max-width: 120px;
+}
+
+.finans-add-btn {
+  padding: 10px 18px;
+  background: var(--system-blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.finans-add-btn:active { opacity: 0.7; }
+.finans-add-btn--done { background: var(--system-green); }
+
+/* ══ DEBT CARDS ═══════════════════════════════════════════════ */
+.debt-card {
+  border-bottom: 0.5px solid var(--separator);
+}
+
+.debt-card-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.debt-card-main:active { opacity: 0.7; }
+
+.debt-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.debt-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.debt-meta {
+  margin-top: 3px;
+}
+
+.debt-monthly-badge {
+  font-size: 12px;
+  color: var(--system-blue);
+  font-weight: 500;
+}
+
+.debt-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.debt-amount {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.debt-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--text-tertiary);
+  transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+}
+
+.debt-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* Progress */
+.debt-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px 12px;
+}
+
+.debt-progress-track {
+  flex: 1;
+  height: 5px;
+  background: var(--separator);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.debt-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--system-orange);
+  transition: width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.savings-progress-fill {
+  background: var(--system-green);
+}
+
+.debt-progress-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* Expanded panel */
+.debt-expand {
+  background: var(--system-gray5);
+  padding: 4px 0;
+}
+
+.debt-expand-section {
+  padding: 12px 20px;
+  border-bottom: 0.5px solid var(--separator);
+}
+
+.debt-expand-section:last-child {
+  border-bottom: none;
+}
+
+.debt-expand-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+
+.debt-pay-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.debt-monthly-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.debt-monthly-hint {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.debt-pay-input {
+  flex: 1;
+  min-width: 90px;
+  padding: 10px 12px;
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.debt-pay-input:focus {
+  border-color: var(--system-blue);
+}
+
+.debt-pay-btn {
+  padding: 10px 18px;
+  background: var(--system-blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.debt-pay-btn:active { opacity: 0.7; }
+
+/* Edit form */
+.debt-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.debt-edit-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.debt-edit-input:focus {
+  border-color: var(--system-blue);
+}
+
+.debt-edit-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Generic buttons */
+.btn-save {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--system-blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-save:active { opacity: 0.7; }
+
+.btn-cancel {
+  flex: 1;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-cancel:active { opacity: 0.6; }
+
+.btn-reset {
+  flex: 1;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--system-orange);
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-reset:active { opacity: 0.6; }
+
+.btn-delete {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--system-red);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-delete:active { opacity: 0.7; }
+
+.btn-secondary {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--system-gray5);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-secondary:active { opacity: 0.7; }
+
+.btn-delete-outline {
+  flex: 1;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--system-red);
+  border: 1px solid var(--system-red);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-delete-outline:active { opacity: 0.6; }
+
+/* Payment history */
+.payment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.payment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.payment-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.payment-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.payment-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-date {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.payment-delete-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--system-red);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.payment-delete-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.payment-delete-btn:active { opacity: 0.6; }
+
+.debt-no-payments {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.debt-settings-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-top: 0.5px solid var(--separator);
+  color: var(--system-blue);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.debt-settings-link:active { opacity: 0.6; }
+
+/* ══ SAVINGS ══════════════════════════════════════════════════ */
+.savings-card {
+  border-bottom: 0.5px solid var(--separator);
+}
+
+.savings-card-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.savings-card-main:active { opacity: 0.7; }
+
+.savings-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.savings-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.savings-amounts {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.savings-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.savings-pct {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--system-green);
+}
+</style>
