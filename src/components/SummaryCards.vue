@@ -126,13 +126,16 @@ const sizeClass = computed(() => {
 })
 
 const GRADIENTS = {
-  'blue':        'linear-gradient(135deg, #007AFF, #007AFF)',
-  'blue-purple': 'linear-gradient(135deg, #007AFF, #AF52DE)',
-  'orange-pink': 'linear-gradient(135deg, #FF9500, #FF2D92)',
-  'green-teal':  'linear-gradient(135deg, #34C759, #5AC8FA)',
-  'red-orange':  'linear-gradient(135deg, #FF3B30, #FF9500)',
-  'indigo-blue': 'linear-gradient(135deg, #5856D6, #007AFF)',
-  'pink-red':    'linear-gradient(135deg, #FF2D92, #FF3B30)',
+  'blue':             'linear-gradient(135deg, #007AFF, #007AFF)',
+  'blue-purple':      'linear-gradient(135deg, #007AFF, #AF52DE)',
+  'orange-pink':      'linear-gradient(135deg, #FF9500, #FF2D92)',
+  'green-teal':       'linear-gradient(135deg, #34C759, #5AC8FA)',
+  'red-orange':       'linear-gradient(135deg, #FF3B30, #FF9500)',
+  'indigo-blue':      'linear-gradient(135deg, #5856D6, #007AFF)',
+  'pink-red':         'linear-gradient(135deg, #FF2D92, #FF3B30)',
+  'muted-blue-slate': 'linear-gradient(135deg, #4A90C4, #7B6BAE)',
+  'muted-amber':      'linear-gradient(135deg, #C48A2E, #B05C5C)',
+  'muted-green-teal': 'linear-gradient(135deg, #5CAB7D, #3A8A8A)',
 }
 const DEFAULT_COLORS = ['blue-purple', 'orange-pink', 'green-teal']
 

@@ -97,7 +97,7 @@ function showView(name) {
   if (view === currentView.value) {
     if (view === 'settings' && section) {
       pendingSettingsSection.value = section
-    } else if (view === 'settings') {
+    } else if (view === 'settings' || view === 'finans' || view === 'monthly') {
       activeViewRef.value?.toggleAllSections?.()
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' })

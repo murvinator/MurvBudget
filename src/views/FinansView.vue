@@ -43,8 +43,8 @@
               </div>
             </div>
 
-            <!-- Progress bar (only if there are payments) -->
-            <div v-if="debtHasPayments(debt)" class="debt-progress-wrap">
+            <!-- Progress bar (only if there are payments and setting is on) -->
+            <div v-if="store.finansViewSettings?.debtsShowProgress !== false && debtHasPayments(debt)" class="debt-progress-wrap">
               <div class="debt-progress-track">
                 <div class="debt-progress-fill" :style="{ width: debtPaidPct(debt) + '%' }"></div>
               </div>
@@ -75,6 +75,15 @@
 
                 <div class="debt-expand-section" v-else>
                   <p class="debt-no-payments">Inga betalningar registrerade ännu.</p>
+                </div>
+
+                <div class="debt-expand-section debt-expand-section--action">
+                  <button class="debt-add-payment-btn" @click="openDebtPaymentModal(debt)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Lägg till en betalning
+                  </button>
                 </div>
 
               </div>
@@ -138,7 +147,6 @@
               </div>
               <span class="debt-progress-label">{{ Math.min(savingsPct(goal), 100) }}% av mål</span>
             </div>
-
             <!-- Expanded -->
             <CollapseTransition>
               <div v-if="openSaving === goal.id" class="debt-expand">
@@ -163,6 +171,15 @@
 
                 <div class="debt-expand-section" v-else>
                   <p class="debt-no-payments">Inga insättningar registrerade ännu.</p>
+                </div>
+
+                <div class="debt-expand-section debt-expand-section--action">
+                  <button class="debt-add-payment-btn" @click="openSavingsDepositModal(goal)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Lägg till insättning
+                  </button>
                 </div>
 
               </div>
@@ -248,7 +265,7 @@
                   <span v-if="hasFlexActual(expense.name)" class="flex-item-budget">/ {{ fmt(expense.amount) }} kr</span>
                 </div>
               </div>
-              <div class="flex-item-bar-track">
+              <div v-if="store.finansViewSettings?.flexShowBars !== false" class="flex-item-bar-track">
                 <div
                   class="flex-item-bar-fill"
                   :class="flexBarClass(expense)"
@@ -273,10 +290,88 @@
   <br>
   <br>
   <br>
+
+  <!-- Savings deposit modal -->
+  <Teleport to="body">
+    <div v-if="savingsDepositModal.open" class="dp-overlay" @click.self="closeSavingsModal">
+      <div class="dp-sheet">
+        <div class="dp-header">
+          <span class="dp-title">Lägg till insättning</span>
+          <button class="dp-close" @click="closeSavingsModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <p class="dp-subtitle">{{ savingsDepositModal.goalName }}</p>
+        <input
+          ref="savingsModalAmountRef"
+          type="number"
+          class="dp-input"
+          v-model.number="savingsDepositModal.amount"
+          placeholder="Belopp (kr)"
+          inputmode="numeric"
+          step="1"
+          @focus="$event.target.select()"
+          @keyup.enter="saveSavingsDeposit"
+        >
+        <input
+          type="text"
+          class="dp-input"
+          v-model="savingsDepositModal.note"
+          placeholder="Anteckning (valfritt)"
+          @keyup.enter="saveSavingsDeposit"
+        >
+        <div class="dp-actions">
+          <button class="btn-cancel" @click="closeSavingsModal">Avbryt</button>
+          <button class="btn-save" @click="saveSavingsDeposit" :disabled="!savingsDepositModal.amount || savingsDepositModal.amount <= 0">Spara</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Debt payment modal -->
+  <Teleport to="body">
+    <div v-if="debtPaymentModal.open" class="dp-overlay" @click.self="closeDebtModal">
+      <div class="dp-sheet">
+        <div class="dp-header">
+          <span class="dp-title">Lägg till betalning</span>
+          <button class="dp-close" @click="closeDebtModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <p class="dp-subtitle">{{ debtPaymentModal.debtName }}</p>
+        <input
+          ref="debtModalAmountRef"
+          type="number"
+          class="dp-input"
+          v-model.number="debtPaymentModal.amount"
+          placeholder="Belopp (kr)"
+          inputmode="numeric"
+          step="1"
+          @focus="$event.target.select()"
+          @keyup.enter="saveDebtPayment"
+        >
+        <input
+          type="text"
+          class="dp-input"
+          v-model="debtPaymentModal.note"
+          placeholder="Anteckning (valfritt)"
+          @keyup.enter="saveDebtPayment"
+        >
+        <div class="dp-actions">
+          <button class="btn-cancel" @click="closeDebtModal">Avbryt</button>
+          <button class="btn-save" @click="saveDebtPayment" :disabled="!debtPaymentModal.amount || debtPaymentModal.amount <= 0">Spara</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, nextTick, watch } from 'vue'
 import { useBudgetStore } from '../stores/budget'
 import CollapseTransition from '../components/CollapseTransition.vue'
 
@@ -284,8 +379,36 @@ const store = useBudgetStore()
 const emit = defineEmits(['navigate'])
 
 // ── Section collapse ──────────────────────────────────────────────────────────
-const collapsed = reactive({ debts: false, savings: false, flex: false })
-function toggleSection(key) { collapsed[key] = !collapsed[key] }
+const COLLAPSED_KEY = 'murvbudget-finans-collapsed'
+const SECTION_KEYS = ['debts', 'savings', 'flex']
+
+function loadCollapsed() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(COLLAPSED_KEY) || '{}')
+    return {
+      debts:   saved.debts   !== undefined ? saved.debts   : false,
+      savings: saved.savings !== undefined ? saved.savings : false,
+      flex:    saved.flex    !== undefined ? saved.flex    : false,
+    }
+  } catch {
+    return { debts: false, savings: false, flex: false }
+  }
+}
+
+const collapsed = reactive(loadCollapsed())
+
+function toggleSection(key) {
+  collapsed[key] = !collapsed[key]
+  try { sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsed })) } catch {}
+}
+
+function toggleAllSections() {
+  const anyOpen = SECTION_KEYS.some(k => !collapsed[k])
+  for (const k of SECTION_KEYS) collapsed[k] = anyOpen
+  try { sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsed })) } catch {}
+}
+
+defineExpose({ toggleAllSections })
 
 // ── Formatting ────────────────────────────────────────────────────────────────
 function fmt(n) { return (n || 0).toLocaleString('sv-SE') }
@@ -350,6 +473,60 @@ function savingsDeposits(goal) {
 function reversedDeposits(goal) {
   return savingsDeposits(goal).map((d, i) => ({ d, origIdx: i })).reverse()
 }
+
+// ══ SAVINGS DEPOSIT MODAL ═════════════════════════════════════════════════════
+const savingsModalAmountRef = ref(null)
+const savingsDepositModal = reactive({ open: false, goalId: null, goalName: '', amount: null, note: '' })
+
+function openSavingsDepositModal(goal) {
+  savingsDepositModal.goalId = goal.id
+  savingsDepositModal.goalName = goal.name
+  savingsDepositModal.amount = null
+  savingsDepositModal.note = ''
+  savingsDepositModal.open = true
+  nextTick(() => savingsModalAmountRef.value?.focus())
+}
+
+function closeSavingsModal() {
+  savingsDepositModal.open = false
+}
+
+function saveSavingsDeposit() {
+  if (!savingsDepositModal.amount || savingsDepositModal.amount <= 0) return
+  const idx = store.savings.findIndex(s => s.id === savingsDepositModal.goalId)
+  if (idx === -1) return
+  store.addSavingsDeposit(idx, savingsDepositModal.amount, savingsDepositModal.note || '')
+  closeSavingsModal()
+}
+
+// ══ DEBT PAYMENT MODAL ════════════════════════════════════════════════════════
+const debtModalAmountRef = ref(null)
+const debtPaymentModal = reactive({ open: false, debtId: null, debtName: '', amount: null, note: '' })
+
+function openDebtPaymentModal(debt) {
+  debtPaymentModal.debtId = debt.id
+  debtPaymentModal.debtName = debt.name
+  debtPaymentModal.amount = null
+  debtPaymentModal.note = ''
+  debtPaymentModal.open = true
+  nextTick(() => debtModalAmountRef.value?.focus())
+}
+
+function closeDebtModal() {
+  debtPaymentModal.open = false
+}
+
+function saveDebtPayment() {
+  if (!debtPaymentModal.amount || debtPaymentModal.amount <= 0) return
+  const idx = store.debts.findIndex(d => d.id === debtPaymentModal.debtId)
+  if (idx === -1) return
+  store.addDebtPayment(idx, debtPaymentModal.amount, debtPaymentModal.note || '')
+  closeDebtModal()
+}
+
+watch(() => debtPaymentModal.open || savingsDepositModal.open, (isOpen) => {
+  document.body.style.overflow = isOpen ? 'hidden' : ''
+})
 
 // ══ FLEX EXPENSES ═════════════════════════════════════════════════════════════
 const SWEDISH_MONTHS = [
@@ -549,7 +726,7 @@ function resetFlexActual(name) {
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-secondary);
   border-top: 0.5px solid var(--separator);
@@ -941,6 +1118,7 @@ function resetFlexActual(name) {
 .payment-row-info {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
   flex: 1;
   min-width: 0;
@@ -963,6 +1141,7 @@ function resetFlexActual(name) {
 .payment-date {
   font-size: 11px;
   color: var(--text-tertiary);
+  margin-left: 0;
 }
 
 .payment-delete-btn {
@@ -1052,6 +1231,13 @@ function resetFlexActual(name) {
   font-size: 15px;
   font-weight: 600;
   color: var(--system-green);
+}
+
+.savings-rate-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding: 0 20px 10px;
+  font-weight: 500;
 }
 
 /* ══ FLEX ICON ════════════════════════════════════════════════ */
@@ -1230,5 +1416,119 @@ function resetFlexActual(name) {
 .flex-edit-row {
   display: flex;
   gap: 8px;
+}
+
+/* ══ DEBT ADD PAYMENT BUTTON ══════════════════════════════════ */
+.debt-add-payment-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--system-blue);
+  border: 1.5px solid var(--system-blue);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.debt-add-payment-btn:active { opacity: 0.7; }
+
+/* ══ DEBT PAYMENT MODAL ═══════════════════════════════════════ */
+.dp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: max(80px, 12vh) 24px 24px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.dp-sheet {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 24px 20px 20px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: dp-pop 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+@keyframes dp-pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.dp-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dp-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: -8px 0 2px;
+}
+
+.dp-close {
+  background: var(--system-gray5);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.dp-close:active { opacity: 0.6; }
+
+.dp-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--separator);
+  border-radius: 12px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.dp-input:focus {
+  border-color: var(--system-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.dp-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
 }
 </style>

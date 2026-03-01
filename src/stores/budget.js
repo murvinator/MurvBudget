@@ -25,6 +25,20 @@ export const useBudgetStore = defineStore('budget', {
     savingsDeposits: {},
     monthlyChecklistTracking: {},
     finansOrder: ['debts', 'savings', 'flex'],
+    checklistSettings: {
+      showAmounts: true,
+      showDates: true,
+      autoCollapseCompleted: false,
+      showSummary: true,
+      sortOrder: 'manual',
+    },
+    finansViewSettings: {
+      flexShowBars: true,
+      flexShowEstimates: true,
+      debtsShowProgress: true,
+      savingsShowPct: true,
+      savingsShowRate: false,
+    },
     salaryDay: null,
     salaryMonthOffset: false,
     tempMonthlyIncome: {},
@@ -206,6 +220,14 @@ export const useBudgetStore = defineStore('budget', {
     },
     setFinansOrder(newOrder) {
       this.finansOrder = newOrder
+    },
+    setChecklistSetting(key, value) {
+      if (!this.checklistSettings) this.checklistSettings = {}
+      this.checklistSettings[key] = value
+    },
+    setFinansViewSetting(key, value) {
+      if (!this.finansViewSettings) this.finansViewSettings = {}
+      this.finansViewSettings[key] = value
     },
     saveEditCategory(index, newName) {
       const oldName = this.categories[index]
@@ -528,6 +550,12 @@ export const useBudgetStore = defineStore('budget', {
         this.finansOrder = ['debts', 'savings', 'flex']
       } else if (!this.finansOrder.includes('flex')) {
         this.finansOrder = [...this.finansOrder, 'flex']
+      }
+      if (!this.checklistSettings) {
+        this.checklistSettings = { showAmounts: true, showDates: true, autoCollapseCompleted: false, showSummary: true, sortOrder: 'manual' }
+      }
+      if (!this.finansViewSettings) {
+        this.finansViewSettings = { flexShowBars: true, flexShowEstimates: true, debtsShowProgress: true, savingsShowPct: true, savingsShowRate: false }
       }
       this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
       // Ensure all debts have ids

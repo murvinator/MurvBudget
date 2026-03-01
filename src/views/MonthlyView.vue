@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="monthly-summary">
+    <div v-if="store.checklistSettings?.showSummary !== false" class="monthly-summary">
       <div class="monthly-stat">
         <div class="monthly-stat-label">Totalt</div>
         <div class="monthly-stat-value">{{ fmt(grandTotal) }} kr</div>
@@ -291,10 +291,13 @@ function saveSpecialCollapsed(key, value) {
 }
 
 function categoryExpenses(category) {
-  return store.expenses
+  const items = store.expenses
     .map((e, index) => ({ ...e, index }))
     .filter((e) => e.category === category && !e.variable)
-    .sort((a, b) => b.amount - a.amount)
+  const sortOrder = store.checklistSettings?.sortOrder || 'manual'
+  if (sortOrder === 'amount') return [...items].sort((a, b) => b.amount - a.amount)
+  if (sortOrder === 'date') return [...items].sort((a, b) => (a.date || 99) - (b.date || 99))
+  return items
 }
 
 const uncategorizedExpenses = computed(() =>
@@ -381,6 +384,16 @@ function isPaid(index) {
 
 function togglePaid(index) {
   store.toggleMonthlyPayment(index, !isPaid(index))
+  if (store.checklistSettings?.autoCollapseCompleted) {
+    const exp = store.expenses[index]
+    if (exp?.category) {
+      const catExps = categoryExpenses(exp.category)
+      if (catExps.every(e => isPaid(e.index))) {
+        collapsedCategories[exp.category] = true
+        try { sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories })) } catch {}
+      }
+    }
+  }
 }
 
 function categoryTotal(category) {
@@ -471,6 +484,8 @@ function toggleAll() {
     sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
   } catch {}
 }
+
+defineExpose({ toggleAllSections: toggleAll })
 
 async function resetMonth() {
   const ok = await confirm('Återställ checkboxar?', { label: 'Återställ', style: 'destructive', description: 'Alla utgifter markeras som ej betalda.' })

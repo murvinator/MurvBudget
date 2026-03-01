@@ -254,6 +254,27 @@
               </div>
             </div>
           </div>
+          <div class="widget-sub-settings">
+            <div class="chart-type-section chart-type-section--toggle">
+              <div class="chart-type-label">Visa summering</div>
+              <input type="checkbox" class="ios-toggle" :checked="store.checklistSettings?.showSummary !== false" @change="store.setChecklistSetting('showSummary', $event.target.checked)">
+            </div>
+            <div class="chart-type-section chart-type-section--toggle">
+              <div class="chart-type-label">Komprimera avklarade</div>
+              <input type="checkbox" class="ios-toggle" :checked="store.checklistSettings?.autoCollapseCompleted" @change="store.setChecklistSetting('autoCollapseCompleted', $event.target.checked)">
+            </div>
+            <div class="chart-type-section chart-type-section--last">
+              <div class="chart-type-label">Sortera poster</div>
+              <div class="chart-type-segment">
+                <button
+                  v-for="opt in checklistSortOptions"
+                  :key="opt.value"
+                  :class="['segment-btn', { active: (store.checklistSettings?.sortOrder || 'manual') === opt.value }]"
+                  @click="store.setChecklistSetting('sortOrder', opt.value)"
+                >{{ opt.label }}</button>
+              </div>
+            </div>
+          </div>
         </div></CollapseTransition>
       </div>
 
@@ -291,6 +312,16 @@
                   <span class="widget-order-label">{{ FINANS_SECTION_LABELS[sectionId] }}</span>
                 </div>
               </div>
+            </div>
+          </div>
+          <div class="widget-sub-settings">
+            <div class="chart-type-section chart-type-section--toggle">
+              <div class="chart-type-label">Flex: Visa staplar</div>
+              <input type="checkbox" class="ios-toggle" :checked="store.finansViewSettings?.flexShowBars !== false" @change="store.setFinansViewSetting('flexShowBars', $event.target.checked)">
+            </div>
+            <div class="chart-type-section chart-type-section--last chart-type-section--toggle">
+              <div class="chart-type-label">Skulder: Visa progress direkt</div>
+              <input type="checkbox" class="ios-toggle" :checked="store.finansViewSettings?.debtsShowProgress !== false" @change="store.setFinansViewSetting('debtsShowProgress', $event.target.checked)">
             </div>
           </div>
         </div></CollapseTransition>
@@ -809,6 +840,29 @@
                     <button class="cancel-edit-btn" @click="editingDebt = null">Avbryt</button>
                     <button class="delete-edit-btn" @click="deleteDebtFromEdit(debt.storeIdx)">Radera</button>
                   </div>
+                  <!-- Lägg till betalning -->
+                  <button class="settings-add-payment-btn" @click="openSettingsDebtPayment(debt.storeIdx)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    {{ addingPaymentForDebt === debt.storeIdx ? 'Avbryt betalning' : 'Lägg till en betalning' }}
+                  </button>
+                  <CollapseTransition>
+                    <div v-if="addingPaymentForDebt === debt.storeIdx" class="settings-inline-payment">
+                      <div class="edit-input-group">
+                        <label>Belopp (kr)</label>
+                        <input type="number" v-model.number="settingsPaymentAmount" placeholder="" inputmode="numeric" step="1" @focus="$event.target.select()" @keyup.enter="saveSettingsDebtPayment(debt.storeIdx)">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Anteckning (valfritt)</label>
+                        <input type="text" v-model="settingsPaymentNote" placeholder="" @keyup.enter="saveSettingsDebtPayment(debt.storeIdx)">
+                      </div>
+                      <div class="edit-actions">
+                        <button class="save-edit-btn" @click="saveSettingsDebtPayment(debt.storeIdx)" :disabled="!settingsPaymentAmount || settingsPaymentAmount <= 0">Spara</button>
+                        <button class="cancel-edit-btn" @click="addingPaymentForDebt = null">Avbryt</button>
+                      </div>
+                    </div>
+                  </CollapseTransition>
                   <!-- Betalningshistorik -->
                   <div v-if="(store.debtPayments[debt.id] || []).length > 0" class="settings-payment-history">
                     <div class="settings-payment-history-label">Betalningshistorik</div>
@@ -903,13 +957,36 @@
                   </div>
                   <div class="edit-input-group">
                     <label>Månadsbetalning (valfritt)</label>
-                    <input type="number" v-model.number="editSavingMonthlyPayment" step="1" inputmode="numeric" placeholder="" @focus="$event.target.select()">
+                    <input type="number" v-model.number="editSavingMonthlyPayment" step="1" inputmode="numeric" placeholder="1" @focus="$event.target.select()">
                   </div>
                   <div class="edit-actions">
                     <button class="save-edit-btn" @click="saveSavingEdit(goal.storeIdx)">Spara</button>
                     <button class="cancel-edit-btn" @click="editingSaving = null">Avbryt</button>
                     <button class="delete-edit-btn" @click="deleteSavingFromEdit(goal.storeIdx)">Radera</button>
                   </div>
+                  <!-- Lägg till insättning -->
+                  <button class="settings-add-payment-btn" @click="openSettingsSavingsDeposit(goal.storeIdx)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    {{ addingDepositForSaving === goal.storeIdx ? 'Avbryt insättning' : 'Lägg till insättning' }}
+                  </button>
+                  <CollapseTransition>
+                    <div v-if="addingDepositForSaving === goal.storeIdx" class="settings-inline-payment">
+                      <div class="edit-input-group">
+                        <label>Belopp (kr)</label>
+                        <input type="number" v-model.number="settingsDepositAmount" placeholder="" inputmode="numeric" step="1" @focus="$event.target.select()" @keyup.enter="saveSettingsSavingsDeposit(goal.storeIdx)">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Anteckning (valfritt)</label>
+                        <input type="text" v-model="settingsDepositNote" placeholder="" @keyup.enter="saveSettingsSavingsDeposit(goal.storeIdx)">
+                      </div>
+                      <div class="edit-actions">
+                        <button class="save-edit-btn" @click="saveSettingsSavingsDeposit(goal.storeIdx)" :disabled="!settingsDepositAmount || settingsDepositAmount <= 0">Spara</button>
+                        <button class="cancel-edit-btn" @click="addingDepositForSaving = null">Avbryt</button>
+                      </div>
+                    </div>
+                  </CollapseTransition>
                   <!-- Insättningshistorik -->
                   <div v-if="(store.savingsDeposits[goal.id] || []).length > 0" class="settings-payment-history">
                     <div class="settings-payment-history-label">Insättningshistorik</div>
@@ -1305,6 +1382,12 @@ function onChecklistCatDragEnd() {
 
 // Ekonomi section — drag to reorder finansOrder
 const FINANS_SECTION_LABELS = { debts: 'Skulder och lån', savings: 'Sparande', flex: 'Flex-utgifter' }
+
+const checklistSortOptions = [
+  { value: 'manual', label: 'Manuell' },
+  { value: 'amount', label: 'Belopp' },
+  { value: 'date',   label: 'Datum' },
+]
 const ekonomiListRef = ref(null)
 const ekonomiDragIdx = ref(null)
 
@@ -1379,18 +1462,22 @@ const summaryStyleOptions = [
 ]
 
 const GRADIENTS = {
-  'blue':        'linear-gradient(135deg, #007AFF, #007AFF)',
-  'blue-purple': 'linear-gradient(135deg, #007AFF, #AF52DE)',
-  'orange-pink': 'linear-gradient(135deg, #FF9500, #FF2D92)',
-  'green-teal':  'linear-gradient(135deg, #34C759, #5AC8FA)',
-  'red-orange':  'linear-gradient(135deg, #FF3B30, #FF9500)',
-  'indigo-blue': 'linear-gradient(135deg, #5856D6, #007AFF)',
-  'pink-red':    'linear-gradient(135deg, #FF2D92, #FF3B30)',
-  'neutral':     'linear-gradient(135deg, #D1D1D6, #D1D1D6)',
+  'blue':             'linear-gradient(135deg, #007AFF, #007AFF)',
+  'blue-purple':      'linear-gradient(135deg, #007AFF, #AF52DE)',
+  'orange-pink':      'linear-gradient(135deg, #FF9500, #FF2D92)',
+  'green-teal':       'linear-gradient(135deg, #34C759, #5AC8FA)',
+  'red-orange':       'linear-gradient(135deg, #FF3B30, #FF9500)',
+  'indigo-blue':      'linear-gradient(135deg, #5856D6, #007AFF)',
+  'pink-red':         'linear-gradient(135deg, #FF2D92, #FF3B30)',
+  'neutral':          'linear-gradient(135deg, #D1D1D6, #D1D1D6)',
+  'muted-blue-slate': 'linear-gradient(135deg, #4A90C4, #7B6BAE)',
+  'muted-amber':      'linear-gradient(135deg, #C48A2E, #B05C5C)',
+  'muted-green-teal': 'linear-gradient(135deg, #5CAB7D, #3A8A8A)',
 }
 
 const colorPresets = [
   { value: 'colorful', label: 'Färgglad', colors: ['blue-purple', 'orange-pink', 'green-teal'] },
+  { value: 'muted',    label: 'Dämpad',   colors: ['muted-blue-slate', 'muted-amber', 'muted-green-teal'] },
   { value: 'blue',     label: 'Blue',     colors: ['blue', 'blue', 'blue'] },
   { value: 'neutral',  label: 'Neutral',  colors: ['neutral', 'neutral', 'neutral'] },
 ]
@@ -1728,14 +1815,32 @@ const editDebtName = ref('')
 const editDebtAmount = ref(null)
 const editDebtDate = ref(null)
 const editDebtMonthlyPayment = ref(null)
+const addingPaymentForDebt = ref(null)
+const settingsPaymentAmount = ref(null)
+const settingsPaymentNote = ref('')
 
 function toggleEditDebt(idx) {
-  if (editingDebt.value === idx) { editingDebt.value = null; return }
+  if (editingDebt.value === idx) { editingDebt.value = null; addingPaymentForDebt.value = null; return }
   editingDebt.value = idx
+  addingPaymentForDebt.value = null
   editDebtName.value = store.debts[idx].name
   editDebtAmount.value = store.debts[idx].amount
   editDebtDate.value = store.debts[idx].date || null
   editDebtMonthlyPayment.value = store.debts[idx].monthlyPayment || 0
+}
+
+function openSettingsDebtPayment(idx) {
+  if (addingPaymentForDebt.value === idx) { addingPaymentForDebt.value = null; return }
+  settingsPaymentAmount.value = null
+  settingsPaymentNote.value = ''
+  addingPaymentForDebt.value = idx
+}
+
+function saveSettingsDebtPayment(idx) {
+  if (!settingsPaymentAmount.value || settingsPaymentAmount.value <= 0) return
+  store.addDebtPayment(idx, settingsPaymentAmount.value, settingsPaymentNote.value || '')
+  editDebtAmount.value = store.debts[idx].amount
+  addingPaymentForDebt.value = null
 }
 
 function saveDebtEdit(idx) {
@@ -1796,10 +1901,27 @@ const editSavingName = ref('')
 const editSavingTarget = ref(null)
 const editSavingDate = ref(null)
 const editSavingMonthlyPayment = ref(null)
+const addingDepositForSaving = ref(null)
+const settingsDepositAmount = ref(null)
+const settingsDepositNote = ref('')
+
+function openSettingsSavingsDeposit(idx) {
+  if (addingDepositForSaving.value === idx) { addingDepositForSaving.value = null; return }
+  settingsDepositAmount.value = null
+  settingsDepositNote.value = ''
+  addingDepositForSaving.value = idx
+}
+
+function saveSettingsSavingsDeposit(idx) {
+  if (!settingsDepositAmount.value || settingsDepositAmount.value <= 0) return
+  store.addSavingsDeposit(idx, settingsDepositAmount.value, settingsDepositNote.value || '')
+  addingDepositForSaving.value = null
+}
 
 function toggleEditSaving(idx) {
-  if (editingSaving.value === idx) { editingSaving.value = null; return }
+  if (editingSaving.value === idx) { editingSaving.value = null; addingDepositForSaving.value = null; return }
   editingSaving.value = idx
+  addingDepositForSaving.value = null
   editSavingName.value = store.savings[idx].name
   editSavingTarget.value = store.savings[idx].target
   editSavingDate.value = store.savings[idx].date || null
