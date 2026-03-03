@@ -48,16 +48,44 @@
       <CollapseTransition>
         <div v-if="openCard === 1" class="card-detail">
           <div class="detail-sep" />
-          <div v-for="(exp, i) in topExpenses" :key="exp.name" class="detail-row">
+
+          <!-- Flex expenses: always shown, unnumbered, blue badge -->
+          <template v-if="flexExpenses.length > 0">
+            <div v-for="exp in flexExpenses" :key="'flex-' + exp.name" class="detail-row">
+              <span class="detail-rank detail-rank--spacer" />
+              <span class="detail-name">{{ exp.name }}</span>
+              <span class="detail-cat detail-cat--flex">Flex</span>
+              <span class="detail-amount"><span class="detail-tilde">~</span>{{ fmt(exp.amount) }} kr</span>
+            </div>
+            <div v-if="regularExpenses.length > 0" class="detail-sep detail-sep--minor" />
+          </template>
+
+          <!-- Regular expenses: first 5 always shown -->
+          <div v-for="(exp, i) in regularExpenses.slice(0, 5)" :key="exp.name" class="detail-row">
             <span class="detail-rank">{{ i + 1 }}</span>
             <span class="detail-name">{{ exp.name }}</span>
-            <span v-if="exp.variable" class="detail-cat detail-cat--flex">Flex</span>
-            <span v-else-if="exp.category" class="detail-cat">{{ exp.category }}</span>
-            <span class="detail-amount"><span v-if="exp.variable" class="detail-tilde">~</span>{{ fmt(exp.amount) }} kr</span>
+            <span v-if="exp.category" class="detail-cat">{{ exp.category }}</span>
+            <span class="detail-amount">{{ fmt(exp.amount) }} kr</span>
           </div>
+
+          <!-- Extra regular expenses: animated in/out -->
+          <CollapseTransition>
+            <div v-if="showAllExpenses && regularExpenses.length > 5">
+              <div v-for="(exp, i) in regularExpenses.slice(5)" :key="exp.name" class="detail-row">
+                <span class="detail-rank">{{ i + 6 }}</span>
+                <span class="detail-name">{{ exp.name }}</span>
+                <span v-if="exp.category" class="detail-cat">{{ exp.category }}</span>
+                <span class="detail-amount">{{ fmt(exp.amount) }} kr</span>
+              </div>
+            </div>
+          </CollapseTransition>
+
           <div v-if="store.expenses.length === 0" class="detail-empty">Inga utgifter tillagda</div>
-          <div v-else-if="store.expenses.length > 5" class="detail-more">
-            +{{ store.expenses.length - 5 }} till
+          <div v-else-if="remainingCount > 0" class="detail-more detail-more--tap" @click.stop="showAllExpenses = true">
+            +{{ remainingCount }} till
+          </div>
+          <div v-else-if="showAllExpenses && regularExpenses.length > 5" class="detail-more detail-more--tap" @click.stop="showAllExpenses = false">
+            Visa färre
           </div>
         </div>
       </CollapseTransition>
@@ -205,9 +233,19 @@ const normalTotalIncome = computed(() =>
 
 const tempDiff = computed(() => store.totalIncome - normalTotalIncome.value)
 
-// ── Top 5 expenses (including flex with estimate label) ──────
-const topExpenses = computed(() =>
-  [...store.expenses].sort((a, b) => b.amount - a.amount).slice(0, 5)
+// ── Expense lists (flex first, unnumbered; regular numbered & truncatable) ──
+const showAllExpenses = ref(false)
+
+const flexExpenses = computed(() =>
+  store.expenses.filter(e => e.variable).sort((a, b) => b.amount - a.amount)
+)
+
+const regularExpenses = computed(() =>
+  store.expenses.filter(e => !e.variable).sort((a, b) => b.amount - a.amount)
+)
+
+const remainingCount = computed(() =>
+  showAllExpenses.value ? 0 : Math.max(0, regularExpenses.value.length - 5)
 )
 
 // ── Remaining ring ───────────────────────────────────────────
@@ -232,6 +270,7 @@ watch(openCard, (val) => {
       setTimeout(() => { kvarAnimatedOffset.value = ringOffset.value }, 80)
     })
   }
+  if (val !== 1) showAllExpenses.value = false
 })
 
 function fmt(n) {
@@ -403,8 +442,32 @@ function fmt(n) {
 .temp-pos { color: inherit; }
 .temp-neg { opacity: 0.7; }
 
+.detail-rank--spacer {
+  min-width: 14px;
+  display: inline-block;
+}
+
 .detail-cat--flex {
-  background: rgba(255,255,255,0.28);
+  background: rgba(255, 255, 255, 0.92);
+  color: #007AFF;
+  opacity: 1;
+}
+
+.detail-sep--minor {
+  height: 0.5px;
+  background: currentColor;
+  opacity: 0.15;
+  margin: 8px 0;
+}
+
+.detail-more--tap {
+  cursor: pointer;
+  font-weight: 600;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+.detail-more--tap:active {
+  opacity: 1;
 }
 
 .detail-tilde {
