@@ -957,7 +957,7 @@
                   </div>
                   <div class="edit-input-group">
                     <label>Månadsbetalning (valfritt)</label>
-                    <input type="number" v-model.number="editSavingMonthlyPayment" step="1" inputmode="numeric" placeholder="1" @focus="$event.target.select()">
+                    <input type="number" v-model.number="editSavingMonthlyPayment" step="1" inputmode="numeric" placeholder="" @focus="$event.target.select()">
                   </div>
                   <div class="edit-actions">
                     <button class="save-edit-btn" @click="saveSavingEdit(goal.storeIdx)">Spara</button>
