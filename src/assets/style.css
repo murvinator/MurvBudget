@@ -117,6 +117,37 @@ body {
     padding: 0 4px;
 }
 
+/* ─── Settings compact header (mobile only) ──────────────────── */
+/* On mobile, settings uses the compact AppHeader title (always visible at top).
+   Tweak --settings-header-font-size to adjust its size.          */
+:root {
+    --settings-header-font-size: 18px;
+    --settings-header-padding-bottom: 10px;
+    /* ← tweak mobile settings title size here */
+}
+
+/* Mobile settings: push content below the compact header + a bit of breathing room */
+.layout-mobile .settings-root,
+.layout-mobile-web .settings-root {
+    margin-top: 55px;
+}
+
+/* Desktop settings: sticky large title pinned just below the nav bar */
+.layout-desktop .page-large-title.settings-title {
+    position: sticky;
+    top: 59px;
+    /* height of desktop nav */
+    z-index: 100;
+    background: var(--bg-primary);
+    margin: 0;
+    padding: 14px 4px 12px;
+    border-bottom: 0.5px solid var(--separator);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+
 /* ================================= */
 /* LIQUID GLASS */
 /* ================================= */
@@ -1597,50 +1628,7 @@ body {
 /* SETTINGS VIEW */
 /* ================================= */
 
-.settings-header {
-    position: sticky;
-    top: var(--safe-area-top, 0px);
-    z-index: 200;
-    background: var(--bg-primary);
-    padding: 16px 16px 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 0.5px solid var(--separator);
-}
 
-.settings-header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.settings-header h2 {
-    font-size: 25px;
-    font-weight: 700;
-    margin: 0;
-    margin-right: 10px;
-    letter-spacing: -0.3px;
-}
-
-.back-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--bg-secondary);
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--system-blue);
-    flex-shrink: 0;
-}
-
-.back-btn svg {
-    width: 18px;
-    height: 18px;
-}
 
 .settings-root {
     max-width: 900px;
@@ -1910,13 +1898,6 @@ body {
     font-size: 12px;
     font-weight: 600;
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-@media (max-width: 480px) {
-    .settings-header {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
 }
 
 /* ================================= */

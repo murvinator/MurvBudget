@@ -22,12 +22,12 @@
     </svg>
 
     <DesktopNav v-if="showDesktopNav && !showOnboarding" :current-view="currentView" @navigate="showView" />
-    <AppHeader v-if="currentView !== 'settings' && !showOnboarding && !showDesktopNav" :current-view="currentView" />
+    <AppHeader v-if="!showOnboarding && !showDesktopNav" :current-view="currentView" />
 
     <div v-show="!showOnboarding" class="container" @click="dismissKeyboard">
       <div class="content">
-        <!-- Large title scrolls with content, naturally disappears behind the fixed nav bar -->
-        <h1 v-if="currentView !== 'settings' && !showDesktopNav" class="page-large-title">{{ viewTitle }}</h1>
+        <!-- Large title: scrolls with content on mobile; sticky on desktop (settings only) -->
+        <h1 v-if="!showDesktopNav" class="page-large-title">{{ viewTitle }}</h1>
         <component :is="currentViewComponent" ref="activeViewRef" @navigate="showView" />
       </div>
     </div>
@@ -107,6 +107,7 @@ const viewTitle = computed(() => {
     case 'overview': return 'Budget'
     case 'monthly': return 'Checklista'
     case 'economy': return 'Ekonomi'
+    case 'settings': return 'Inställningar'
     default: return 'MurvBudget'
   }
 })

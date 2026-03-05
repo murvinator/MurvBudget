@@ -1,16 +1,5 @@
 <template>
   <div class="settings-view-root">
-    <div class="settings-header">
-      <div class="settings-header-left">
-        <!-- <button class="back-btn" @click="goBack()" title="Tillbaka">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button> -->
-        <h2>Inställningar</h2>
-      </div>
-    </div>
-
     <div class="settings-root">
 
       <!-- ── Flikar-grupp start ─────────────────── -->
