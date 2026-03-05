@@ -1583,6 +1583,30 @@ watch(() => collapsedSections['overview'], (collapsed) => {
 
 function toggleSection(key) {
   collapsedSections[key] = !collapsedSections[key]
+  
+  if (collapsedSections[key]) {
+    // Stänger vi en kategori så nollställer vi underliggande öppen redigering
+    if (key === 'debts') {
+      editingDebt.value = null
+      showAddDebt.value = false
+    } else if (key === 'savings') {
+      editingSaving.value = null
+      showAddSaving.value = false
+    } else if (key === 'income') {
+      editingIncome.value = null
+      showAddIncome.value = false
+    } else if (key === 'categories') {
+      editingCategory.value = null
+      showAddCategory.value = false
+    } else if (key === 'flex') {
+      editingExpense.value = null
+      showAddFlex.value = false
+    } else if (key === 'expenses') {
+      editingExpense.value = null
+      showAddExpense.value = false
+    }
+  }
+
   try {
     sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedSections }))
   } catch {}
@@ -1921,7 +1945,7 @@ function toggleEditDebt(idx) {
   editDebtName.value = store.debts[idx].name
   editDebtAmount.value = store.debts[idx].amount
   editDebtDate.value = store.debts[idx].date || null
-  editDebtMonthlyPayment.value = store.debts[idx].monthlyPayment || 0
+  editDebtMonthlyPayment.value = store.debts[idx].monthlyPayment || null
 }
 
 function openSettingsDebtPayment(idx) {
