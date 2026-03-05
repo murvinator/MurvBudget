@@ -35,7 +35,11 @@ Single Pinia store (`useBudgetStore`) persisted to `localStorage` under key `bud
 - **monthlyStatus** — tracks checkbox state for the monthly checklist; keyed by `'current'` then by expense index
 - **overviewSettings** — controls widget visibility and appearance on the Overview tab
 
-`migrateData()` is called on app mount and handles legacy data migrations (e.g., old `'Skulder'` category → debts, name-keyed debtPayments → id-keyed).
+`migrateData()` is called on app mount and handles legacy data migrations (e.g., old `'Skulder'` category → debts, name-keyed debtPayments → id-keyed, `expenses[].variable = true` → `flex[]`).
+
+**Version constants** (both exported from `src/stores/budget.js`):
+- `DATA_SCHEMA_VERSION` — integer; stored in JSON export and localStorage. **Must be incremented whenever the JSON data structure changes** (new fields added, fields renamed/removed, format changes). Used for import/cloud-sync compatibility warnings.
+- `APP_VERSION` — semver string shown in Settings footer. Update for any release.
 
 ### Views
 
@@ -52,7 +56,7 @@ Single Pinia store (`useBudgetStore`) persisted to `localStorage` under key `bud
 - **Design language:** iOS-native aesthetic - SPECIFICALLY LATEST IOS26 — SF Pro font stack, iOS system colors as CSS variables (`--system-blue`, `--system-red`, etc.), safe-area insets, liquid glass tab bar effect
 - **Styling:** Global styles in `src/assets/style.css`; component-scoped `<style scoped>` for local overrides. Dark mode via `@media (prefers-color-scheme: dark)`.
 - **No routing library** — view switching is manual via emitted `navigate` events
-- **No HTTP calls** — all data is local; `loadTestData()` fetches from `/assets/testdata/testdata.json`
+- **No HTTP calls** — all data is local; `loadTestData()` fetches from `/public/assets/testdata/testdata.json`
 
 ### Key patterns
 

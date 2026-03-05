@@ -11,12 +11,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({ currentView: String })
 
-const viewTitles = { overview: 'Budget', monthly: 'Checklista', finans: 'Ekonomi' }
+const viewTitles = { overview: 'Budget', monthly: 'Checklista', economy: 'Ekonomi', settings: 'Inställningar' }
 const smallTitle = computed(() => viewTitles[props.currentView] ?? 'MurvBudget')
 
 const scrollY = ref(0)
 
 const titleOpacity = computed(() => {
+  
   const start = 68
   const end = 80
   return Math.min(Math.max((scrollY.value - start) / (end - start), 0), 1)
@@ -52,7 +53,7 @@ onUnmounted(() => {
 }
 
 .title-small {
-  font-size: 17px;
+  font-size: var(--settings-header-font-size, 17px);
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.2px;

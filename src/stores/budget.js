@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 import supabase from '../lib/supabase'
+import { encryptData, decryptData } from '../utils/crypto'
+
+export const DATA_SCHEMA_VERSION = 1       // integer; bump when JSON structure changes
+export const APP_VERSION = '1.0.1'         // semver; bump for any release
 
 function genId(prefix = 'd') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -12,27 +16,30 @@ const SWEDISH_MONTHS = [
 
 export const useBudgetStore = defineStore('budget', {
   state: () => ({
+    schemaVersion: DATA_SCHEMA_VERSION,
     income: [],
     expenses: [],
     categories: [],
     monthlyStatus: {},
     debts: [],
     debtPayments: {},
-    variableActuals: {},
-    variableExpenses: [],
-    variableExpenseTransactions: {},
+    variableActuals: {},  // actual flex amounts: { "YYYY-M": { expenseName: amount } }
+    flex: [],             // flex expenses list: { name, amount }
+    // LEGACY (kept for reference, no longer used):
+    // variableExpenses: [],
+    // variableExpenseTransactions: {},
     savings: [],
     savingsDeposits: {},
     monthlyChecklistTracking: {},
-    finansOrder: ['debts', 'savings', 'flex'],
+    economyOrder: ['debts', 'savings', 'flex'],
     checklistSettings: {
       showAmounts: true,
       showDates: true,
       autoCollapseCompleted: false,
       showSummary: true,
-      sortOrder: 'manual',
+      sortOrder: 'amount',
     },
-    finansViewSettings: {
+    economyViewSettings: {
       flexShowBars: true,
       flexShowEstimates: true,
       debtsShowProgress: true,
@@ -42,6 +49,7 @@ export const useBudgetStore = defineStore('budget', {
     salaryDay: null,
     salaryMonthOffset: false,
     tempMonthlyIncome: {},
+    displayModePreference: 'auto', // 'auto' | 'force-pwa' | 'force-browser'
     overviewSettings: {
       showSummaryCards: true,
       showVariableMini: true,
@@ -52,18 +60,18 @@ export const useBudgetStore = defineStore('budget', {
       cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
       summaryStyle: 'default',
       widgetOrder: [
-        { id: 'summary',    visible: true },
-        { id: 'chart',      visible: true },
-        { id: 'debts',      visible: true },
-        { id: 'checklist',  visible: true },
-        { id: 'savings',    visible: true },
+        { id: 'summary', visible: true },
+        { id: 'chart', visible: true },
+        { id: 'debts', visible: true },
+        { id: 'checklist', visible: true },
+        { id: 'savings', visible: true },
         { id: 'categories', visible: true },
-        { id: 'flex',       visible: true },
+        { id: 'flex', visible: true },
       ],
       widgetSettings: {
-        flex:       { style: 'default', showBars: true },
-        checklist:  { size: 'default' },
-        savings:    { size: 'default' },
+        flex: { style: 'default', showBars: true },
+        checklist: { size: 'default' },
+        savings: { size: 'default' },
         categories: { size: 'default', maxItems: 0 },
       },
     },
@@ -84,13 +92,12 @@ export const useBudgetStore = defineStore('budget', {
     totalExpenses: (state) => {
       const now = new Date()
       const mk = `${now.getFullYear()}-${now.getMonth()}`
-      return state.expenses.reduce((sum, e) => {
-        if (e.variable) {
-          const actual = state.variableActuals?.[mk]?.[e.name]
-          return sum + (actual !== undefined ? actual : e.amount)
-        }
-        return sum + e.amount
+      const fixed = state.expenses.reduce((sum, e) => sum + e.amount, 0)
+      const flex = (state.flex || []).reduce((sum, e) => {
+        const actual = state.variableActuals?.[mk]?.[e.name]
+        return sum + (actual !== undefined ? actual : e.amount)
       }, 0)
+      return fixed + flex
     },
     remaining: (state) => {
       const now = new Date()
@@ -99,14 +106,12 @@ export const useBudgetStore = defineStore('budget', {
       const income = (overrides && typeof overrides === 'object')
         ? state.income.reduce((sum, i) => sum + (overrides[i.name] !== undefined ? overrides[i.name] : i.amount), 0)
         : state.income.reduce((sum, i) => sum + i.amount, 0)
-      const expenses = state.expenses.reduce((sum, e) => {
-        if (e.variable) {
-          const actual = state.variableActuals?.[mk]?.[e.name]
-          return sum + (actual !== undefined ? actual : e.amount)
-        }
-        return sum + e.amount
+      const fixed = state.expenses.reduce((sum, e) => sum + e.amount, 0)
+      const flex = (state.flex || []).reduce((sum, e) => {
+        const actual = state.variableActuals?.[mk]?.[e.name]
+        return sum + (actual !== undefined ? actual : e.amount)
       }, 0)
-      return income - expenses
+      return income - fixed - flex
     },
     currentMonthKey: () => {
       const now = new Date()
@@ -125,6 +130,9 @@ export const useBudgetStore = defineStore('budget', {
   },
 
   actions: {
+    // ── Display Mode ─────────────────────────────────────────────────────────
+    setDisplayModePreference(val) { this.displayModePreference = val },
+
     // ── Overview Settings ────────────────────────────────────────────────────
     setOverviewSetting(key, value) {
       this.overviewSettings[key] = value
@@ -218,16 +226,16 @@ export const useBudgetStore = defineStore('budget', {
     reorderCategories(newOrder) {
       this.categories = newOrder
     },
-    setFinansOrder(newOrder) {
-      this.finansOrder = newOrder
+    setEconomyOrder(newOrder) {
+      this.economyOrder = newOrder
     },
     setChecklistSetting(key, value) {
       if (!this.checklistSettings) this.checklistSettings = {}
       this.checklistSettings[key] = value
     },
-    setFinansViewSetting(key, value) {
-      if (!this.finansViewSettings) this.finansViewSettings = {}
-      this.finansViewSettings[key] = value
+    setEconomyViewSetting(key, value) {
+      if (!this.economyViewSettings) this.economyViewSettings = {}
+      this.economyViewSettings[key] = value
     },
     saveEditCategory(index, newName) {
       const oldName = this.categories[index]
@@ -239,21 +247,46 @@ export const useBudgetStore = defineStore('budget', {
       })
     },
 
-    // ── Variable Expenses ────────────────────────────────────────────────────
-    addVariableExpense(name, budget) {
-      if (this.variableExpenses.find((e) => e.name === name)) return false
-      this.variableExpenses.push({ name, budget: parseInt(budget) })
+    // ── Flex Expenses ────────────────────────────────────────────────────────
+    addFlex(name, amount) {
+      if (!this.flex) this.flex = []
+      if (this.flex.find((e) => e.name === name)) return false
+      this.flex.push({ name, amount: parseInt(amount) })
       return true
     },
-    deleteVariableExpense(index) {
-      const name = this.variableExpenses[index].name
-      this.variableExpenses.splice(index, 1)
-      Object.keys(this.variableExpenseTransactions).forEach((monthKey) => {
-        if (this.variableExpenseTransactions[monthKey][name]) {
-          delete this.variableExpenseTransactions[monthKey][name]
-        }
-      })
+    deleteFlex(index) {
+      if (!this.flex) return
+      const name = this.flex[index]?.name
+      this.flex.splice(index, 1)
+      // Clean up actuals for deleted flex expense
+      if (name) {
+        Object.keys(this.variableActuals || {}).forEach((mk) => {
+          if (this.variableActuals[mk]?.[name] !== undefined) {
+            delete this.variableActuals[mk][name]
+          }
+        })
+      }
     },
+    saveEditFlex(index, name, amount) {
+      if (!this.flex?.[index]) return
+      const oldName = this.flex[index].name
+      this.flex[index] = { name, amount: parseInt(amount) }
+      // Migrate actuals if name changed
+      if (oldName !== name) {
+        Object.keys(this.variableActuals || {}).forEach((mk) => {
+          if (this.variableActuals[mk]?.[oldName] !== undefined) {
+            this.variableActuals[mk][name] = this.variableActuals[mk][oldName]
+            delete this.variableActuals[mk][oldName]
+          }
+        })
+      }
+    },
+
+    // LEGACY variable expense actions (kept for reference, no longer called):
+    // addVariableExpense(name, budget) { ... }
+    // deleteVariableExpense(index) { ... }
+    // addVariableTransaction(expenseName, amount, note) { ... }
+    // deleteVariableTransaction(expenseIndex, transactionIndex) { ... }
 
     // ── Debts ────────────────────────────────────────────────────────────────
     addDebt(name, amount, date) {
@@ -270,11 +303,12 @@ export const useBudgetStore = defineStore('budget', {
     },
 
     // ── Debt Payments ────────────────────────────────────────────────────────
-    addDebtPayment(debtIndex, amount, note) {
+    addDebtPayment(debtIndex, amount, note, date) {
       const debt = this.debts[debtIndex]
       if (!debt) return
       if (!this.debtPayments[debt.id]) this.debtPayments[debt.id] = []
-      this.debtPayments[debt.id].push({ amount, note: note || '', date: new Date().toISOString() })
+      const iso = date ? new Date(date + 'T12:00:00').toISOString() : new Date().toISOString()
+      this.debtPayments[debt.id].push({ amount, note: note || '', date: iso })
       debt.amount = Math.max(0, debt.amount - amount)
     },
     editDebtPayment(debtIndex, paymentIndex, newAmount, newNote) {
@@ -315,12 +349,13 @@ export const useBudgetStore = defineStore('budget', {
       const removed = this.savings.splice(index, 1)[0]
       if (removed?.id) delete this.savingsDeposits[removed.id]
     },
-    addSavingsDeposit(goalIndex, amount, note) {
+    addSavingsDeposit(goalIndex, amount, note, date) {
       const goal = this.savings[goalIndex]
       if (!goal) return
       if (!this.savingsDeposits[goal.id]) this.savingsDeposits[goal.id] = []
       const amt = parseInt(amount)
-      this.savingsDeposits[goal.id].push({ amount: amt, note: note || '', date: new Date().toISOString() })
+      const iso = date ? new Date(date + 'T12:00:00').toISOString() : new Date().toISOString()
+      this.savingsDeposits[goal.id].push({ amount: amt, note: note || '', date: iso })
       goal.current = (goal.current || 0) + amt
     },
     deleteSavingsDeposit(goalIndex, depositIndex) {
@@ -359,29 +394,6 @@ export const useBudgetStore = defineStore('budget', {
       this.monthlyStatus['current']['savings-' + savingsId] = paid
     },
 
-    // ── Variable Transactions ────────────────────────────────────────────────
-    addVariableTransaction(expenseName, amount, note) {
-      const monthKey = this.currentMonthKey
-      if (!this.variableExpenseTransactions[monthKey]) {
-        this.variableExpenseTransactions[monthKey] = {}
-      }
-      if (!this.variableExpenseTransactions[monthKey][expenseName]) {
-        this.variableExpenseTransactions[monthKey][expenseName] = []
-      }
-      this.variableExpenseTransactions[monthKey][expenseName].push({
-        amount,
-        note: note || '',
-        date: new Date().toISOString(),
-      })
-    },
-    deleteVariableTransaction(expenseIndex, transactionIndex) {
-      const monthKey = this.currentMonthKey
-      const expense = this.variableExpenses[expenseIndex]
-      if (!expense) return
-      const transactions = this.variableExpenseTransactions[monthKey]?.[expense.name]
-      if (transactions) transactions.splice(transactionIndex, 1)
-    },
-
     // ── Monthly ──────────────────────────────────────────────────────────────
     toggleMonthlyPayment(expenseIndex, paid) {
       if (!this.monthlyStatus['current']) this.monthlyStatus['current'] = {}
@@ -405,6 +417,7 @@ export const useBudgetStore = defineStore('budget', {
     exportData() {
       const date = new Date().toISOString().slice(0, 10)
       const dataStr = JSON.stringify({
+        schemaVersion: DATA_SCHEMA_VERSION,
         income: this.income,
         expenses: this.expenses,
         categories: this.categories,
@@ -412,8 +425,7 @@ export const useBudgetStore = defineStore('budget', {
         debts: this.debts,
         debtPayments: this.debtPayments,
         variableActuals: this.variableActuals,
-        variableExpenses: this.variableExpenses,
-        variableExpenseTransactions: this.variableExpenseTransactions,
+        flex: this.flex,
         savings: this.savings,
         savingsDeposits: this.savingsDeposits,
       }, null, 2)
@@ -430,8 +442,8 @@ export const useBudgetStore = defineStore('budget', {
     },
     async loadTestData() {
       const paths = [
-        '/assets/testdata/testdata.json',
-        '/assets/testdata/Testdata.json',
+        'public/assets/testdata/testdata.json',
+        'public/assets/testdata/Testdata.json',
       ]
       for (const p of paths) {
         try {
@@ -447,12 +459,25 @@ export const useBudgetStore = defineStore('budget', {
       return false
     },
     _applyData(data) {
+      const incomingVersion = data.schemaVersion || 0
       this.income = data.income || []
       this.categories = (data.categories || []).filter((c) => c !== 'Skulder')
       this.monthlyStatus = data.monthlyStatus || {}
       this.variableActuals = data.variableActuals || {}
-      this.variableExpenses = data.variableExpenses || []
-      this.variableExpenseTransactions = data.variableExpenseTransactions || {}
+      this.flex = data.flex || []
+      // Migrate old expenses[].variable = true → flex[]
+      const oldVariableExpenses = (data.expenses || []).filter(e => e.variable)
+      if (oldVariableExpenses.length > 0) {
+        const existingFlexNames = new Set(this.flex.map(e => e.name))
+        for (const e of oldVariableExpenses) {
+          if (!existingFlexNames.has(e.name)) {
+            this.flex.push({ name: e.name, amount: e.amount })
+          }
+        }
+      }
+      // LEGACY imports kept for reference (no longer applied):
+      // this.variableExpenses = data.variableExpenses || []
+      // this.variableExpenseTransactions = data.variableExpenseTransactions || {}
       this.savings = data.savings || []
       this.savingsDeposits = data.savingsDeposits || {}
       this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
@@ -466,13 +491,13 @@ export const useBudgetStore = defineStore('budget', {
         // Migrate from old format where debts were expenses with category Skulder
         const remaining = []
         const migrated = []
-        ;(data.expenses || []).forEach((e) => {
-          if (e.category === 'Skulder') {
-            migrated.push({ id: genId('debt'), name: e.name, amount: e.amount })
-          } else {
-            remaining.push(e)
-          }
-        })
+          ; (data.expenses || []).forEach((e) => {
+            if (e.category === 'Skulder') {
+              migrated.push({ id: genId('debt'), name: e.name, amount: e.amount })
+            } else {
+              remaining.push(e)
+            }
+          })
         this.expenses = remaining
         this.debts = migrated
       }
@@ -495,6 +520,9 @@ export const useBudgetStore = defineStore('budget', {
         this.debtPayments = {}
         this.debts.forEach((d) => { this.debtPayments[d.id] = [] })
       }
+
+      this.migrateData()
+      return incomingVersion
     },
 
     // ── Cloud Sync ───────────────────────────────────────────────────────────
@@ -503,9 +531,18 @@ export const useBudgetStore = defineStore('budget', {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const now = new Date().toISOString()
-      const payload = JSON.parse(localStorage.getItem('budgetApp') || '{}')
+      const rawPayload = JSON.parse(localStorage.getItem('budgetApp') || '{}')
+
+      let finalData = rawPayload
+      try {
+        const encrypted = await encryptData(rawPayload)
+        finalData = { _encrypted: true, blob: encrypted, v: 1 }
+      } catch (e) {
+        console.error('Encryption failed, syncing raw data as fallback', e)
+      }
+
       const { error } = await supabase.from('user_budgets')
-        .upsert({ id: user.id, data: payload, updated_at: now })
+        .upsert({ id: user.id, data: finalData, updated_at: now }, { returning: 'minimal' })
       if (!error) {
         localStorage.setItem('murvbudget-last-cloud-sync', now)
       }
@@ -518,11 +555,24 @@ export const useBudgetStore = defineStore('budget', {
       const { data, error } = await supabase
         .from('user_budgets').select('data, updated_at').eq('id', user.id).single()
       if (error || !data) return null
-      return { payload: data.data, updatedAt: data.updated_at }
+
+      let payload = data.data
+      if (payload && payload._encrypted && payload.blob) {
+        try {
+          payload = await decryptData(payload.blob)
+        } catch (e) {
+          console.error('Decryption failed. Usually means wrong key or corrupted data.', e)
+          // If decryption fails, we return null to avoid loading gibberish/crashing
+          return null
+        }
+      }
+
+      return { payload, updatedAt: data.updated_at }
     },
 
     clearLocalData() {
       this.$patch({
+        schemaVersion: DATA_SCHEMA_VERSION,
         income: [],
         expenses: [],
         categories: [],
@@ -530,8 +580,7 @@ export const useBudgetStore = defineStore('budget', {
         debts: [],
         debtPayments: {},
         variableActuals: {},
-        variableExpenses: [],
-        variableExpenseTransactions: {},
+        flex: [],
         savings: [],
         savingsDeposits: {},
       })
@@ -542,22 +591,45 @@ export const useBudgetStore = defineStore('budget', {
     migrateData() {
       // Ensure variableActuals exists
       if (!this.variableActuals) this.variableActuals = {}
+      // Ensure flex list exists
+      if (!this.flex) this.flex = []
+      // Migrate old expenses[].variable = true → flex[]
+      const oldVariableExpenses = this.expenses.filter(e => e.variable)
+      if (oldVariableExpenses.length > 0) {
+        const existingFlexNames = new Set(this.flex.map(e => e.name))
+        for (const e of oldVariableExpenses) {
+          if (!existingFlexNames.has(e.name)) {
+            this.flex.push({ name: e.name, amount: e.amount })
+          }
+        }
+        this.expenses = this.expenses.filter(e => !e.variable)
+      }
       // Ensure savings exists
       if (!this.savings) this.savings = []
       if (!this.savingsDeposits) this.savingsDeposits = {}
       if (!this.monthlyChecklistTracking) this.monthlyChecklistTracking = {}
-      if (!this.finansOrder) {
-        this.finansOrder = ['debts', 'savings', 'flex']
-      } else if (!this.finansOrder.includes('flex')) {
-        this.finansOrder = [...this.finansOrder, 'flex']
+      if (!this.economyOrder) {
+        this.economyOrder = ['debts', 'savings', 'flex']
+      } else if (!this.economyOrder.includes('flex')) {
+        this.economyOrder = [...this.economyOrder, 'flex']
       }
       if (!this.checklistSettings) {
-        this.checklistSettings = { showAmounts: true, showDates: true, autoCollapseCompleted: false, showSummary: true, sortOrder: 'manual' }
+        this.checklistSettings = { showAmounts: true, showDates: true, autoCollapseCompleted: false, showSummary: true, sortOrder: 'amount' }
       }
-      if (!this.finansViewSettings) {
-        this.finansViewSettings = { flexShowBars: true, flexShowEstimates: true, debtsShowProgress: true, savingsShowPct: true, savingsShowRate: false }
+      if (!this.economyViewSettings) {
+        this.economyViewSettings = { flexShowBars: true, flexShowEstimates: true, debtsShowProgress: true, savingsShowPct: true, savingsShowRate: false }
       }
       this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
+      // LEGACY migrations (kept for reference, no longer active):
+      // Migrate old variableExpenses[] → expenses[] with variable:true:
+      // if (this.variableExpenses?.length > 0) {
+      //   const existing = new Set(this.expenses.filter(e => e.variable).map(e => e.name))
+      //   for (const ve of this.variableExpenses) {
+      //     if (ve.name && !existing.has(ve.name))
+      //       this.expenses.push({ name: ve.name, amount: parseInt(ve.budget || ve.amount || 0), category: null, variable: true })
+      //   }
+      //   this.variableExpenses = []
+      // }
       // Ensure all debts have ids
       this.debts = this.debts.map((d) => ({ ...d, id: d.id || genId('debt') }))
       // Ensure debtPayments keys are ids not names
@@ -586,13 +658,13 @@ export const useBudgetStore = defineStore('budget', {
       const ALL_WIDGET_IDS = ['summary', 'chart', 'debts', 'checklist', 'savings', 'categories', 'flex']
       if (!this.overviewSettings.widgetOrder?.length) {
         this.overviewSettings.widgetOrder = [
-          { id: 'summary',    visible: this.overviewSettings.showSummaryCards ?? true },
-          { id: 'chart',      visible: this.overviewSettings.showChart ?? true },
-          { id: 'debts',      visible: this.overviewSettings.showDebts ?? true },
-          { id: 'checklist',  visible: true },
-          { id: 'savings',    visible: true },
+          { id: 'summary', visible: this.overviewSettings.showSummaryCards ?? true },
+          { id: 'chart', visible: this.overviewSettings.showChart ?? true },
+          { id: 'debts', visible: this.overviewSettings.showDebts ?? true },
+          { id: 'checklist', visible: true },
+          { id: 'savings', visible: true },
           { id: 'categories', visible: true },
-          { id: 'flex',       visible: true },
+          { id: 'flex', visible: true },
         ]
       } else {
         for (const id of ALL_WIDGET_IDS) {
@@ -604,9 +676,9 @@ export const useBudgetStore = defineStore('budget', {
       // Ensure widgetSettings exists and all defaults are populated
       if (!this.overviewSettings.widgetSettings) this.overviewSettings.widgetSettings = {}
       const defaultWidgetSettings = {
-        flex:       { style: 'default', showBars: true },
-        checklist:  { size: 'default' },
-        savings:    { size: 'default' },
+        flex: { style: 'default', showBars: true },
+        checklist: { size: 'default' },
+        savings: { size: 'default' },
         categories: { size: 'default', maxItems: 0 },
       }
       for (const [id, defaults] of Object.entries(defaultWidgetSettings)) {
@@ -633,6 +705,8 @@ export const useBudgetStore = defineStore('budget', {
         })
         this.expenses = this.expenses.filter((e) => e.category !== 'Skulder')
       }
+
+      this.schemaVersion = DATA_SCHEMA_VERSION
     },
   },
 

@@ -41,15 +41,16 @@ const chartData = computed(() => {
   return expenses.map((e) => ({ ...e }))
 })
 
-const COLORS = [
-  '#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE',
-  '#5AC8FA', '#FFCC00', '#FF6482', '#30B0C7', '#32D74B',
-]
+const COLOR_SCHEMES = {
+  colorful: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#06b6d4', '#a3e635', '#fb923c', '#e879f9', '#34d399'],
+  soft:     ['#60a5fa', '#4ade80', '#fbbf24', '#c084fc', '#fb7185', '#67e8f9', '#bef264', '#fdba74', '#f0abfc', '#86efac'],
+  deep:     ['#1d4ed8', '#059669', '#d97706', '#7c3aed', '#be123c', '#0891b2', '#4d7c0f', '#c2410c', '#9333ea', '#0f766e'],
+  muted:    ['#475569', '#0f766e', '#78350f', '#4c1d95', '#881337', '#164e63', '#713f12', '#1e1b4b', '#14532d', '#44403c'],
+}
 
-const COLORS_MUTED = [
-  '#4A90C4', '#5CAB7D', '#C48A2E', '#B05C5C', '#7B6BAE',
-  '#4A9AB0', '#B5A028', '#B05670', '#3A8A8A', '#5C9B5C',
-]
+// Legacy aliases kept for safety
+const COLORS      = COLOR_SCHEMES.colorful
+const COLORS_MUTED = COLOR_SCHEMES.muted
 
 const isStackedBar = computed(() => (store.overviewSettings?.chartType || 'pie') === 'stackedBar')
 
@@ -101,7 +102,7 @@ function buildChart() {
   const labels = main.map((e) => e.name)
   const amounts = main.map((e) => e.amount)
   const scheme = store.overviewSettings?.chartColorScheme || 'colorful'
-  const colors = scheme === 'muted' ? COLORS_MUTED : COLORS
+  const colors = COLOR_SCHEMES[scheme] || COLOR_SCHEMES.colorful
   const bgColors = main.map((_, i) => colors[i % colors.length])
   const grandTotal = amounts.reduce((s, v) => s + v, 0)
 

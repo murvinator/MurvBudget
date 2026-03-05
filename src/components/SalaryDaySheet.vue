@@ -27,6 +27,7 @@
                       inputmode="numeric"
                       step="1"
                       :class="{ 'inc-input--changed': item.amount !== item.original }"
+                      @focus="$event.target.select()"
                     />
                     <span class="inc-kr">kr</span>
                   </div>
@@ -87,6 +88,7 @@
                   max="31"
                   step="1"
                   placeholder="dag"
+                  @focus="$event.target.select()"
                 />
               </div>
             </div>

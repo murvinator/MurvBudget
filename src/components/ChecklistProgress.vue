@@ -23,18 +23,23 @@ const emit = defineEmits(['navigate'])
 
 const size = computed(() => store.overviewSettings.widgetSettings?.checklist?.size || 'default')
 
+const checklistExpenses = computed(() => store.expenses.filter(e => !e.variable))
+
 const paidCount = computed(() => {
   const status = store.monthlyStatus['current'] || {}
-  return store.expenses.filter((_, idx) => status[idx]).length
+  return checklistExpenses.value.filter((_, idx) => status[store.expenses.indexOf(checklistExpenses.value[idx])]).length
 })
 
-const totalCount = computed(() => store.expenses.length)
+const totalCount = computed(() => checklistExpenses.value.length)
 
-const totalAmount = computed(() => store.expenses.reduce((s, e) => s + e.amount, 0))
+const totalAmount = computed(() => checklistExpenses.value.reduce((s, e) => s + e.amount, 0))
 
 const paidAmount = computed(() => {
   const status = store.monthlyStatus['current'] || {}
-  return store.expenses.reduce((s, e, idx) => s + (status[idx] ? e.amount : 0), 0)
+  return checklistExpenses.value.reduce((s, e) => {
+    const idx = store.expenses.indexOf(e)
+    return s + (status[idx] ? e.amount : 0)
+  }, 0)
 })
 
 const pct = computed(() => {

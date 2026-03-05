@@ -1,48 +1,38 @@
 <!DOCTYPE html>
 <html lang="sv">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="MurvBudget — en snygg och enkel budgetapp för iPhone. Håll koll på dina utgifter utan bankkoppling, utan AI och utan krångel." />
+  <meta name="description"
+    content="MurvBudget — en snygg och enkel budgetapp för iPhone. Håll koll på dina utgifter utan bankkoppling, utan AI och utan krångel." />
   <title>MurvBudget · Enkel budgetering för iPhone</title>
   <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     :root {
-      --bg:              #f5f5f7;
-      --bg-alt:          #ffffff;
-      --text:            #1d1d1f;
-      --text-secondary:  #6e6e73;
-      --text-tertiary:   #a1a1a6;
-      --card-bg:         rgba(255,255,255,0.8);
-      --separator:       rgba(0,0,0,0.08);
-      --blue:            #007AFF;
-      --blue-dark:       #0063cc;
-      --purple:          #5856D6;
-      --green:           #34C759;
-      --shadow-sm:       0 2px 12px rgba(0,0,0,0.06);
-      --shadow-md:       0 8px 32px rgba(0,0,0,0.10);
-      --shadow-lg:       0 24px 64px rgba(0,0,0,0.14);
-      --radius-card:     24px;
-      --radius-phone:    46px;
+      --bg: #080810;
+      --bg-card: rgba(255, 255, 255, 0.04);
+      --bg-card-border: rgba(255, 255, 255, 0.08);
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.56);
+      --text-dim: rgba(255, 255, 255, 0.32);
+      --blue: #007AFF;
+      --blue-glow: rgba(0, 122, 255, 0.35);
+      --purple: #a78bfa;
+      --separator: rgba(255, 255, 255, 0.08);
+      --radius-card: 20px;
     }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg:             #000000;
-        --bg-alt:         #0a0a0a;
-        --text:           #f5f5f7;
-        --text-secondary: rgba(245,245,247,0.56);
-        --text-tertiary:  rgba(245,245,247,0.32);
-        --card-bg:        rgba(255,255,255,0.06);
-        --separator:      rgba(255,255,255,0.08);
-        --shadow-sm:      0 2px 12px rgba(0,0,0,0.4);
-        --shadow-md:      0 8px 32px rgba(0,0,0,0.5);
-        --shadow-lg:      0 24px 64px rgba(0,0,0,0.7);
-      }
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html { scroll-behavior: smooth; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
@@ -54,8 +44,8 @@
       overflow-x: hidden;
     }
 
-    /* ── Nav ── */
-    nav {
+    /* ── Sticky navbar ── */
+    .navbar {
       position: sticky;
       top: 0;
       z-index: 200;
@@ -63,89 +53,152 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 24px;
-      height: 52px;
-      background: rgba(255,255,255,0.72);
-      backdrop-filter: blur(24px) saturate(200%);
-      -webkit-backdrop-filter: blur(24px) saturate(200%);
+      height: 56px;
+      background: rgba(8, 8, 16, 0.72);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
       border-bottom: 0.5px solid var(--separator);
     }
 
-    @media (prefers-color-scheme: dark) {
-      nav { background: rgba(0,0,0,0.72); }
-    }
-
-    .nav-logo {
-      font-size: 17px;
-      font-weight: 600;
-      letter-spacing: -0.3px;
+    .navbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 16px;
+      font-weight: 700;
       color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.3px;
     }
 
-    .nav-cta {
+    .navbar-logo img {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+    }
+
+    .navbar-cta {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 16px;
+      padding: 8px 18px;
       background: var(--blue);
       color: #fff;
       font-size: 14px;
       font-weight: 600;
       border-radius: 999px;
       text-decoration: none;
-      transition: background 0.2s, transform 0.15s;
+      transition: opacity 0.2s, transform 0.15s;
     }
 
-    .nav-cta:hover { background: var(--blue-dark); transform: translateY(-1px); }
+    .navbar-cta:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
+
+    .navbar-cta svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
 
     /* ── Hero ── */
     .hero {
-      text-align: center;
-      padding: 80px 24px 72px;
-      background: radial-gradient(ellipse 90% 55% at 50% 0%, rgba(0,122,255,0.10), transparent 70%);
-    }
-
-    .app-icon {
-      width: 96px;
-      height: 96px;
-      border-radius: 22px;
-      background: linear-gradient(145deg, #007AFF, #5856D6);
-      display: inline-flex;
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin-bottom: 28px;
-      box-shadow: 0 12px 40px rgba(0,122,255,0.35), 0 4px 16px rgba(0,0,0,0.12);
+      text-align: center;
+      padding: 80px 24px 96px;
+      overflow: hidden;
     }
 
-    .app-icon svg {
-      width: 52px;
-      height: 52px;
-      fill: white;
+    /* Gradient orb */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(900px, 140vw);
+      height: min(900px, 140vw);
+      background: radial-gradient(circle, rgba(0, 122, 255, 0.18) 0%, rgba(88, 86, 214, 0.10) 40%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Noise texture */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 256px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero>* {
+      position: relative;
+      z-index: 1;
     }
 
     .hero-eyebrow {
-      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
       font-weight: 600;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
       color: var(--blue);
-      margin-bottom: 12px;
+      background: rgba(0, 122, 255, 0.1);
+      border: 1px solid rgba(0, 122, 255, 0.2);
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 28px;
+    }
+
+    .hero-eyebrow-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--blue);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+      }
     }
 
     .hero-title {
-      font-size: clamp(2.6rem, 8vw, 4.8rem);
+      font-size: clamp(48px, 8vw, 96px);
       font-weight: 800;
-      letter-spacing: -2px;
-      line-height: 1.08;
-      margin-bottom: 20px;
-      background: linear-gradient(135deg, var(--blue) 10%, var(--purple) 90%);
+      letter-spacing: -3px;
+      line-height: 1.04;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #ffffff 30%, #a0b4ff 70%, #7c88ff 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      max-width: 14ch;
     }
 
     .hero-sub {
-      font-size: clamp(1rem, 2.4vw, 1.2rem);
-      color: var(--text-secondary);
+      font-size: clamp(16px, 2.2vw, 20px);
+      color: var(--text-muted);
       max-width: 520px;
       margin: 0 auto 40px;
       line-height: 1.7;
@@ -153,80 +206,109 @@
 
     .hero-actions {
       display: flex;
+      align-items: center;
       justify-content: center;
       gap: 12px;
       flex-wrap: wrap;
     }
 
     .btn-primary {
-      display: inline-block;
-      padding: 15px 32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 32px;
       background: var(--blue);
       color: #fff;
       font-size: 16px;
       font-weight: 600;
       border-radius: 999px;
       text-decoration: none;
-      box-shadow: 0 4px 20px rgba(0,122,255,0.35);
-      transition: background 0.2s, transform 0.2s;
+      box-shadow: 0 0 32px var(--blue-glow), 0 4px 16px rgba(0, 0, 0, 0.3);
+      transition: opacity 0.2s, transform 0.2s;
     }
 
-    .btn-primary:hover { background: var(--blue-dark); transform: translateY(-2px); }
+    .btn-primary:hover {
+      opacity: 0.88;
+      transform: translateY(-2px);
+    }
 
     .btn-ghost {
-      display: inline-block;
-      padding: 15px 32px;
-      background: transparent;
-      color: var(--blue);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 32px;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.8);
       font-size: 16px;
       font-weight: 600;
       border-radius: 999px;
       text-decoration: none;
-      border: 1.5px solid rgba(0,122,255,0.3);
+      border: 1px solid var(--separator);
       transition: background 0.2s, transform 0.2s;
     }
 
-    .btn-ghost:hover { background: rgba(0,122,255,0.06); transform: translateY(-2px); }
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
 
-    /* ── Sections ── */
+    /* ── Scroll reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Section shell ── */
     .section {
-      padding: 80px 24px;
-    }
-
-    .section--alt {
-      background: var(--bg-alt);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .section--alt { background: #111; }
+      padding: 96px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
     }
 
     .section-eyebrow {
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
       text-transform: uppercase;
       color: var(--blue);
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .section-title {
-      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-size: clamp(28px, 5vw, 48px);
       font-weight: 700;
-      letter-spacing: -0.8px;
-      line-height: 1.15;
+      letter-spacing: -1.5px;
+      line-height: 1.12;
       text-align: center;
       margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 40%, rgba(255, 255, 255, 0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .section-sub {
-      font-size: 1rem;
-      color: var(--text-secondary);
+      font-size: 16px;
+      color: var(--text-muted);
       text-align: center;
       max-width: 480px;
       margin: 0 auto 56px;
       line-height: 1.7;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--separator) 20%, var(--separator) 80%, transparent);
+      max-width: 1100px;
+      margin: 0 auto;
     }
 
     /* ── Screenshots ── */
@@ -239,49 +321,35 @@
     }
 
     .phone-frame {
-      width: 210px;
-      border-radius: var(--radius-phone);
-      background: #1c1c1e;
-      padding: 8px;
+      width: 200px;
+      border-radius: 44px;
+      background: #111;
+      padding: 7px;
       box-shadow:
-        0 0 0 1.5px rgba(255,255,255,0.12),
-        0 0 0 3px rgba(0,0,0,0.7),
-        0 40px 100px rgba(0,0,0,0.45),
-        0 8px 24px rgba(0,0,0,0.25);
+        0 0 0 1.5px rgba(255, 255, 255, 0.1),
+        0 0 0 3px rgba(0, 0, 0, 0.8),
+        0 40px 100px rgba(0, 0, 0, 0.7),
+        0 16px 40px rgba(0, 122, 255, 0.08);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      flex-shrink: 0;
     }
 
-    .phone-frame:nth-child(even) { transform: translateY(16px); }
+    .phone-frame:nth-child(2) {
+      transform: translateY(-20px);
+    }
 
     .phone-frame:hover {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow:
-        0 0 0 1.5px rgba(255,255,255,0.16),
-        0 0 0 3px rgba(0,0,0,0.7),
-        0 60px 120px rgba(0,0,0,0.55),
-        0 16px 40px rgba(0,0,0,0.3);
-    }
-
-    .phone-frame:nth-child(even):hover {
-      transform: translateY(8px) scale(1.02);
+      transform: translateY(-8px) !important;
     }
 
     .phone-screen {
-      border-radius: 38px;
+      border-radius: 37px;
       overflow: hidden;
       position: relative;
       aspect-ratio: 9 / 19.5;
-      background: #f2f2f7;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: #1a1a2e;
     }
 
-    @media (prefers-color-scheme: dark) {
-      .phone-screen { background: #1c1c1e; }
-    }
-
-    /* Dynamic Island */
     .phone-screen::before {
       content: '';
       position: absolute;
@@ -289,7 +357,7 @@
       left: 50%;
       transform: translateX(-50%);
       width: 60px;
-      height: 19px;
+      height: 18px;
       background: #000;
       border-radius: 10px;
       z-index: 10;
@@ -303,38 +371,37 @@
       display: block;
     }
 
-    /* Placeholder when no image */
     .phone-placeholder {
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      padding: 16px;
+      padding: 20px;
       text-align: center;
-      opacity: 0.4;
     }
 
     .phone-placeholder svg {
-      width: 36px;
-      height: 36px;
-      color: var(--text-secondary);
+      width: 32px;
+      height: 32px;
+      color: rgba(255, 255, 255, 0.25);
     }
 
     .phone-placeholder-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      color: var(--text-secondary);
+      color: rgba(255, 255, 255, 0.25);
       line-height: 1.4;
     }
 
     .screenshot-caption {
       text-align: center;
       font-size: 12px;
-      color: var(--text-tertiary);
-      margin-top: 12px;
+      color: var(--text-dim);
+      margin-top: 14px;
       font-weight: 500;
-      letter-spacing: 0.2px;
     }
 
     .screenshot-item {
@@ -343,433 +410,534 @@
     }
 
     @media (max-width: 600px) {
-      .phone-frame { width: 155px; border-radius: 36px; padding: 6px; }
-      .phone-screen { border-radius: 30px; }
-      .phone-screen::before { width: 46px; height: 15px; border-radius: 8px; top: 8px; }
-      .screenshots-wrap { gap: 12px; }
+      .phone-frame {
+        width: 150px;
+        border-radius: 34px;
+        padding: 5px;
+      }
+
+      .phone-screen {
+        border-radius: 29px;
+      }
+
+      .phone-screen::before {
+        width: 44px;
+        height: 14px;
+        top: 7px;
+      }
+
+      .screenshots-wrap {
+        gap: 12px;
+      }
     }
 
-    /* ── Features ── */
+    /* ── Features grid ── */
     .features-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 2px;
+      gap: 16px;
       max-width: 900px;
       margin: 0 auto;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-radius: var(--radius-card);
-      overflow: hidden;
-      background: var(--separator);
-      box-shadow: var(--shadow-sm);
+      padding: 28px 24px;
+      transition: border-color 0.2s, background 0.2s;
     }
 
-    .feature-cell {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      padding: 32px 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .feature-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(0, 122, 255, 0.25);
     }
 
-    @media (prefers-color-scheme: dark) {
-      .feature-cell { background: #1c1c1e; }
-      .features-grid { background: rgba(255,255,255,0.04); }
-    }
-
-    .feature-icon-wrap {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(0, 122, 255, 0.12);
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      margin-bottom: 16px;
+      border: 1px solid rgba(0, 122, 255, 0.2);
     }
 
-    .feature-icon-wrap svg {
-      width: 24px;
-      height: 24px;
+    .feature-icon svg {
+      width: 22px;
+      height: 22px;
+      color: var(--blue);
     }
 
-    .fi--blue   { background: rgba(0,122,255,0.12); color: var(--blue); }
-    .fi--purple { background: rgba(88,86,214,0.12); color: var(--purple); }
-    .fi--green  { background: rgba(52,199,89,0.12); color: var(--green); }
-    .fi--orange { background: rgba(255,149,0,0.12); color: #FF9500; }
-    .fi--pink   { background: rgba(255,45,85,0.12); color: #FF2D55; }
-    .fi--teal   { background: rgba(90,200,250,0.12); color: #5AC8FA; }
-
-    .feature-name {
-      font-size: 17px;
+    .feature-title {
+      font-size: 16px;
       font-weight: 600;
-      letter-spacing: -0.3px;
+      margin-bottom: 8px;
       color: var(--text);
     }
 
     .feature-desc {
       font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.55;
+      color: var(--text-muted);
+      line-height: 1.6;
     }
 
     /* ── Install steps ── */
-    .steps-wrap {
-      max-width: 560px;
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      max-width: 860px;
       margin: 0 auto;
+    }
+
+    .step-card {
       display: flex;
       flex-direction: column;
-      gap: 0;
-      border-radius: var(--radius-card);
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .step {
-      display: flex;
       align-items: flex-start;
-      gap: 16px;
-      padding: 22px 24px;
-      background: var(--card-bg);
-      border-bottom: 0.5px solid var(--separator);
+      gap: 12px;
+      padding: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-card);
     }
 
-    @media (prefers-color-scheme: dark) {
-      .step { background: #1c1c1e; }
-    }
-
-    .step:last-child { border-bottom: none; }
-
-    .step-num {
-      flex-shrink: 0;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: var(--blue);
-      color: white;
-      font-size: 14px;
+    .step-number {
+      font-size: 13px;
       font-weight: 700;
+      color: var(--blue);
+      letter-spacing: 0.5px;
+      background: rgba(0, 122, 255, 0.1);
+      border: 1px solid rgba(0, 122, 255, 0.2);
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-top: 1px;
     }
 
-    .step-body {}
-
     .step-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text);
-      margin-bottom: 3px;
     }
 
     .step-desc {
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.5;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
     }
 
-    .step-desc a { color: var(--blue); text-decoration: none; }
-    .step-desc strong { font-weight: 600; color: var(--text); }
+    /* ── Stats row ── */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+      margin-top: 64px;
+    }
 
-    /* ── Support ── */
-    .support-card {
-      max-width: 560px;
-      margin: 0 auto;
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: var(--radius-card);
-      padding: 48px 40px;
+    .stat-item {
       text-align: center;
-      box-shadow: var(--shadow-md);
-      border: 0.5px solid var(--separator);
     }
 
-    @media (prefers-color-scheme: dark) {
-      .support-card { background: #1c1c1e; }
+    .stat-value {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #fff 40%, #a0b4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 6px;
     }
 
-    .support-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-      display: block;
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
     }
-
-    .support-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.4px;
-      margin-bottom: 10px;
-    }
-
-    .support-desc {
-      font-size: 15px;
-      color: var(--text-secondary);
-      line-height: 1.65;
-      margin-bottom: 28px;
-    }
-
-    .btn-swish {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 28px;
-      background: var(--green);
-      color: white;
-      font-size: 16px;
-      font-weight: 600;
-      border-radius: 999px;
-      text-decoration: none;
-      box-shadow: 0 4px 16px rgba(52,199,89,0.35);
-      transition: background 0.2s, transform 0.2s;
-    }
-
-    .btn-swish:hover { background: #28a745; transform: translateY(-2px); }
 
     /* ── Footer ── */
     footer {
+      border-top: 1px solid var(--separator);
+      padding: 48px 24px;
       text-align: center;
-      padding: 40px 24px;
-      color: var(--text-tertiary);
-      font-size: 13px;
-      border-top: 0.5px solid var(--separator);
     }
 
-    footer a { color: var(--text-tertiary); text-decoration: none; }
-    footer a:hover { color: var(--text-secondary); }
+    .footer-inner {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .footer-logo img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    .footer-copy {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    /* ── swish donate pill ── */
+    .swish-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      background: rgba(255, 94, 91, 0.1);
+      border: 1px solid rgba(255, 94, 91, 0.2);
+      color: #6dfb5a;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .swish-pill:hover {
+      background: rgba(255, 94, 91, 0.16);
+      transform: translateY(-1px);
+    }
+
+    /* ── Background grid ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+    }
   </style>
 </head>
+
 <body>
 
-  <!-- ── Navigation ── -->
-  <nav>
-    <span class="nav-logo">MurvBudget</span>
-    <a class="nav-cta" href="https://murvbudgetapp.netlify.app/" target="_blank" rel="noopener">
+  <!-- Subtle grid background -->
+  <div class="grid-bg"></div>
+
+  <!-- ── Sticky Navbar ── -->
+  <nav class="navbar">
+    <a href="#" class="navbar-logo">
+      <img src="/icons/icon-192.png" alt="MurvBudget ikon" onerror="this.style.display='none'" />
+      MurvBudget
+    </a>
+    <a href="/" class="navbar-cta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </svg>
       Öppna appen
     </a>
   </nav>
 
   <!-- ── Hero ── -->
   <section class="hero">
-    <div class="app-icon">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-      </svg>
+    <div class="hero-eyebrow">
+      <span class="hero-eyebrow-dot"></span>
+      Budgetering för iPhone
     </div>
-    <p class="hero-eyebrow">MurvBudget</p>
-    <h1 class="hero-title">Din budget.<br>Enkelt och snyggt.</h1>
-    <p class="hero-sub">MurvBudget är det smidiga sättet att hålla koll på vad pengarna går till — utan bankkoppling, utan prenumeration och utan onödig komplexitet.</p>
+    <h1 class="hero-title">Din ekonomi. Vackert enkelt.</h1>
+    <p class="hero-sub">
+      MurvBudget hjälper dig hålla koll på inkomster, utgifter och skulder — utan bankkoppling, utan prenumeration, utan
+      krångel.
+    </p>
     <div class="hero-actions">
-      <a class="btn-primary" href="https://murvbudgetapp.netlify.app/" target="_blank" rel="noopener">Öppna appen</a>
-      <a class="btn-ghost" href="#installera">Lägg till på hemskärmen</a>
+      <a href="/" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14" />
+          <path d="m12 5 7 7-7 7" />
+        </svg>
+        Öppna appen
+      </a>
+      <a href="#hur-det-fungerar" class="btn-ghost">Se hur det fungerar</a>
+    </div>
+
+    <div class="stats-row reveal">
+      <div class="stat-item">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">Gratis att använda</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Bankkopplingar</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">PWA</div>
+        <div class="stat-label">Installeras direkt</div>
+      </div>
     </div>
   </section>
+
+  <div class="divider"></div>
 
   <!-- ── Screenshots ── -->
-  <section class="section section--alt">
-    <p class="section-eyebrow">Se appen i aktion</p>
-    <h2 class="section-title">Designad för iPhone</h2>
-    <p class="section-sub">En native iOS-känsla direkt i webbläsaren. Snabb, responsiv och snygg — som en riktig app.</p>
+  <section class="section" id="screenshots">
+    <p class="section-eyebrow reveal">Appen</p>
+    <h2 class="section-title reveal">Designad för din vardag</h2>
+    <p class="section-sub reveal">iOS-känsla med flytande glas-design. Allt du behöver, ingenting du inte behöver.</p>
 
-    <div class="screenshots-wrap">
+    <div class="screenshots-wrap reveal">
       <div class="screenshot-item">
         <div class="phone-frame">
           <div class="phone-screen">
-            <!-- Replace src with your screenshot: src="assets/screenshots/overview.png" -->
-            <img src="assets/screenshots/main.png" alt="MurvBudget översikt"
+            <img src="/assets/screenshots/main.png" alt="Översikt"
               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div class="phone-placeholder" style="display:none">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+                <line x1="2" y1="20" x2="22" y2="20" />
               </svg>
-              <span class="phone-placeholder-label">Skärmbild<br>Översikt</span>
+              <span class="phone-placeholder-label">Översikt</span>
             </div>
           </div>
         </div>
-        <p class="screenshot-caption">Översikt</p>
+        <span class="screenshot-caption">Översikt</span>
       </div>
 
       <div class="screenshot-item">
         <div class="phone-frame">
           <div class="phone-screen">
-            <img src="assets/screenshots/main2.png" alt="MurvBudget checklista"
+            <img src="/assets/screenshots/main2.png" alt="Checklista"
               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div class="phone-placeholder" style="display:none">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                <rect x="9" y="3" width="6" height="4" rx="1" />
+                <path d="m9 12 2 2 4-4" />
               </svg>
-              <span class="phone-placeholder-label">Skärmbild<br>Checklista</span>
+              <span class="phone-placeholder-label">Checklista</span>
             </div>
           </div>
         </div>
-        <p class="screenshot-caption">Checklista</p>
+        <span class="screenshot-caption">Betala räkningar</span>
       </div>
 
       <div class="screenshot-item">
         <div class="phone-frame">
           <div class="phone-screen">
-            <img src="assets/screenshots/main3.png" alt="MurvBudget diagram"
+            <img src="/assets/screenshots/main3.png" alt="Ekonomi"
               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div class="phone-placeholder" style="display:none">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <path d="M2 10h20" />
               </svg>
-              <span class="phone-placeholder-label">Skärmbild<br>Diagram</span>
+              <span class="phone-placeholder-label">Skulder & Sparande</span>
             </div>
           </div>
         </div>
-        <p class="screenshot-caption">Diagram</p>
-      </div>
-
-      <div class="screenshot-item">
-        <div class="phone-frame">
-          <div class="phone-screen">
-            <img src="assets/screenshots/main4.png" alt="MurvBudget inställningar"
-              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-            <div class="phone-placeholder" style="display:none">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-              <span class="phone-placeholder-label">Skärmbild<br>Inställningar</span>
-            </div>
-          </div>
-        </div>
-        <p class="screenshot-caption">Inställningar</p>
+        <span class="screenshot-caption">Skulder & Sparande</span>
       </div>
     </div>
   </section>
+
+  <div class="divider"></div>
 
   <!-- ── Features ── -->
   <section class="section">
-    <p class="section-eyebrow">Funktioner</p>
-    <h2 class="section-title">Allt du behöver.<br>Inget du inte behöver.</h2>
-    <p class="section-sub">Byggt från grunden för att vara snabbt och enkelt att använda — varje dag, varje månad.</p>
+    <p class="section-eyebrow reveal">Funktioner</p>
+    <h2 class="section-title reveal">Allt du behöver</h2>
+    <p class="section-sub reveal">Byggt med enkelhet i fokus. Inga onödiga funktioner, inga dolda avgifter.</p>
 
     <div class="features-grid">
-
-      <div class="feature-cell">
-        <div class="feature-icon-wrap fi--blue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
-            <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
           </svg>
         </div>
-        <div class="feature-name">Anpassningsbara widgets</div>
-        <div class="feature-desc">Välj vilka kort som visas på din översikt och i vilken ordning. Skräddarsy vyerna helt efter dina behov.</div>
+        <div class="feature-title">Månadsöversikt</div>
+        <div class="feature-desc">Se inkomster, utgifter och kvarvarande pengar på ett ögonblick. Diagram och
+          sammanfattningskort.</div>
       </div>
 
-      <div class="feature-cell">
-        <div class="feature-icon-wrap fi--purple">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+            <rect x="9" y="3" width="6" height="4" rx="1" />
+            <path d="m9 12 2 2 4-4" />
           </svg>
         </div>
-        <div class="feature-name">Månadsvis checklista</div>
-        <div class="feature-desc">Bocka av räkningar och fasta utgifter allteftersom du betalar dem. Tydlig överblick i realtid.</div>
+        <div class="feature-title">Betalningschecklista</div>
+        <div class="feature-desc">Markera räkningar som betalda löpande under månaden. Gruperade per kategori med
+          automatisk summering.</div>
       </div>
 
-      <div class="feature-cell">
-        <div class="feature-icon-wrap fi--teal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <path d="M2 10h20" />
           </svg>
         </div>
-        <div class="feature-name">Flex-utgifter</div>
-        <div class="feature-desc">Sätt en uppskattning för rörliga kostnader som mat och transport. Bekräfta det faktiska beloppet varje månad.</div>
+        <div class="feature-title">Skulder & lån</div>
+        <div class="feature-desc">Håll koll på skulder med visuell progress. Se hur mycket som betalats av och vad som
+          återstår.</div>
       </div>
 
-      <div class="feature-cell">
-        <div class="feature-icon-wrap fi--orange">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </div>
-        <div class="feature-name">Visuella diagram</div>
-        <div class="feature-desc">Se var pengarna tar vägen med tydliga cirkel- och stapeldiagram, uppdelade per kategori.</div>
+        <div class="feature-title">Sparmål</div>
+        <div class="feature-desc">Sätt upp sparmål och följ din progress mot semesterkassan, bufferten eller nästa köp.
+        </div>
       </div>
 
-      <div class="feature-cell">
-        <div class="feature-icon-wrap fi--pink">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+            <path d="M21.18 8.02c-1-2.3-2.85-4.17-5.16-5.18" />
           </svg>
         </div>
-        <div class="feature-name">Integritet i fokus</div>
-        <div class="feature-desc">Inget bankkonto, ingen AI, ingen prenumeration. Dina data stannar på din enhet — eller synkas frivilligt via molnet.</div>
+        <div class="feature-title">Flex-utgifter</div>
+        <div class="feature-desc">Sätt en budget för variabla utgifter som mat och nöjen. Logga faktiska kostnader och
+          se hur du ligger till.</div>
       </div>
 
-      <div class="feature-cell">
-        <div class="feature-icon-wrap fi--green">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.79a16 16 0 0 0 6.29 6.29l.95-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
         </div>
-        <div class="feature-name">Skulder och amortering</div>
-        <div class="feature-desc">Håll koll på lån och krediter. Logga inbetalningar med datum och se din totala skuldbörda minska.</div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ── Install ── -->
-  <section class="section section--alt" id="installera">
-    <p class="section-eyebrow">Kom igång</p>
-    <h2 class="section-title">Lägg till på<br>hemskärmen</h2>
-    <p class="section-sub">MurvBudget fungerar som en inbyggd app direkt på din iPhone — utan App Store.</p>
-
-    <div class="steps-wrap">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-body">
-          <div class="step-title">Öppna i Safari eller Chrome</div>
-          <div class="step-desc">Gå till <a href="https://murvbudgetapp.netlify.app/" target="_blank" rel="noopener">murvbudgetapp.netlify.app</a> i <strong>Safari</strong> eller <strong>Chrome</strong> på din iPhone.</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-body">
-          <div class="step-title">Tryck på Dela</div>
-          <div class="step-desc">Tryck på <strong>dela-ikonen</strong> längst ned i Safari eller Chrome (rutan med en pil uppåt).</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-body">
-          <div class="step-title">Lägg till på hemskärmen</div>
-          <div class="step-desc">Klicka på "Mer" och scrolla ned i delningsmenyn och välj<br>ma <strong>Lägg till på hemskärmen</strong>.</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-body">
-          <div class="step-title">Klar!</div>
-          <div class="step-desc">Tryck på <strong>Lägg till</strong> — appen visas nu på din hemskärm precis som en vanlig app.</div>
-        </div>
+        <div class="feature-title">Dina data, din kontroll</div>
+        <div class="feature-desc">All data lagras lokalt på din enhet. Valfri molnsynk med ditt konto. Ingen
+          bankkoppling krävs.</div>
       </div>
     </div>
   </section>
 
-  <!-- ── Support ── -->
-  <section class="section">
-    <div class="support-card">
-      <span class="support-icon">☕</span>
-      <h2 class="support-title">Stöd projektet</h2>
-      <p class="support-desc">MurvBudget är gratis och byggt på fritiden. Om du tycker om appen och vill stötta dess utveckling tar jag gärna emot en liten gåva via Swish.</p>
-      <a class="btn-swish" href="https://app.swish.nu/1/p/sw/?sw=46701484473&amt=10.0&msg=MurvBudget&edit=amt,msg">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-        Swisha en gåva
-      </a>
+  <div class="divider"></div>
+
+  <!-- ── Install steps ── -->
+  <section class="section" id="hur-det-fungerar">
+    <p class="section-eyebrow reveal">Kom igång</p>
+    <h2 class="section-title reveal">Installera på 30 sekunder</h2>
+    <p class="section-sub reveal">MurvBudget är en progressiv webbapp (PWA) — installera den direkt från Safari utan App
+      Store.</p>
+
+    <div class="steps-grid">
+      <div class="step-card reveal">
+        <div class="step-number">1</div>
+        <div class="step-title">Öppna i Safari</div>
+        <div class="step-desc">Gå till murvbudget.netlify.app i Safari på din iPhone eller iPad.</div>
+      </div>
+      <div class="step-card reveal">
+        <div class="step-number">2</div>
+        <div class="step-title">Tryck på dela</div>
+        <div class="step-desc">Tryck på dela-ikonen längst ned i Safari-verktygsfältet.</div>
+      </div>
+      <div class="step-card reveal">
+        <div class="step-number">3</div>
+        <div class="step-title">Lägg till på hemskärm</div>
+        <div class="step-desc">Välj "Lägg till på hemskärmen" och tryck sedan "Lägg till".</div>
+      </div>
+      <div class="step-card reveal">
+        <div class="step-number">4</div>
+        <div class="step-title">Klart!</div>
+        <div class="step-desc">Appen startar precis som en vanlig app — utan App Store, utan prenumeration.</div>
+      </div>
     </div>
   </section>
+
+  <div class="divider"></div>
 
   <!-- ── Footer ── -->
   <footer>
-    <p>© 2026 MurvBudget · <a href="mailto:jonathan@belloni.se">Jonathan Belloni</a></p>
+    <div class="footer-inner">
+      <a href="#" class="footer-logo">
+        <img src="/icons/icon-192.png" alt="MurvBudget" onerror="this.style.display='none'" />
+        MurvBudget
+      </a>
+      <div class="footer-links">
+        <a href="/">Öppna appen</a>
+        <a href="mailto:jonathanbelloni@gmail.com">Kontakt</a>
+        <a href="https://app.swish.nu/1/p/sw/?sw=46701484473&amt=10.0&msg=Cool%20budgetapp&edit=amt,msg" target="_blank"
+          rel="noopener">Stöd projektet</a>
+      </div>
+      <a href="https://app.swish.nu/1/p/sw/?sw=46701484473&amt=35.0&msg=Cool%20budgetapp&edit=amt,msg" target="_blank"
+        rel="noopener" class="swish-pill">
+        ☕ Swisha en kaffe
+      </a>
+      <p class="footer-copy">MurvBudget · Ingen AI, inga bankkopplingar, ingen prenumeration.</p>
+    </div>
   </footer>
 
+  <script>
+    // Scroll-reveal via IntersectionObserver
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible')
+          observer.unobserve(e.target)
+        }
+      })
+    }, { threshold: 0.12 })
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el))
+  </script>
 </body>
+
 </html>

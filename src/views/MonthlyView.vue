@@ -23,7 +23,7 @@
       <span class="monthly-section-title">{{ store.displayMonthName }}</span>
       <span class="monthly-paid-count">{{ paidCount }} av {{ totalCount }} betalt</span>
       <button v-if="hasCollapsibleSections" class="toggle-all-btn" @click="toggleAll">
-        {{ allExpanded ? 'Dölj alla' : 'Visa alla' }}
+        {{ anyOpen ? 'Dölj alla' : 'Visa alla' }}
       </button>
     </div>
 
@@ -162,6 +162,15 @@
               <div class="expense-info">
                 <div class="expense-name">{{ item.name }}</div>
               </div>
+              <span v-if="item.date" class="expense-date-badge">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                  <line x1="1" y1="5" x2="11" y2="5"/>
+                  <line x1="4" y1="1" x2="4" y2="3"/>
+                  <line x1="8" y1="1" x2="8" y2="3"/>
+                </svg>
+                {{ item.date }}
+              </span>
               <div class="expense-amount">{{ fmt(item.monthlyPayment) }} kr</div>
               <input
                 type="checkbox"
@@ -207,6 +216,15 @@
               <div class="expense-info">
                 <div class="expense-name">{{ item.name }}</div>
               </div>
+              <span v-if="item.date" class="expense-date-badge">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                  <line x1="1" y1="5" x2="11" y2="5"/>
+                  <line x1="4" y1="1" x2="4" y2="3"/>
+                  <line x1="8" y1="1" x2="8" y2="3"/>
+                </svg>
+                {{ item.date }}
+              </span>
               <div class="expense-amount">{{ fmt(item.monthlyPayment) }} kr</div>
               <input
                 type="checkbox"
@@ -294,7 +312,7 @@ function categoryExpenses(category) {
   const items = store.expenses
     .map((e, index) => ({ ...e, index }))
     .filter((e) => e.category === category && !e.variable)
-  const sortOrder = store.checklistSettings?.sortOrder || 'manual'
+  const sortOrder = store.checklistSettings?.sortOrder || 'amount'
   if (sortOrder === 'amount') return [...items].sort((a, b) => b.amount - a.amount)
   if (sortOrder === 'date') return [...items].sort((a, b) => (a.date || 99) - (b.date || 99))
   return items
@@ -312,11 +330,14 @@ const hasCategorizedExpenses = computed(() =>
 )
 
 // Debt payment items (debts with monthlyPayment set)
-const debtPaymentItems = computed(() =>
-  store.debts
+const debtPaymentItems = computed(() => {
+  const items = store.debts
     .map((d, i) => ({ ...d, debtIndex: i }))
     .filter(d => d.monthlyPayment > 0)
-)
+  const sortOrder = store.checklistSettings?.sortOrder || 'amount'
+  if (sortOrder === 'amount') return [...items].sort((a, b) => b.monthlyPayment - a.monthlyPayment)
+  return items
+})
 
 function isDebtPaid(debtId) {
   return !!(store.monthlyStatus['current']?.['debt-' + debtId])
@@ -345,11 +366,14 @@ const debtSectionCollapsed = ref(loadSpecialCollapsed('__debt'))
 watch(debtSectionCollapsed, (v) => saveSpecialCollapsed('__debt', v))
 
 // Savings payment items (savings goals with monthlyPayment set)
-const savingsPaymentItems = computed(() =>
-  store.savings
+const savingsPaymentItems = computed(() => {
+  const items = store.savings
     .map((s, i) => ({ ...s, savingsIndex: i }))
     .filter(s => s.monthlyPayment > 0)
-)
+  const sortOrder = store.checklistSettings?.sortOrder || 'amount'
+  if (sortOrder === 'amount') return [...items].sort((a, b) => b.monthlyPayment - a.monthlyPayment)
+  return items
+})
 
 const savingsSectionCollapsed = ref(loadSpecialCollapsed('__savings'))
 watch(savingsSectionCollapsed, (v) => saveSpecialCollapsed('__savings', v))
@@ -464,22 +488,19 @@ const hasCollapsibleSections = computed(() =>
   savingsPaymentItems.value.length > 0
 )
 
-const allExpanded = computed(() => {
-  const catsExpanded = store.categories
-    .filter((cat) => categoryExpenses(cat).length > 0)
-    .every((cat) => !collapsedCategories[cat])
-  const debtOk = debtPaymentItems.value.length === 0 || !debtSectionCollapsed.value
-  const savingsOk = savingsPaymentItems.value.length === 0 || !savingsSectionCollapsed.value
-  return catsExpanded && debtOk && savingsOk
-})
+const anyOpen = computed(() =>
+  store.categories.filter(cat => categoryExpenses(cat).length > 0).some(cat => !collapsedCategories[cat]) ||
+  (debtPaymentItems.value.length > 0 && !debtSectionCollapsed.value) ||
+  (savingsPaymentItems.value.length > 0 && !savingsSectionCollapsed.value)
+)
 
 function toggleAll() {
-  const expand = !allExpanded.value
+  const shouldCollapse = anyOpen.value
   for (const cat of store.categories) {
-    if (categoryExpenses(cat).length > 0) collapsedCategories[cat] = !expand
+    if (categoryExpenses(cat).length > 0) collapsedCategories[cat] = shouldCollapse
   }
-  if (debtPaymentItems.value.length > 0) debtSectionCollapsed.value = !expand
-  if (savingsPaymentItems.value.length > 0) savingsSectionCollapsed.value = !expand
+  if (debtPaymentItems.value.length > 0) debtSectionCollapsed.value = shouldCollapse
+  if (savingsPaymentItems.value.length > 0) savingsSectionCollapsed.value = shouldCollapse
   try {
     sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
   } catch {}
