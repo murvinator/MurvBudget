@@ -1620,6 +1620,17 @@ function toggleAllSections() {
   } catch {}
 }
 
+function collapseAllExcept(keepOpen) {
+  for (const s of SECTIONS) {
+    if (s !== keepOpen) {
+      collapsedSections[s] = true
+    }
+  }
+  try {
+    sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedSections }))
+  } catch {}
+}
+
 defineExpose({ toggleAllSections })
 
 // New item form state
@@ -2110,6 +2121,7 @@ function importFile(event) {
       const ok = await confirm('Ersätt all data?', { description: 'All nuvarande data på den här enheten ersätts med innehållet i filen.' })
       if (ok) {
         store.importData(data)
+        collapseAllExcept('account')
         statusMsg.value = 'Data importerad!'
         setTimeout(() => { statusMsg.value = '' }, 3000)
       }
@@ -2126,6 +2138,7 @@ async function loadTestData() {
   if (!ok) return
   const result = await store.loadTestData()
   if (result) {
+    collapseAllExcept('account')
     statusMsg.value = 'Testdata laddad!'
     setTimeout(() => { statusMsg.value = '' }, 3000)
   } else {
