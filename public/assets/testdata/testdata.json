@@ -2,13 +2,13 @@
   "income": [
     {
       "name": "Lön",
-      "amount": 33200
+      "amount": 30000
     }
   ],
   "expenses": [
     {
       "name": "Hyra",
-      "amount": 7473,
+      "amount": 7500,
       "category": "E-faktura"
     },
     {
@@ -32,6 +32,12 @@
       "amount": 2000,
       "category": "Autogiro",
       "date": 25
+    },
+    {
+      "name": "Mat",
+      "amount": 4000,
+      "category": null,
+      "variable": true
     }
   ],
   "categories": [
@@ -61,20 +67,30 @@
       "17": true
     }
   },
-  "debtStatus": {
-    "15": false,
-    "17": false,
-    "18": false,
-    "19": false,
-    "20": false,
-    "21": false,
-    "22": false
-  },
   "debts": [
     {
       "id": "debt-mhupd16o-ihub0k",
       "name": "Lån",
       "amount": 30000
     }
-  ]
+  ],
+  "debtPayments": {
+    "debt-mhupd16o-ihub0k": []
+  },
+  "variableActuals": {},
+  "variableExpenses": [],
+  "variableExpenseTransactions": {},
+  "savings": [
+    {
+      "id": "sav-mmd38opo-wzwrrz",
+      "name": "Lägenhet",
+      "target": 100000,
+      "current": 0,
+      "date": null,
+      "monthlyPayment": 2000
+    }
+  ],
+  "savingsDeposits": {
+    "sav-mmd38opo-wzwrrz": []
+  }
 }

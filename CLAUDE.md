@@ -52,7 +52,7 @@ Single Pinia store (`useBudgetStore`) persisted to `localStorage` under key `bud
 - **Design language:** iOS-native aesthetic - SPECIFICALLY LATEST IOS26 — SF Pro font stack, iOS system colors as CSS variables (`--system-blue`, `--system-red`, etc.), safe-area insets, liquid glass tab bar effect
 - **Styling:** Global styles in `src/assets/style.css`; component-scoped `<style scoped>` for local overrides. Dark mode via `@media (prefers-color-scheme: dark)`.
 - **No routing library** — view switching is manual via emitted `navigate` events
-- **No HTTP calls** — all data is local; `loadTestData()` fetches from `/assets/testdata/testdata.json`
+- **No HTTP calls** — all data is local; `loadTestData()` fetches from `/public/assets/testdata/testdata.json`
 
 ### Key patterns
 

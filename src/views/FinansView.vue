@@ -214,7 +214,7 @@
       <CollapseTransition>
         <div v-if="!collapsed.flex" class="finans-section-body">
           <div v-if="variableExpenses.length === 0" class="finans-empty">
-            <p>Du har inga flex-utgifter ännu.</p>
+            <p>Inga flex-utgifter inlagda.</p>
             <button class="finans-empty-link" @click="emit('navigate', 'settings:expenses')">Lägg till under Inställningar →</button>
           </div>
           <!-- Month navigator -->
