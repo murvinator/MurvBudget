@@ -645,7 +645,7 @@ function resetFlexModal() {
 </script>
 
 <style scoped>
-economy-view {
+.economy-view {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -653,7 +653,7 @@ economy-view {
 }
 
 /* ── Section shell ─────────────────────────────────────────── */
-economy-section {
+.economy-section {
   background: var(--card-bg);
   border-radius: 20px;
   overflow: hidden;
@@ -767,7 +767,7 @@ economy-section {
 }
 
 /* ── Add section ───────────────────────────────────────────── */
-economy-add-section {
+.economy-add-section {
   padding: 16px 20px 8px;
   border-top: 0.5px solid var(--separator);
   margin-top: 8px;
@@ -1275,7 +1275,7 @@ economy-add-section {
 }
 
 /* ══ FLEX ICON ════════════════════════════════════════════════ */
-economy-section-icon--flex { color: var(--system-blue); }
+.economy-section-icon--flex { color: var(--system-blue); }
 
 /* ══ MONTH NAVIGATOR ══════════════════════════════════════════ */
 .month-nav {
