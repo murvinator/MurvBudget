@@ -532,7 +532,7 @@ export const useBudgetStore = defineStore('budget', {
       const now = new Date().toISOString()
       const payload = JSON.parse(localStorage.getItem('budgetApp') || '{}')
       const { error } = await supabase.from('user_budgets')
-        .upsert({ id: user.id, data: payload, updated_at: now })
+        .upsert({ id: user.id, data: payload, updated_at: now }, { returning: 'minimal' })
       if (!error) {
         localStorage.setItem('murvbudget-last-cloud-sync', now)
       }
