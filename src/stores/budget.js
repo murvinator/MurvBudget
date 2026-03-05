@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import supabase from '../lib/supabase'
+import { encryptData, decryptData } from '../utils/crypto'
 
 export const DATA_SCHEMA_VERSION = 1       // integer; bump when JSON structure changes
 export const APP_VERSION = '1.0.0'         // semver; bump for any release
@@ -530,9 +531,18 @@ export const useBudgetStore = defineStore('budget', {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const now = new Date().toISOString()
-      const payload = JSON.parse(localStorage.getItem('budgetApp') || '{}')
+      const rawPayload = JSON.parse(localStorage.getItem('budgetApp') || '{}')
+
+      let finalData = rawPayload
+      try {
+        const encrypted = await encryptData(rawPayload)
+        finalData = { _encrypted: true, blob: encrypted, v: 1 }
+      } catch (e) {
+        console.error('Encryption failed, syncing raw data as fallback', e)
+      }
+
       const { error } = await supabase.from('user_budgets')
-        .upsert({ id: user.id, data: payload, updated_at: now }, { returning: 'minimal' })
+        .upsert({ id: user.id, data: finalData, updated_at: now }, { returning: 'minimal' })
       if (!error) {
         localStorage.setItem('murvbudget-last-cloud-sync', now)
       }
@@ -545,7 +555,19 @@ export const useBudgetStore = defineStore('budget', {
       const { data, error } = await supabase
         .from('user_budgets').select('data, updated_at').eq('id', user.id).single()
       if (error || !data) return null
-      return { payload: data.data, updatedAt: data.updated_at }
+
+      let payload = data.data
+      if (payload && payload._encrypted && payload.blob) {
+        try {
+          payload = await decryptData(payload.blob)
+        } catch (e) {
+          console.error('Decryption failed. Usually means wrong key or corrupted data.', e)
+          // If decryption fails, we return null to avoid loading gibberish/crashing
+          return null
+        }
+      }
+
+      return { payload, updatedAt: data.updated_at }
     },
 
     clearLocalData() {
