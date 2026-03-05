@@ -1425,9 +1425,9 @@ function onChecklistCatDragEnd() {
 const ECONOMY_SECTION_LABELS = { debts: 'Skulder och lån', savings: 'Sparande', flex: 'Flex-utgifter' }
 
 const checklistSortOptions = [
-  { value: 'manual', label: 'Manuell' },
-  { value: 'amount', label: 'Belopp' },
+  { value: 'amount', label: 'Belopp (högst först)' },
   { value: 'date',   label: 'Datum' },
+  { value: 'manual', label: 'Manuell' },
 ]
 
 const displayModeOptions = [
