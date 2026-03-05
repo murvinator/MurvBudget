@@ -442,8 +442,8 @@ export const useBudgetStore = defineStore('budget', {
     },
     async loadTestData() {
       const paths = [
-        'public/assets/testdata/testdata.json',
-        'public/assets/testdata/Testdata.json',
+        '/assets/testdata/testdata.json',
+        '/assets/testdata/Testdata.json',
       ]
       for (const p of paths) {
         try {
