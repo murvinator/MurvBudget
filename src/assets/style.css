@@ -540,6 +540,9 @@ body {
     font-weight: 600;
     margin-right: 16px;
     font-size: 17px;
+    width: 95px;
+    text-align: right;
+    flex-shrink: 0;
 }
 
 .expense-item.paid {
