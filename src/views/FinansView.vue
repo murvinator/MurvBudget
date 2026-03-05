@@ -197,14 +197,14 @@
     </div>
 
     <!-- Flex-utgifter -->
-    <div v-else-if="sectionId === 'flex' && variableExpenses.length > 0" class="finans-section">
+    <div v-else-if="sectionId === 'flex'" class="finans-section">
       <div class="finans-section-header" @click="toggleSection('flex')">
         <div class="finans-section-title-group">
           <svg class="finans-section-icon finans-section-icon--flex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
           <span class="finans-section-title">Flex-utgifter</span>
-          <span class="finans-section-badge">{{ variableExpenses.length }} poster</span>
+          <span class="finans-section-badge" v-if="variableExpenses.length > 0">{{ variableExpenses.length }} poster</span>
         </div>
         <svg class="finans-chevron" :class="{ collapsed: collapsed.flex }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="6 9 12 15 18 9"/>
@@ -213,8 +213,12 @@
 
       <CollapseTransition>
         <div v-if="!collapsed.flex" class="finans-section-body">
+          <div v-if="variableExpenses.length === 0" class="finans-empty">
+            <p>Du har inga flex-utgifter ännu.</p>
+            <button class="finans-empty-link" @click="emit('navigate', 'settings:expenses')">Lägg till under Inställningar →</button>
+          </div>
           <!-- Month navigator -->
-          <div class="month-nav">
+          <div v-if="variableExpenses.length > 0" class="month-nav">
             <button class="month-nav-btn" @click="stepMonth(-1)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
@@ -275,7 +279,7 @@
             </template>
           </div>
 
-          <div class="finans-total-row">
+          <div v-if="variableExpenses.length > 0" class="finans-total-row">
             <span>Totalt Flex ({{ flexMonthName }})</span>
             <span>{{ fmt(variableTotal) }} kr</span>
           </div>

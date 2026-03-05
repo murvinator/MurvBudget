@@ -53,18 +53,18 @@ export const useBudgetStore = defineStore('budget', {
       cardColors: ['blue-purple', 'orange-pink', 'green-teal'],
       summaryStyle: 'default',
       widgetOrder: [
-        { id: 'summary',    visible: true },
-        { id: 'chart',      visible: true },
-        { id: 'debts',      visible: true },
-        { id: 'checklist',  visible: true },
-        { id: 'savings',    visible: true },
+        { id: 'summary', visible: true },
+        { id: 'chart', visible: true },
+        { id: 'debts', visible: true },
+        { id: 'checklist', visible: true },
+        { id: 'savings', visible: true },
         { id: 'categories', visible: true },
-        { id: 'flex',       visible: true },
+        { id: 'flex', visible: true },
       ],
       widgetSettings: {
-        flex:       { style: 'default', showBars: true },
-        checklist:  { size: 'default' },
-        savings:    { size: 'default' },
+        flex: { style: 'default', showBars: true },
+        checklist: { size: 'default' },
+        savings: { size: 'default' },
         categories: { size: 'default', maxItems: 0 },
       },
     },
@@ -434,8 +434,8 @@ export const useBudgetStore = defineStore('budget', {
     },
     async loadTestData() {
       const paths = [
-        '/assets/testdata/testdata.json',
-        '/assets/testdata/Testdata.json',
+        'public/assets/testdata/testdata.json',
+        'public/assets/testdata/Testdata.json',
       ]
       for (const p of paths) {
         try {
@@ -470,13 +470,13 @@ export const useBudgetStore = defineStore('budget', {
         // Migrate from old format where debts were expenses with category Skulder
         const remaining = []
         const migrated = []
-        ;(data.expenses || []).forEach((e) => {
-          if (e.category === 'Skulder') {
-            migrated.push({ id: genId('debt'), name: e.name, amount: e.amount })
-          } else {
-            remaining.push(e)
-          }
-        })
+          ; (data.expenses || []).forEach((e) => {
+            if (e.category === 'Skulder') {
+              migrated.push({ id: genId('debt'), name: e.name, amount: e.amount })
+            } else {
+              remaining.push(e)
+            }
+          })
         this.expenses = remaining
         this.debts = migrated
       }
@@ -590,13 +590,13 @@ export const useBudgetStore = defineStore('budget', {
       const ALL_WIDGET_IDS = ['summary', 'chart', 'debts', 'checklist', 'savings', 'categories', 'flex']
       if (!this.overviewSettings.widgetOrder?.length) {
         this.overviewSettings.widgetOrder = [
-          { id: 'summary',    visible: this.overviewSettings.showSummaryCards ?? true },
-          { id: 'chart',      visible: this.overviewSettings.showChart ?? true },
-          { id: 'debts',      visible: this.overviewSettings.showDebts ?? true },
-          { id: 'checklist',  visible: true },
-          { id: 'savings',    visible: true },
+          { id: 'summary', visible: this.overviewSettings.showSummaryCards ?? true },
+          { id: 'chart', visible: this.overviewSettings.showChart ?? true },
+          { id: 'debts', visible: this.overviewSettings.showDebts ?? true },
+          { id: 'checklist', visible: true },
+          { id: 'savings', visible: true },
           { id: 'categories', visible: true },
-          { id: 'flex',       visible: true },
+          { id: 'flex', visible: true },
         ]
       } else {
         for (const id of ALL_WIDGET_IDS) {
@@ -608,9 +608,9 @@ export const useBudgetStore = defineStore('budget', {
       // Ensure widgetSettings exists and all defaults are populated
       if (!this.overviewSettings.widgetSettings) this.overviewSettings.widgetSettings = {}
       const defaultWidgetSettings = {
-        flex:       { style: 'default', showBars: true },
-        checklist:  { size: 'default' },
-        savings:    { size: 'default' },
+        flex: { style: 'default', showBars: true },
+        checklist: { size: 'default' },
+        savings: { size: 'default' },
         categories: { size: 'default', maxItems: 0 },
       }
       for (const [id, defaults] of Object.entries(defaultWidgetSettings)) {
