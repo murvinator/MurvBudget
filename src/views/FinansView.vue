@@ -234,28 +234,26 @@
             class="flex-item-card"
           >
             <!-- Display state -->
-            <template>
-              <div class="flex-item-row" @click="openFlexModal(expense)">
-                <div class="flex-item-left">
-                  <span class="flex-item-name">{{ expense.name }}</span>
-                  <span class="flex-item-sub" v-if="!hasFlexActual(expense.name)">Tryck för att ange faktiskt belopp</span>
-                  <span class="flex-item-sub flex-item-sub--confirmed" v-else>Bekräftat</span>
-                </div>
-                <div class="flex-item-amounts">
-                  <span class="flex-item-actual" :class="{ 'flex-item-actual--estimate': !hasFlexActual(expense.name) }">
-                    <span v-if="!hasFlexActual(expense.name)" class="flex-tilde">~</span>{{ fmt(variableAmount(expense)) }} kr
-                  </span>
-                  <span v-if="hasFlexActual(expense.name)" class="flex-item-budget">/ {{ fmt(expense.amount) }} kr</span>
-                </div>
+            <div class="flex-item-row" @click="openFlexModal(expense)">
+              <div class="flex-item-left">
+                <span class="flex-item-name">{{ expense.name }}</span>
+                <span class="flex-item-sub" v-if="!hasFlexActual(expense.name)">Tryck för att ange faktiskt belopp</span>
+                <span class="flex-item-sub flex-item-sub--confirmed" v-else>Bekräftat</span>
               </div>
-              <div v-if="store.finansViewSettings?.flexShowBars !== false" class="flex-item-bar-track">
-                <div
-                  class="flex-item-bar-fill"
-                  :class="flexBarClass(expense)"
-                  :style="{ width: flexBarPct(expense) + '%' }"
-                ></div>
+              <div class="flex-item-amounts">
+                <span class="flex-item-actual" :class="{ 'flex-item-actual--estimate': !hasFlexActual(expense.name) }">
+                  <span v-if="!hasFlexActual(expense.name)" class="flex-tilde">~</span>{{ fmt(variableAmount(expense)) }} kr
+                </span>
+                <span v-if="hasFlexActual(expense.name)" class="flex-item-budget">/ {{ fmt(expense.amount) }} kr</span>
               </div>
-            </template>
+            </div>
+            <div v-if="store.finansViewSettings?.flexShowBars !== false" class="flex-item-bar-track">
+              <div
+                class="flex-item-bar-fill"
+                :class="flexBarClass(expense)"
+                :style="{ width: flexBarPct(expense) + '%' }"
+              ></div>
+            </div>
           </div>
 
           <div v-if="variableExpenses.length > 0" class="finans-total-row">
