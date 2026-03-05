@@ -1181,7 +1181,7 @@
       <div class="settings-footer">
         <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget<br>
         © Jonathan Belloni 2026</a>
-        <span class="settings-version">Version 1.0.0-beta1</span>
+        <span class="settings-version">Version {{ DATA_SCHEMA_VERSION }}</span>
       </div>
 
       <div class="settings-footer">
@@ -1222,7 +1222,7 @@
 
 <script setup>
 import { ref, reactive, computed, inject, watch, nextTick } from 'vue'
-import { useBudgetStore } from '../stores/budget'
+import { useBudgetStore, DATA_SCHEMA_VERSION } from '../stores/budget'
 import { useAuthStore } from '../stores/auth'
 import SwipeToDelete from '../components/SwipeToDelete.vue'
 import CollapseTransition from '../components/CollapseTransition.vue'
@@ -2074,6 +2074,14 @@ function importFile(event) {
         await confirm('Ogiltig fil', { label: 'OK', style: 'primary', description: 'Filen innehåller ogiltiga poster. Kontrollera att det är en giltig MurvBudget-fil.' })
         event.target.value = ''
         return
+      }
+      const incoming = data.schemaVersion || '0.0.0'
+      if (incoming > DATA_SCHEMA_VERSION) {
+        const proceed = await confirm('Nyare dataformat', {
+          label: 'Importera ändå', style: 'primary',
+          description: `Filen skapades med en nyare version av MurvBudget (${incoming}). Importera ändå?`
+        })
+        if (!proceed) { event.target.value = ''; return }
       }
       const ok = await confirm('Ersätt all data?', { description: 'All nuvarande data på den här enheten ersätts med innehållet i filen.' })
       if (ok) {

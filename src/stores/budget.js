@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import supabase from '../lib/supabase'
 
+export const DATA_SCHEMA_VERSION = '1.0.0'
+
 function genId(prefix = 'd') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
@@ -12,6 +14,7 @@ const SWEDISH_MONTHS = [
 
 export const useBudgetStore = defineStore('budget', {
   state: () => ({
+    schemaVersion: DATA_SCHEMA_VERSION,
     income: [],
     expenses: [],
     categories: [],
@@ -412,6 +415,7 @@ export const useBudgetStore = defineStore('budget', {
     exportData() {
       const date = new Date().toISOString().slice(0, 10)
       const dataStr = JSON.stringify({
+        schemaVersion: DATA_SCHEMA_VERSION,
         income: this.income,
         expenses: this.expenses,
         categories: this.categories,
@@ -453,6 +457,7 @@ export const useBudgetStore = defineStore('budget', {
       return false
     },
     _applyData(data) {
+      const incomingVersion = data.schemaVersion || '0.0.0'
       this.income = data.income || []
       this.categories = (data.categories || []).filter((c) => c !== 'Skulder')
       this.monthlyStatus = data.monthlyStatus || {}
@@ -503,6 +508,9 @@ export const useBudgetStore = defineStore('budget', {
         this.debtPayments = {}
         this.debts.forEach((d) => { this.debtPayments[d.id] = [] })
       }
+
+      this.migrateData()
+      return incomingVersion
     },
 
     // ── Cloud Sync ───────────────────────────────────────────────────────────
@@ -531,6 +539,7 @@ export const useBudgetStore = defineStore('budget', {
 
     clearLocalData() {
       this.$patch({
+        schemaVersion: DATA_SCHEMA_VERSION,
         income: [],
         expenses: [],
         categories: [],
@@ -652,6 +661,8 @@ export const useBudgetStore = defineStore('budget', {
         })
         this.expenses = this.expenses.filter((e) => e.category !== 'Skulder')
       }
+
+      this.schemaVersion = DATA_SCHEMA_VERSION
     },
   },
 

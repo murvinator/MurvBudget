@@ -130,12 +130,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import { useBudgetStore } from '../stores/budget'
+import { useBudgetStore, DATA_SCHEMA_VERSION } from '../stores/budget'
 
 const authStore = useAuthStore()
 const store = useBudgetStore()
+const confirm = inject('confirm')
 
 const visible = ref(false)
 const mode = ref('login')
@@ -228,8 +229,17 @@ async function handleCloudSync() {
   const localSnapshot = localStorage.getItem('budgetApp')
   localStorage.setItem('budgetApp-pre-login', localSnapshot ?? '')
 
-  // Cloud has data — always load it, no questions asked
+  // Cloud has data — check version before loading
+  const cloudVersion = result.payload?.schemaVersion || '0.0.0'
+  if (cloudVersion > DATA_SCHEMA_VERSION) {
+    const ok = await confirm('Nyare dataformat', {
+      label: 'Importera ändå', style: 'primary',
+      description: `Molndata skapades med en nyare version av MurvBudget (${cloudVersion}). Importera ändå?`
+    })
+    if (!ok) return
+  }
   store.$patch(result.payload)
+  store.migrateData()
   authStore.setLastSynced()
 }
 
