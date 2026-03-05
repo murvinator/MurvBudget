@@ -35,7 +35,11 @@ Single Pinia store (`useBudgetStore`) persisted to `localStorage` under key `bud
 - **monthlyStatus** — tracks checkbox state for the monthly checklist; keyed by `'current'` then by expense index
 - **overviewSettings** — controls widget visibility and appearance on the Overview tab
 
-`migrateData()` is called on app mount and handles legacy data migrations (e.g., old `'Skulder'` category → debts, name-keyed debtPayments → id-keyed).
+`migrateData()` is called on app mount and handles legacy data migrations (e.g., old `'Skulder'` category → debts, name-keyed debtPayments → id-keyed, `expenses[].variable = true` → `flex[]`).
+
+**Version constants** (both exported from `src/stores/budget.js`):
+- `DATA_SCHEMA_VERSION` — integer; stored in JSON export and localStorage. **Must be incremented whenever the JSON data structure changes** (new fields added, fields renamed/removed, format changes). Used for import/cloud-sync compatibility warnings.
+- `APP_VERSION` — semver string shown in Settings footer. Update for any release.
 
 ### Views
 

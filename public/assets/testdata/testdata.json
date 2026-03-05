@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 1,
   "income": [
     {
       "name": "Lön",
@@ -32,12 +33,12 @@
       "amount": 2000,
       "category": "Autogiro",
       "date": 25
-    },
+    }
+  ],
+  "flex": [
     {
       "name": "Mat",
-      "amount": 4000,
-      "category": null,
-      "variable": true
+      "amount": 4000
     }
   ],
   "categories": [
@@ -78,8 +79,6 @@
     "debt-mhupd16o-ihub0k": []
   },
   "variableActuals": {},
-  "variableExpenses": [],
-  "variableExpenseTransactions": {},
   "savings": [
     {
       "id": "sav-mmd38opo-wzwrrz",

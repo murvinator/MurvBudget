@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import supabase from '../lib/supabase'
 
-export const DATA_SCHEMA_VERSION = '1.0.0'
+export const DATA_SCHEMA_VERSION = 1       // integer; bump when JSON structure changes
+export const APP_VERSION = '1.0.0'         // semver; bump for any release
 
 function genId(prefix = 'd') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -457,12 +458,22 @@ export const useBudgetStore = defineStore('budget', {
       return false
     },
     _applyData(data) {
-      const incomingVersion = data.schemaVersion || '0.0.0'
+      const incomingVersion = data.schemaVersion || 0
       this.income = data.income || []
       this.categories = (data.categories || []).filter((c) => c !== 'Skulder')
       this.monthlyStatus = data.monthlyStatus || {}
       this.variableActuals = data.variableActuals || {}
       this.flex = data.flex || []
+      // Migrate old expenses[].variable = true → flex[]
+      const oldVariableExpenses = (data.expenses || []).filter(e => e.variable)
+      if (oldVariableExpenses.length > 0) {
+        const existingFlexNames = new Set(this.flex.map(e => e.name))
+        for (const e of oldVariableExpenses) {
+          if (!existingFlexNames.has(e.name)) {
+            this.flex.push({ name: e.name, amount: e.amount })
+          }
+        }
+      }
       // LEGACY imports kept for reference (no longer applied):
       // this.variableExpenses = data.variableExpenses || []
       // this.variableExpenseTransactions = data.variableExpenseTransactions || {}
@@ -560,6 +571,17 @@ export const useBudgetStore = defineStore('budget', {
       if (!this.variableActuals) this.variableActuals = {}
       // Ensure flex list exists
       if (!this.flex) this.flex = []
+      // Migrate old expenses[].variable = true → flex[]
+      const oldVariableExpenses = this.expenses.filter(e => e.variable)
+      if (oldVariableExpenses.length > 0) {
+        const existingFlexNames = new Set(this.flex.map(e => e.name))
+        for (const e of oldVariableExpenses) {
+          if (!existingFlexNames.has(e.name)) {
+            this.flex.push({ name: e.name, amount: e.amount })
+          }
+        }
+        this.expenses = this.expenses.filter(e => !e.variable)
+      }
       // Ensure savings exists
       if (!this.savings) this.savings = []
       if (!this.savingsDeposits) this.savingsDeposits = {}

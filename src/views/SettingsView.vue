@@ -1181,7 +1181,7 @@
       <div class="settings-footer">
         <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget<br>
         © Jonathan Belloni 2026</a>
-        <span class="settings-version">Version {{ DATA_SCHEMA_VERSION }}</span>
+        <span class="settings-version">Version {{ APP_VERSION }}</span>
       </div>
 
       <div class="settings-footer">
@@ -1222,7 +1222,7 @@
 
 <script setup>
 import { ref, reactive, computed, inject, watch, nextTick } from 'vue'
-import { useBudgetStore, DATA_SCHEMA_VERSION } from '../stores/budget'
+import { useBudgetStore, DATA_SCHEMA_VERSION, APP_VERSION } from '../stores/budget'
 import { useAuthStore } from '../stores/auth'
 import SwipeToDelete from '../components/SwipeToDelete.vue'
 import CollapseTransition from '../components/CollapseTransition.vue'
@@ -2075,7 +2075,7 @@ function importFile(event) {
         event.target.value = ''
         return
       }
-      const incoming = data.schemaVersion || '0.0.0'
+      const incoming = data.schemaVersion || 0
       if (incoming > DATA_SCHEMA_VERSION) {
         const proceed = await confirm('Nyare dataformat', {
           label: 'Importera ändå', style: 'primary',
