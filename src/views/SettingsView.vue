@@ -207,6 +207,55 @@
         </div></CollapseTransition>
       </div>
 
+      <!-- Ekonomi-vy -->
+      <div class="settings-section">
+        <div class="section-toggle" @click="toggleSection('ekonomi')">
+          <h3>Ekonomi</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['ekonomi'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <CollapseTransition><div v-if="!collapsedSections['ekonomi']" class="settings-content">
+          <div ref="ekonomiListRef">
+            <div
+              v-for="(sectionId, idx) in store.economyOrder"
+              :key="sectionId"
+              class="cat-order-row"
+              :class="{ 'widget-dragging': ekonomiDragIdx === idx }"
+            >
+              <div class="ekonomi-plain-row">
+                <div class="cat-row-inner">
+                  <div
+                    class="widget-drag-handle"
+                    @pointerdown="startEkonomiDrag(idx, $event)"
+                    @touchstart.stop
+                    title="Dra för att ändra ordning"
+                  >
+                    <svg viewBox="0 0 10 16" fill="currentColor">
+                      <circle cx="3" cy="3"  r="1.5"/>
+                      <circle cx="7" cy="3"  r="1.5"/>
+                      <circle cx="3" cy="8"  r="1.5"/>
+                      <circle cx="7" cy="8"  r="1.5"/>
+                      <circle cx="3" cy="13" r="1.5"/>
+                      <circle cx="7" cy="13" r="1.5"/>
+                    </svg>
+                  </div>
+                  <span class="widget-order-label">{{ ECONOMY_SECTION_LABELS[sectionId] }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="widget-sub-settings">
+            <div class="chart-type-section chart-type-section--toggle">
+              <div class="chart-type-label">Flex: Visa staplar</div>
+              <input type="checkbox" class="ios-toggle" :checked="store.economyViewSettings?.flexShowBars !== false" @change="store.setEconomyViewSetting('flexShowBars', $event.target.checked)">
+            </div>
+            <!-- <div class="chart-type-section chart-type-section--last chart-type-section--toggle">
+              <div class="chart-type-label">Skulder: Visa progress direkt</div>
+              <input type="checkbox" class="ios-toggle" :checked="store.economyViewSettings?.debtsShowProgress !== false" @change="store.setEconomyViewSetting('debtsShowProgress', $event.target.checked)">
+            </div> -->
+          </div>
+        </div></CollapseTransition>
+      </div>
+
       <!-- Checklista -->
       <div class="settings-section">
         <div class="section-toggle" @click="toggleSection('checklist')">
@@ -262,55 +311,6 @@
                   @click="store.setChecklistSetting('sortOrder', opt.value)"
                 >{{ opt.label }}</button>
               </div>
-            </div>
-          </div>
-        </div></CollapseTransition>
-      </div>
-
-      <!-- Ekonomi-vy -->
-      <div class="settings-section">
-        <div class="section-toggle" @click="toggleSection('ekonomi')">
-          <h3>Ekonomi</h3>
-          <svg class="chevron" :class="{ collapsed: collapsedSections['ekonomi'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <CollapseTransition><div v-if="!collapsedSections['ekonomi']" class="settings-content">
-          <div ref="ekonomiListRef">
-            <div
-              v-for="(sectionId, idx) in store.economyOrder"
-              :key="sectionId"
-              class="cat-order-row"
-              :class="{ 'widget-dragging': ekonomiDragIdx === idx }"
-            >
-              <div class="ekonomi-plain-row">
-                <div class="cat-row-inner">
-                  <div
-                    class="widget-drag-handle"
-                    @pointerdown="startEkonomiDrag(idx, $event)"
-                    @touchstart.stop
-                    title="Dra för att ändra ordning"
-                  >
-                    <svg viewBox="0 0 10 16" fill="currentColor">
-                      <circle cx="3" cy="3"  r="1.5"/>
-                      <circle cx="7" cy="3"  r="1.5"/>
-                      <circle cx="3" cy="8"  r="1.5"/>
-                      <circle cx="7" cy="8"  r="1.5"/>
-                      <circle cx="3" cy="13" r="1.5"/>
-                      <circle cx="7" cy="13" r="1.5"/>
-                    </svg>
-                  </div>
-                  <span class="widget-order-label">{{ ECONOMY_SECTION_LABELS[sectionId] }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="widget-sub-settings">
-            <div class="chart-type-section chart-type-section--toggle">
-              <div class="chart-type-label">Flex: Visa staplar</div>
-              <input type="checkbox" class="ios-toggle" :checked="store.economyViewSettings?.flexShowBars !== false" @change="store.setEconomyViewSetting('flexShowBars', $event.target.checked)">
-            </div>
-            <div class="chart-type-section chart-type-section--last chart-type-section--toggle">
-              <div class="chart-type-label">Skulder: Visa progress direkt</div>
-              <input type="checkbox" class="ios-toggle" :checked="store.economyViewSettings?.debtsShowProgress !== false" @change="store.setEconomyViewSetting('debtsShowProgress', $event.target.checked)">
             </div>
           </div>
         </div></CollapseTransition>
@@ -496,7 +496,7 @@
                   </select>
                 </div>
                 <div class="add-form-field">
-                  <label class="add-form-label">Dag i månaden (valfritt)</label>
+                  <label class="add-form-label">Dag för betalning (valfritt)</label>
                   <input type="number" v-model.number="newExpenseDate" placeholder="" min="1" max="31" step="1" inputmode="numeric" @focus="$event.target.select()">
                 </div>
               </div>
@@ -807,12 +807,12 @@
                   <span v-if="formErrors.debt_amount" class="field-error">{{ formErrors.debt_amount }}</span>
                 </div>
                 <div class="add-form-field">
-                  <label class="add-form-label">Förfallodatum (valfritt)</label>
-                  <input type="number" v-model.number="newDebtDate" placeholder="" min="1" max="31" step="1" inputmode="numeric" @focus="$event.target.select()">
-                </div>
-                <div class="add-form-field">
                   <label class="add-form-label">Månadsbetalning (valfritt)</label>
                   <input type="number" v-model.number="newDebtMonthlyPayment" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()">
+                </div>
+                <div class="add-form-field">
+                  <label class="add-form-label">Dag för betalning (valfritt)</label>
+                  <input type="number" v-model.number="newDebtDate" placeholder="" min="1" max="31" step="1" inputmode="numeric" @focus="$event.target.select()">
                 </div>
               </div>
               <div class="add-form-submit-row">
@@ -845,12 +845,12 @@
                     <input type="number" v-model.number="editDebtAmount" step="1" inputmode="numeric" placeholder="Belopp" @focus="$event.target.select()">
                   </div>
                   <div class="edit-input-group">
-                    <label>Förfallodatum (valfritt)</label>
-                    <input type="number" v-model.number="editDebtDate" step="1" inputmode="numeric" placeholder="" min="1" max="31" @focus="$event.target.select()">
-                  </div>
-                  <div class="edit-input-group">
                     <label>Månadsbetalning (valfritt)</label>
                     <input type="number" v-model.number="editDebtMonthlyPayment" step="1" inputmode="numeric" placeholder="" @focus="$event.target.select()">
+                  </div>
+                  <div class="edit-input-group">
+                    <label>Dag för betalning (valfritt)</label>
+                    <input type="number" v-model.number="editDebtDate" step="1" inputmode="numeric" placeholder="" min="1" max="31" @focus="$event.target.select()">
                   </div>
                   <div class="edit-actions">
                     <button class="save-edit-btn" @click="saveDebtEdit(debt.storeIdx)">Spara</button>
@@ -937,7 +937,7 @@
                   <input type="number" v-model.number="newSavingMonthlyPayment" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()">
                 </div>
                 <div class="add-form-field">
-                  <label class="add-form-label">Dag i månaden (valfritt)</label>
+                  <label class="add-form-label">Dag för insättning (valfritt)</label>
                   <input type="number" v-model.number="newSavingDate" placeholder="" min="1" max="31" step="1" inputmode="numeric" @focus="$event.target.select()">
                 </div>
               </div>
@@ -971,12 +971,12 @@
                     <input type="number" v-model.number="editSavingTarget" step="1" inputmode="numeric" @focus="$event.target.select()">
                   </div>
                   <div class="edit-input-group">
-                    <label>Dag i månaden (valfritt)</label>
-                    <input type="number" v-model.number="editSavingDate" step="1" inputmode="numeric" placeholder="" min="1" max="31" @focus="$event.target.select()">
+                    <label>Månadsinsättning (valfritt)</label>
+                    <input type="number" v-model.number="editSavingMonthlyPayment" step="1" inputmode="numeric" placeholder="" @focus="$event.target.select()">
                   </div>
                   <div class="edit-input-group">
-                    <label>Månadsbetalning (valfritt)</label>
-                    <input type="number" v-model.number="editSavingMonthlyPayment" step="1" inputmode="numeric" placeholder="" @focus="$event.target.select()">
+                    <label>Dag för insättning (valfritt)</label>
+                    <input type="number" v-model.number="editSavingDate" step="1" inputmode="numeric" placeholder="" min="1" max="31" @focus="$event.target.select()">
                   </div>
                   <div class="edit-actions">
                     <button class="save-edit-btn" @click="saveSavingEdit(goal.storeIdx)">Spara</button>

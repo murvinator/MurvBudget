@@ -162,6 +162,15 @@
               <div class="expense-info">
                 <div class="expense-name">{{ item.name }}</div>
               </div>
+              <span v-if="item.date" class="expense-date-badge">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                  <line x1="1" y1="5" x2="11" y2="5"/>
+                  <line x1="4" y1="1" x2="4" y2="3"/>
+                  <line x1="8" y1="1" x2="8" y2="3"/>
+                </svg>
+                {{ item.date }}
+              </span>
               <div class="expense-amount">{{ fmt(item.monthlyPayment) }} kr</div>
               <input
                 type="checkbox"
@@ -207,6 +216,15 @@
               <div class="expense-info">
                 <div class="expense-name">{{ item.name }}</div>
               </div>
+              <span v-if="item.date" class="expense-date-badge">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="1" y="2" width="10" height="9" rx="1.5"/>
+                  <line x1="1" y1="5" x2="11" y2="5"/>
+                  <line x1="4" y1="1" x2="4" y2="3"/>
+                  <line x1="8" y1="1" x2="8" y2="3"/>
+                </svg>
+                {{ item.date }}
+              </span>
               <div class="expense-amount">{{ fmt(item.monthlyPayment) }} kr</div>
               <input
                 type="checkbox"
