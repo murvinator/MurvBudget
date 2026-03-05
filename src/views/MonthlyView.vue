@@ -23,7 +23,7 @@
       <span class="monthly-section-title">{{ store.displayMonthName }}</span>
       <span class="monthly-paid-count">{{ paidCount }} av {{ totalCount }} betalt</span>
       <button v-if="hasCollapsibleSections" class="toggle-all-btn" @click="toggleAll">
-        {{ allExpanded ? 'Dölj alla' : 'Visa alla' }}
+        {{ anyOpen ? 'Dölj alla' : 'Visa alla' }}
       </button>
     </div>
 
@@ -464,22 +464,19 @@ const hasCollapsibleSections = computed(() =>
   savingsPaymentItems.value.length > 0
 )
 
-const allExpanded = computed(() => {
-  const catsExpanded = store.categories
-    .filter((cat) => categoryExpenses(cat).length > 0)
-    .every((cat) => !collapsedCategories[cat])
-  const debtOk = debtPaymentItems.value.length === 0 || !debtSectionCollapsed.value
-  const savingsOk = savingsPaymentItems.value.length === 0 || !savingsSectionCollapsed.value
-  return catsExpanded && debtOk && savingsOk
-})
+const anyOpen = computed(() =>
+  store.categories.filter(cat => categoryExpenses(cat).length > 0).some(cat => !collapsedCategories[cat]) ||
+  (debtPaymentItems.value.length > 0 && !debtSectionCollapsed.value) ||
+  (savingsPaymentItems.value.length > 0 && !savingsSectionCollapsed.value)
+)
 
 function toggleAll() {
-  const expand = !allExpanded.value
+  const shouldCollapse = anyOpen.value
   for (const cat of store.categories) {
-    if (categoryExpenses(cat).length > 0) collapsedCategories[cat] = !expand
+    if (categoryExpenses(cat).length > 0) collapsedCategories[cat] = shouldCollapse
   }
-  if (debtPaymentItems.value.length > 0) debtSectionCollapsed.value = !expand
-  if (savingsPaymentItems.value.length > 0) savingsSectionCollapsed.value = !expand
+  if (debtPaymentItems.value.length > 0) debtSectionCollapsed.value = shouldCollapse
+  if (savingsPaymentItems.value.length > 0) savingsSectionCollapsed.value = shouldCollapse
   try {
     sessionStorage.setItem(COLLAPSED_KEY, JSON.stringify({ ...collapsedCategories }))
   } catch {}

@@ -327,6 +327,29 @@
         </div></CollapseTransition>
       </div>
 
+      <!-- Utseende -->
+      <div class="settings-section">
+        <div class="section-toggle" @click="toggleSection('utseende')">
+          <h3>Utseende</h3>
+          <svg class="chevron" :class="{ collapsed: collapsedSections['utseende'] }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <CollapseTransition><div v-if="!collapsedSections['utseende']" class="settings-content">
+          <div class="widget-sub-settings">
+            <div class="chart-type-section chart-type-section--last">
+              <div class="chart-type-label">Visningsläge</div>
+              <div class="chart-type-segment">
+                <button
+                  v-for="opt in displayModeOptions"
+                  :key="opt.value"
+                  :class="['segment-btn', { active: (store.displayModePreference || 'auto') === opt.value }]"
+                  @click="store.setDisplayModePreference(opt.value)"
+                >{{ opt.label }}</button>
+              </div>
+            </div>
+          </div>
+        </div></CollapseTransition>
+      </div>
+
       </div><!-- /settings-view-group -->
 
       <!-- Inkomster -->
@@ -346,11 +369,13 @@
               <div class="add-form-fields">
                 <div class="add-form-field">
                   <label class="add-form-label">Namn</label>
-                  <input type="text" v-model="newIncomeName" placeholder="" @focus="$event.target.select()">
+                  <input type="text" v-model="newIncomeName" placeholder="" @focus="$event.target.select()" @input="formErrors.income_name = null" :class="{ 'input-error': formErrors.income_name }">
+                  <span v-if="formErrors.income_name" class="field-error">{{ formErrors.income_name }}</span>
                 </div>
                 <div class="add-form-field">
                   <label class="add-form-label">Belopp</label>
-                  <input type="number" v-model.number="newIncomeAmount" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()">
+                  <input type="number" v-model.number="newIncomeAmount" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()" @input="formErrors.income_amount = null" :class="{ 'input-error': formErrors.income_amount }">
+                  <span v-if="formErrors.income_amount" class="field-error">{{ formErrors.income_amount }}</span>
                 </div>
               </div>
               <div class="add-form-submit-row">
@@ -381,11 +406,11 @@
                   <div class="edit-form-content">
                     <div class="edit-input-group">
                       <label>Namn</label>
-                      <input type="text" v-model="editIncomeForm.name">
+                      <input type="text" v-model="editIncomeForm.name" @focus="$event.target.select()">
                     </div>
                     <div class="edit-input-group">
                       <label>Belopp</label>
-                      <input type="number" v-model.number="editIncomeForm.amount" step="1" inputmode="numeric">
+                      <input type="number" v-model.number="editIncomeForm.amount" step="1" inputmode="numeric" @focus="$event.target.select()">
                     </div>
                     <div class="edit-actions">
                       <button class="save-edit-btn" @click="saveIncomeEdit(idx)">Spara</button>
@@ -466,11 +491,13 @@
               <div class="add-form-fields">
                 <div class="add-form-field">
                   <label class="add-form-label">Namn</label>
-                  <input type="text" v-model="newExpenseName" placeholder="" @focus="$event.target.select()">
+                  <input type="text" v-model="newExpenseName" placeholder="" @focus="$event.target.select()" @input="formErrors.expense_name = null" :class="{ 'input-error': formErrors.expense_name }">
+                  <span v-if="formErrors.expense_name" class="field-error">{{ formErrors.expense_name }}</span>
                 </div>
                 <div class="add-form-field">
                   <label class="add-form-label">Belopp</label>
-                  <input type="number" v-model.number="newExpenseAmount" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()">
+                  <input type="number" v-model.number="newExpenseAmount" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()" @input="formErrors.expense_amount = null" :class="{ 'input-error': formErrors.expense_amount }">
+                  <span v-if="formErrors.expense_amount" class="field-error">{{ formErrors.expense_amount }}</span>
                 </div>
                 <div class="add-form-field">
                   <label class="add-form-label">Kategori</label>
@@ -545,7 +572,7 @@
                       </div>
                       <div v-if="!editForm.variable" class="edit-input-group">
                         <label>Dag (valfritt)</label>
-                        <input type="number" v-model.number="editForm.date" min="1" max="31" step="1" inputmode="numeric" placeholder="1–31">
+                        <input type="number" v-model.number="editForm.date" min="1" max="31" step="1" inputmode="numeric" placeholder="1–31" @focus="$event.target.select()">
                       </div>
                       <div class="edit-actions">
                         <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
@@ -599,11 +626,11 @@
                       <div class="edit-form-content">
                         <div class="edit-input-group">
                           <label>Namn</label>
-                          <input type="text" v-model="editForm.name">
+                          <input type="text" v-model="editForm.name" @focus="$event.target.select()">
                         </div>
                         <div class="edit-input-group">
                           <label>Belopp</label>
-                          <input type="number" v-model.number="editForm.amount" step="1" inputmode="numeric">
+                          <input type="number" v-model.number="editForm.amount" step="1" inputmode="numeric" @focus="$event.target.select()">
                         </div>
                         <div v-if="!editForm.variable" class="edit-input-group">
                           <label>Kategori</label>
@@ -614,11 +641,7 @@
                         </div>
                         <div v-if="!editForm.variable" class="edit-input-group">
                           <label>Dag (valfritt)</label>
-                          <input type="number" v-model.number="editForm.date" min="1" max="31" step="1" inputmode="numeric" placeholder="">
-                        </div>
-                        <div class="edit-toggle-row">
-                          <label>Flex (belopp varierar)</label>
-                          <input type="checkbox" class="ios-toggle" v-model="editForm.variable">
+                          <input type="number" v-model.number="editForm.date" min="1" max="31" step="1" inputmode="numeric" placeholder="" @focus="$event.target.select()">
                         </div>
                         <div class="edit-actions">
                           <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
@@ -654,11 +677,13 @@
               <div class="add-form-fields">
                 <div class="add-form-field">
                   <label class="add-form-label">Namn</label>
-                  <input type="text" v-model="newFlexName" placeholder="" @focus="$event.target.select()">
+                  <input type="text" v-model="newFlexName" placeholder="" @focus="$event.target.select()" @input="formErrors.flex_name = null" :class="{ 'input-error': formErrors.flex_name }">
+                  <span v-if="formErrors.flex_name" class="field-error">{{ formErrors.flex_name }}</span>
                 </div>
                 <div class="add-form-field">
                   <label class="add-form-label">Uppskattad månadskostnad</label>
-                  <input type="number" v-model.number="newFlexAmount" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()">
+                  <input type="number" v-model.number="newFlexAmount" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()" @input="formErrors.flex_amount = null" :class="{ 'input-error': formErrors.flex_amount }">
+                  <span v-if="formErrors.flex_amount" class="field-error">{{ formErrors.flex_amount }}</span>
                 </div>
               </div>
               <div class="add-form-submit-row">
@@ -723,7 +748,8 @@
               <div class="add-form-fields">
                 <div class="add-form-field">
                   <label class="add-form-label">Kategorinamn</label>
-                  <input type="text" v-model="newCategoryName" placeholder="" @focus="$event.target.select()">
+                  <input type="text" v-model="newCategoryName" placeholder="" @focus="$event.target.select()" @input="formErrors.category_name = null" :class="{ 'input-error': formErrors.category_name }">
+                  <span v-if="formErrors.category_name" class="field-error">{{ formErrors.category_name }}</span>
                 </div>
               </div>
               <div class="add-form-submit-row">
@@ -751,7 +777,7 @@
                   <div class="edit-form-content" style="padding: 16px 16px 8px;">
                     <div class="edit-input-group">
                       <label>Namn</label>
-                      <input type="text" v-model="editCategoryName">
+                      <input type="text" v-model="editCategoryName" @focus="$event.target.select()">
                     </div>
                     <div class="edit-actions">
                       <button class="save-edit-btn" @click="saveCategoryEdit(idx)">Spara</button>
@@ -783,11 +809,13 @@
               <div class="add-form-fields">
                 <div class="add-form-field">
                   <label class="add-form-label">Namn</label>
-                  <input type="text" v-model="newDebtName" placeholder="" @focus="$event.target.select()">
+                  <input type="text" v-model="newDebtName" placeholder="" @focus="$event.target.select()" @input="formErrors.debt_name = null" :class="{ 'input-error': formErrors.debt_name }">
+                  <span v-if="formErrors.debt_name" class="field-error">{{ formErrors.debt_name }}</span>
                 </div>
                 <div class="add-form-field">
                   <label class="add-form-label">Summa</label>
-                  <input type="number" v-model.number="newDebtAmount" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()">
+                  <input type="number" v-model.number="newDebtAmount" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()" @input="formErrors.debt_amount = null" :class="{ 'input-error': formErrors.debt_amount }">
+                  <span v-if="formErrors.debt_amount" class="field-error">{{ formErrors.debt_amount }}</span>
                 </div>
                 <div class="add-form-field">
                   <label class="add-form-label">Förfallodatum (valfritt)</label>
@@ -907,11 +935,13 @@
               <div class="add-form-fields">
                 <div class="add-form-field">
                   <label class="add-form-label">Namn</label>
-                  <input type="text" v-model="newSavingName" placeholder="" @focus="$event.target.select()">
+                  <input type="text" v-model="newSavingName" placeholder="" @focus="$event.target.select()" @input="formErrors.saving_name = null" :class="{ 'input-error': formErrors.saving_name }">
+                  <span v-if="formErrors.saving_name" class="field-error">{{ formErrors.saving_name }}</span>
                 </div>
                 <div class="add-form-field">
                   <label class="add-form-label">Sparmål</label>
-                  <input type="number" v-model.number="newSavingTarget" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()">
+                  <input type="number" v-model.number="newSavingTarget" placeholder="" step="1" inputmode="numeric" @focus="$event.target.select()" @input="formErrors.saving_target = null" :class="{ 'input-error': formErrors.saving_target }">
+                  <span v-if="formErrors.saving_target" class="field-error">{{ formErrors.saving_target }}</span>
                 </div>
                 <div class="add-form-field">
                   <label class="add-form-label">Månadsinsättning (valfritt)</label>
@@ -1170,6 +1200,24 @@
     <br>
 
   <AuthModal ref="authModalRef" />
+
+  <Teleport to="body">
+    <Transition name="auth">
+      <div v-if="signOutSuccess" class="auth-backdrop">
+        <div class="auth-card" style="max-width:360px">
+          <div class="auth-success">
+            <div class="auth-success-icon">
+              <svg viewBox="0 0 24 24" fill="none" width="36" height="36">
+                <circle cx="12" cy="12" r="12" fill="var(--system-green)"/>
+                <path d="M6.5 12.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <p class="auth-success-title">Utloggad!</p>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -1186,9 +1234,10 @@ const confirm = inject('confirm')
 const showSalarySheet = inject('showSalarySheet', () => {})
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
-const SECTIONS = ['overview', 'checklist', 'ekonomi', 'income', 'expenses', 'flex', 'categories', 'debts', 'savings', 'salary', 'account']
+const SECTIONS = ['overview', 'checklist', 'ekonomi', 'utseende', 'income', 'expenses', 'flex', 'categories', 'debts', 'savings', 'salary', 'account']
 
 const authModalRef = ref(null)
+const signOutSuccess = ref(false)
 const deleteExpanded = ref(false)
 const localDataTs = inject('localDataTs')
 
@@ -1214,7 +1263,7 @@ async function signOut() {
   )
   if (!ok) return
 
-  authStore.signOut()
+  await authStore.signOut()
 
   const preLogin = localStorage.getItem('budgetApp-pre-login')
   if (preLogin !== null) {
@@ -1224,6 +1273,9 @@ async function signOut() {
     }
     localStorage.removeItem('budgetApp-pre-login')
   }
+
+  signOutSuccess.value = true
+  setTimeout(() => { signOutSuccess.value = false }, 1200)
 }
 
 async function doDeleteLocal() {
@@ -1388,6 +1440,12 @@ const checklistSortOptions = [
   { value: 'amount', label: 'Belopp' },
   { value: 'date',   label: 'Datum' },
 ]
+
+const displayModeOptions = [
+  { value: 'auto',          label: 'Auto' },
+  { value: 'force-pwa',     label: 'App' },
+  { value: 'force-browser', label: 'Webb' },
+]
 const ekonomiListRef = ref(null)
 const ekonomiDragIdx = ref(null)
 
@@ -1427,8 +1485,10 @@ function onEkonomiDragEnd() {
 }
 
 const chartColorSchemes = [
-  { value: 'colorful', label: 'Färgglad', colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE'] },
-  { value: 'muted',    label: 'Dämpad',   colors: ['#4A90C4', '#5CAB7D', '#C48A2E', '#B05C5C', '#7B6BAE'] },
+  { value: 'colorful', label: 'Spectrum', colors: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'] },
+  { value: 'soft',     label: 'Soft',     colors: ['#60a5fa', '#4ade80', '#fbbf24', '#c084fc', '#fb7185'] },
+  { value: 'deep',     label: 'Deep',     colors: ['#1d4ed8', '#059669', '#d97706', '#7c3aed', '#be123c'] },
+  { value: 'muted',    label: 'Stone',    colors: ['#475569', '#0f766e', '#78350f', '#4c1d95', '#881337'] },
 ]
 
 const chartTypeOptions = [
@@ -1584,6 +1644,8 @@ function showAddFeedback(key) {
   setTimeout(() => { addFeedback[key] = false }, 2000)
 }
 
+const formErrors = reactive({})
+
 // Temp income overrides (for current month)
 const tempOverridesNow = computed(() => {
   const mk = store.currentMonthKey
@@ -1716,8 +1778,9 @@ async function saveExpenseEdit(globalIndex) {
 }
 
 async function addCategory() {
+  formErrors.category_name = null
   const name = newCategoryName.value.trim()
-  if (!name) return
+  if (!name) { formErrors.category_name = 'Obligatoriskt'; return }
   if (name === 'Skulder') { await confirm('Reserverat namn', { label: 'OK', style: 'primary', description: "'Skulder' är reserverat och kan inte läggas till." }); return }
   store.addCategory(name)
   newCategoryName.value = ''
@@ -1727,9 +1790,12 @@ async function addCategory() {
 
 
 function addExpense() {
+  formErrors.expense_name = null; formErrors.expense_amount = null
   const name = newExpenseName.value.trim()
   const amount = newExpenseAmount.value
-  if (!name || !amount || amount <= 0) return
+  if (!name) formErrors.expense_name = 'Obligatoriskt'
+  if (!amount || amount <= 0) formErrors.expense_amount = 'Ange ett giltigt belopp'
+  if (formErrors.expense_name || formErrors.expense_amount) return
   store.addExpense(name, amount, newExpenseCategory.value || null, newExpenseDate.value, false)
   newExpenseName.value = ''
   newExpenseAmount.value = null
@@ -1753,9 +1819,12 @@ async function deleteExpenseFromEdit(globalIndex) {
 }
 
 function addIncome() {
+  formErrors.income_name = null; formErrors.income_amount = null
   const name = newIncomeName.value.trim()
   const amount = newIncomeAmount.value
-  if (!name || !amount || amount <= 0) return
+  if (!name) formErrors.income_name = 'Obligatoriskt'
+  if (!amount || amount <= 0) formErrors.income_amount = 'Ange ett giltigt belopp'
+  if (formErrors.income_name || formErrors.income_amount) return
   store.addIncome(name, amount)
   newIncomeName.value = ''
   newIncomeAmount.value = null
@@ -1764,9 +1833,12 @@ function addIncome() {
 }
 
 function addFlexExpense() {
+  formErrors.flex_name = null; formErrors.flex_amount = null
   const name = newFlexName.value.trim()
   const amount = newFlexAmount.value
-  if (!name || !amount || amount <= 0) return
+  if (!name) formErrors.flex_name = 'Obligatoriskt'
+  if (!amount || amount <= 0) formErrors.flex_amount = 'Ange ett giltigt belopp'
+  if (formErrors.flex_name || formErrors.flex_amount) return
   store.addExpense(name, amount, null, null, true)
   newFlexName.value = ''
   newFlexAmount.value = null
@@ -1781,9 +1853,12 @@ async function deleteIncome(idx) {
 
 // ── Debts ─────────────────────────────────────────────────────────────────────
 function addDebt() {
+  formErrors.debt_name = null; formErrors.debt_amount = null
   const name = newDebtName.value.trim()
   const amount = newDebtAmount.value
-  if (!name || !amount || amount <= 0) return
+  if (!name) formErrors.debt_name = 'Obligatoriskt'
+  if (!amount || amount <= 0) formErrors.debt_amount = 'Ange ett giltigt belopp'
+  if (formErrors.debt_name || formErrors.debt_amount) return
   store.addDebt(name, amount, newDebtDate.value)
   const newIdx = store.debts.length - 1
   if (newDebtMonthlyPayment.value > 0) {
@@ -1854,9 +1929,12 @@ function saveDebtEdit(idx) {
 
 // ── Savings ───────────────────────────────────────────────────────────────────
 function addSaving() {
+  formErrors.saving_name = null; formErrors.saving_target = null
   const name = newSavingName.value.trim()
   const target = newSavingTarget.value
-  if (!name || !target || target <= 0) return
+  if (!name) formErrors.saving_name = 'Obligatoriskt'
+  if (!target || target <= 0) formErrors.saving_target = 'Ange ett giltigt belopp'
+  if (formErrors.saving_name || formErrors.saving_target) return
   store.setSavingsGoal(name, target, newSavingDate.value)
   const newIdx = store.savings.length - 1
   if (newSavingMonthlyPayment.value > 0) {
@@ -3099,5 +3177,76 @@ function fmt(n) {
 .add-form-field select option {
   color: var(--text-primary);
   background: var(--bg-primary);
+}
+
+.field-error {
+  display: block;
+  font-size: 12px;
+  color: var(--system-red);
+  margin-top: 4px;
+}
+
+.input-error {
+  border-color: var(--system-red) !important;
+  outline-color: var(--system-red) !important;
+}
+
+/* ── Sign-out success overlay ─────────────────────────────── */
+.auth-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--card-bg);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.auth-success {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.auth-success-icon {
+  animation: successPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.auth-success-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--system-green);
+  letter-spacing: -0.3px;
+}
+
+@keyframes successPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.auth-enter-active { transition: opacity 0.22s ease; }
+.auth-leave-active { transition: opacity 0.18s ease; }
+.auth-enter-active .auth-card { animation: authPop 0.3s cubic-bezier(0.34, 1.36, 0.64, 1); }
+.auth-leave-active .auth-card { transition: transform 0.18s ease, opacity 0.18s ease; }
+.auth-enter-from, .auth-leave-to { opacity: 0; }
+.auth-leave-to .auth-card { transform: scale(0.92); opacity: 0; }
+
+@keyframes authPop {
+  from { transform: scale(0.88); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
 </style>

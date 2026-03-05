@@ -21,17 +21,19 @@
       </filter>
     </svg>
 
-    <AppHeader v-if="currentView !== 'settings' && !showOnboarding" :current-view="currentView" />
+    <DesktopNav v-if="showDesktopNav && !showOnboarding" :current-view="currentView" @navigate="showView" />
+    <AppHeader v-if="currentView !== 'settings' && !showOnboarding && !showDesktopNav" :current-view="currentView" />
 
-    <div v-show="!showOnboarding" class="container">
+    <div v-show="!showOnboarding" class="container" @click="dismissKeyboard">
       <div class="content">
         <!-- Large title scrolls with content, naturally disappears behind the fixed nav bar -->
-        <h1 v-if="currentView !== 'settings'" class="page-large-title">{{ viewTitle }}</h1>
+        <h1 v-if="currentView !== 'settings' && !showDesktopNav" class="page-large-title">{{ viewTitle }}</h1>
         <component :is="currentViewComponent" ref="activeViewRef" @navigate="showView" />
       </div>
     </div>
 
-    <TabBar v-show="!showOnboarding" :current-view="currentView" @navigate="showView" />
+    <TabBar v-show="!showOnboarding && !showDesktopNav && !showMobileWebNav" :current-view="currentView" @navigate="showView" />
+    <MobileWebNav v-if="showMobileWebNav && !showOnboarding" :current-view="currentView" @navigate="showView" />
 
     <DebtPaymentModal />
     <ConfirmSheet ref="confirmSheetRef" />
@@ -45,6 +47,8 @@ import { useBudgetStore } from './stores/budget'
 import { useAuthStore } from './stores/auth'
 import AppHeader from './components/AppHeader.vue'
 import TabBar from './components/TabBar.vue'
+import DesktopNav from './components/DesktopNav.vue'
+import MobileWebNav from './components/MobileWebNav.vue'
 import DebtPaymentModal from './components/DebtPaymentModal.vue'
 import ConfirmSheet from './components/ConfirmSheet.vue'
 import SalaryDaySheet from './components/SalaryDaySheet.vue'
@@ -57,6 +61,27 @@ import SettingsView from './views/SettingsView.vue'
 
 const store = useBudgetStore()
 const authStore = useAuthStore()
+
+// ── Desktop / browser mode detection ──────────────────────────────────────
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+const isWideScreen = ref(window.innerWidth >= 768)
+window.addEventListener('resize', () => { isWideScreen.value = window.innerWidth >= 768 })
+
+const effectiveMode = computed(() => {
+  const pref = store.displayModePreference || 'auto'
+  if (pref === 'force-pwa') return 'pwa'
+  if (pref === 'force-browser') return 'browser'
+  return isStandalone ? 'pwa' : 'browser'
+})
+
+const showDesktopNav    = computed(() => effectiveMode.value === 'browser' && isWideScreen.value)
+const showMobileWebNav  = computed(() => effectiveMode.value === 'browser' && !isWideScreen.value)
+
+watch([showDesktopNav, showMobileWebNav], ([desktop, mobileWeb]) => {
+  document.body.classList.toggle('layout-desktop',    desktop)
+  document.body.classList.toggle('layout-mobile-web', mobileWeb && !desktop)
+  document.body.classList.toggle('layout-mobile',     !desktop && !mobileWeb)
+}, { immediate: true })
 const confirmSheetRef = ref(null)
 const salaryDaySheetRef = ref(null)
 const activeViewRef = ref(null)
@@ -164,6 +189,12 @@ function applySalarySheetResult(result) {
   }
   if (result.resetChecklist) {
     store.resetCurrentMonth()
+  }
+}
+
+function dismissKeyboard(e) {
+  if (!e.target.closest('input, textarea, select')) {
+    document.activeElement?.blur()
   }
 }
 

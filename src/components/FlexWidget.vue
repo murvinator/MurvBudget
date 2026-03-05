@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-widget-card" :class="`fw--${widgetStyle}`" @click="emit('navigate', 'monthly')">
+  <div class="flex-widget-card" :class="`fw--${widgetStyle}`" @click="emit('navigate', 'finans')">
     <!-- Decorative blue glow in corner -->
     <div class="fw-glow" aria-hidden="true"></div>
 

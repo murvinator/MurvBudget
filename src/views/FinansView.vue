@@ -1383,11 +1383,9 @@ function resetFlexActual(name) {
 }
 
 .flex-edit-name {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 .flex-edit-num {

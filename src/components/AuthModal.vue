@@ -80,8 +80,8 @@
 
                 <p v-if="authStore.error || localError" class="auth-error">{{ authStore.error || localError }}</p>
 
-                <button class="auth-submit-btn" :disabled="authStore.loading" @click="submit">
-                  <span v-if="authStore.loading" class="spinner"></span>
+                <button class="auth-submit-btn" :disabled="submitting" @click="submit">
+                  <span v-if="submitting" class="spinner"></span>
                   <span v-else>{{ mode === 'login' ? 'Logga in' : 'Skapa konto' }}</span>
                 </button>
 
@@ -105,8 +105,8 @@
                     >
                   </div>
                   <p v-if="authStore.error" class="auth-error">{{ authStore.error }}</p>
-                  <button class="auth-submit-btn" :disabled="authStore.loading" @click="submitReset">
-                    <span v-if="authStore.loading" class="spinner"></span>
+                  <button class="auth-submit-btn" :disabled="submitting" @click="submitReset">
+                    <span v-if="submitting" class="spinner"></span>
                     <span v-else>Skicka återställningslänk</span>
                   </button>
                 </template>
@@ -146,6 +146,7 @@ const localError = ref('')
 const resetSent = ref(false)
 const successMode = ref(false)
 const successMessage = ref('')
+const submitting = ref(false)
 let resolveFn = null
 
 function setMode(m) {
@@ -186,26 +187,31 @@ async function submit() {
     return
   }
 
-  let user
-  if (mode.value === 'login') {
-    user = await authStore.signIn(email.value, password.value)
-  } else {
-    user = await authStore.signUp(email.value, password.value)
+  submitting.value = true
+  try {
+    let user
+    if (mode.value === 'login') {
+      user = await authStore.signIn(email.value, password.value)
+    } else {
+      user = await authStore.signUp(email.value, password.value)
+    }
+
+    if (!user) return
+
+    const isRegister = mode.value === 'register'
+    await handleCloudSync()
+
+    successMessage.value = isRegister ? 'Konto skapat!' : 'Inloggad!'
+    successMode.value = true
+
+    setTimeout(() => {
+      visible.value = false
+      successMode.value = false
+      resolveFn?.(true)
+    }, 1200)
+  } finally {
+    submitting.value = false
   }
-
-  if (!user) return
-
-  const isRegister = mode.value === 'register'
-  await handleCloudSync()
-
-  successMessage.value = isRegister ? 'Konto skapat!' : 'Inloggad!'
-  successMode.value = true
-
-  setTimeout(() => {
-    visible.value = false
-    successMode.value = false
-    resolveFn?.(true)
-  }, 1200)
 }
 
 async function handleCloudSync() {
@@ -230,8 +236,13 @@ async function handleCloudSync() {
 async function submitReset() {
   localError.value = ''
   if (!email.value) { localError.value = 'Ange din e-postadress.'; return }
-  const ok = await authStore.resetPassword(email.value)
-  if (ok) resetSent.value = true
+  submitting.value = true
+  try {
+    const ok = await authStore.resetPassword(email.value)
+    if (ok) resetSent.value = true
+  } finally {
+    submitting.value = false
+  }
 }
 
 defineExpose({ show })

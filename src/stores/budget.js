@@ -42,6 +42,7 @@ export const useBudgetStore = defineStore('budget', {
     salaryDay: null,
     salaryMonthOffset: false,
     tempMonthlyIncome: {},
+    displayModePreference: 'auto', // 'auto' | 'force-pwa' | 'force-browser'
     overviewSettings: {
       showSummaryCards: true,
       showVariableMini: true,
@@ -125,6 +126,9 @@ export const useBudgetStore = defineStore('budget', {
   },
 
   actions: {
+    // ── Display Mode ─────────────────────────────────────────────────────────
+    setDisplayModePreference(val) { this.displayModePreference = val },
+
     // ── Overview Settings ────────────────────────────────────────────────────
     setOverviewSetting(key, value) {
       this.overviewSettings[key] = value
