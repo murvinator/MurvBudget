@@ -69,7 +69,7 @@ onMounted(() => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  line-height: 1;
+  line-height: 1.3;
 }
 
 .splash-sub {
@@ -77,7 +77,7 @@ onMounted(() => {
   font-weight: 500;
   color: var(--text-tertiary);
   letter-spacing: 0.5px;
-  margin-top: -8px;
+  margin-top: -18px;
 }
 
 @keyframes splashIn {
