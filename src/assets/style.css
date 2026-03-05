@@ -147,6 +147,10 @@ body {
     letter-spacing: -0.3px;
 }
 
+.layout-desktop .settings-root {
+    margin-top: 80px;
+}
+
 
 /* ================================= */
 /* LIQUID GLASS */

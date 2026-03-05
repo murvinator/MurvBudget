@@ -27,7 +27,7 @@
     <div v-show="!showOnboarding" class="container" @click="dismissKeyboard">
       <div class="content">
         <!-- Large title: scrolls with content on mobile; sticky on desktop (settings only) -->
-        <h1 v-if="!showDesktopNav" class="page-large-title">{{ viewTitle }}</h1>
+        <h1 v-if="!showDesktopNav || currentView === 'settings'" class="page-large-title" :class="{ 'settings-title': currentView === 'settings' }">{{ viewTitle }}</h1>
         <component :is="currentViewComponent" ref="activeViewRef" @navigate="showView" />
       </div>
     </div>
