@@ -36,7 +36,7 @@ export const useBudgetStore = defineStore('budget', {
       showDates: true,
       autoCollapseCompleted: false,
       showSummary: true,
-      sortOrder: 'manual',
+      sortOrder: 'amount',
     },
     economyViewSettings: {
       flexShowBars: true,
@@ -592,7 +592,7 @@ export const useBudgetStore = defineStore('budget', {
         this.economyOrder = [...this.economyOrder, 'flex']
       }
       if (!this.checklistSettings) {
-        this.checklistSettings = { showAmounts: true, showDates: true, autoCollapseCompleted: false, showSummary: true, sortOrder: 'manual' }
+        this.checklistSettings = { showAmounts: true, showDates: true, autoCollapseCompleted: false, showSummary: true, sortOrder: 'amount' }
       }
       if (!this.economyViewSettings) {
         this.economyViewSettings = { flexShowBars: true, flexShowEstimates: true, debtsShowProgress: true, savingsShowPct: true, savingsShowRate: false }

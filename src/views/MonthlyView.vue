@@ -294,7 +294,7 @@ function categoryExpenses(category) {
   const items = store.expenses
     .map((e, index) => ({ ...e, index }))
     .filter((e) => e.category === category && !e.variable)
-  const sortOrder = store.checklistSettings?.sortOrder || 'manual'
+  const sortOrder = store.checklistSettings?.sortOrder || 'amount'
   if (sortOrder === 'amount') return [...items].sort((a, b) => b.amount - a.amount)
   if (sortOrder === 'date') return [...items].sort((a, b) => (a.date || 99) - (b.date || 99))
   return items
@@ -312,11 +312,14 @@ const hasCategorizedExpenses = computed(() =>
 )
 
 // Debt payment items (debts with monthlyPayment set)
-const debtPaymentItems = computed(() =>
-  store.debts
+const debtPaymentItems = computed(() => {
+  const items = store.debts
     .map((d, i) => ({ ...d, debtIndex: i }))
     .filter(d => d.monthlyPayment > 0)
-)
+  const sortOrder = store.checklistSettings?.sortOrder || 'amount'
+  if (sortOrder === 'amount') return [...items].sort((a, b) => b.monthlyPayment - a.monthlyPayment)
+  return items
+})
 
 function isDebtPaid(debtId) {
   return !!(store.monthlyStatus['current']?.['debt-' + debtId])
@@ -345,11 +348,14 @@ const debtSectionCollapsed = ref(loadSpecialCollapsed('__debt'))
 watch(debtSectionCollapsed, (v) => saveSpecialCollapsed('__debt', v))
 
 // Savings payment items (savings goals with monthlyPayment set)
-const savingsPaymentItems = computed(() =>
-  store.savings
+const savingsPaymentItems = computed(() => {
+  const items = store.savings
     .map((s, i) => ({ ...s, savingsIndex: i }))
     .filter(s => s.monthlyPayment > 0)
-)
+  const sortOrder = store.checklistSettings?.sortOrder || 'amount'
+  if (sortOrder === 'amount') return [...items].sort((a, b) => b.monthlyPayment - a.monthlyPayment)
+  return items
+})
 
 const savingsSectionCollapsed = ref(loadSpecialCollapsed('__savings'))
 watch(savingsSectionCollapsed, (v) => saveSpecialCollapsed('__savings', v))

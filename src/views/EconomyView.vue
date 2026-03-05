@@ -11,7 +11,7 @@
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
           <span class="economy-section-title">Skulder och lån</span>
-          <span class="economy-section-badge" v-if="store.debts.length > 0">{{ fmt(totalDebt) }} kr</span>
+          
         </div>
         <svg class="economy-chevron" :class="{ collapsed: collapsed.debts }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="6 9 12 15 18 9"/>
