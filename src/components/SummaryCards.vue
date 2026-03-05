@@ -55,7 +55,9 @@
               <span class="detail-rank detail-rank--spacer" />
               <span class="detail-name">{{ exp.name }}</span>
               <span class="detail-cat detail-cat--flex">Flex</span>
-              <span class="detail-amount"><span class="detail-tilde">~</span>{{ fmt(exp.amount) }} kr</span>
+              <span class="detail-amount">
+                <span v-if="flexActual(exp.name) === undefined" class="detail-tilde">~</span>{{ fmt(flexActual(exp.name) !== undefined ? flexActual(exp.name) : exp.amount) }} kr
+              </span>
             </div>
             <div v-if="regularExpenses.length > 0" class="detail-sep detail-sep--minor" />
           </template>
@@ -237,11 +239,17 @@ const tempDiff = computed(() => store.totalIncome - normalTotalIncome.value)
 const showAllExpenses = ref(false)
 
 const flexExpenses = computed(() =>
-  store.expenses.filter(e => e.variable).sort((a, b) => b.amount - a.amount)
+  (store.flex || []).slice().sort((a, b) => b.amount - a.amount)
 )
 
+function flexActual(name) {
+  const mk = store.currentMonthKey
+  const val = store.variableActuals?.[mk]?.[name]
+  return val !== undefined ? val : undefined
+}
+
 const regularExpenses = computed(() =>
-  store.expenses.filter(e => !e.variable).sort((a, b) => b.amount - a.amount)
+  store.expenses.slice().sort((a, b) => b.amount - a.amount)
 )
 
 const remainingCount = computed(() =>

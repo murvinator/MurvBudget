@@ -215,7 +215,7 @@
         <div v-if="!collapsed.flex" class="finans-section-body">
           <div v-if="variableExpenses.length === 0" class="finans-empty">
             <p>Inga flex-utgifter inlagda.</p>
-            <button class="finans-empty-link" @click="emit('navigate', 'settings:expenses')">Lägg till under Inställningar →</button>
+            <button class="finans-empty-link" @click="emit('navigate', 'settings:flex')">Lägg till under Inställningar →</button>
           </div>
           <!-- Month navigator -->
           <div v-if="variableExpenses.length > 0" class="month-nav">
@@ -233,30 +233,9 @@
             :key="expense.name"
             class="flex-item-card"
           >
-            <!-- Edit state -->
-            <template v-if="editingFlex === expense.name">
-              <div class="flex-edit-wrap" @click.stop>
-                <div class="flex-edit-name">{{ expense.name }}</div>
-                <input
-                  type="number"
-                  class="flex-edit-num"
-                  v-model.number="flexEditValue"
-                  inputmode="numeric"
-                  step="1"
-                  @focus="$event.target.select()"
-                  @keyup.enter="saveFlexActual(expense.name)"
-                >
-                <div class="flex-edit-row">
-                  <button class="btn-cancel" @click="editingFlex = null">Avbryt</button>
-                  <button v-if="hasFlexActual(expense.name)" class="btn-reset" @click="resetFlexActual(expense.name)">Återställ</button>
-                  <button class="btn-save" @click="saveFlexActual(expense.name)">Spara</button>
-                </div>
-              </div>
-            </template>
-
             <!-- Display state -->
-            <template v-else>
-              <div class="flex-item-row" @click="openFlexEdit(expense)">
+            <template>
+              <div class="flex-item-row" @click="openFlexModal(expense)">
                 <div class="flex-item-left">
                   <span class="flex-item-name">{{ expense.name }}</span>
                   <span class="flex-item-sub" v-if="!hasFlexActual(expense.name)">Tryck för att ange faktiskt belopp</span>
@@ -295,6 +274,40 @@
   <br>
   <br>
 
+  <!-- Flex expense modal -->
+  <Teleport to="body">
+    <div v-if="flexModal.open" class="dp-overlay" @click.self="closeFlexModal">
+      <div class="dp-sheet">
+        <div class="dp-header">
+          <span class="dp-title">{{ flexModal.confirmed ? 'Uppdatera flex-utgift' : 'Bekräfta flex-utgift' }}</span>
+          <button class="dp-close" @click="closeFlexModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <p class="dp-subtitle">{{ flexModal.name }}</p>
+        <p class="dp-desc">Ange vad du faktiskt spenderade. Beloppet ersätter budgetestimat och uppdaterar din totala utgiftssummering i Översikten.</p>
+        <input
+          ref="flexModalAmountRef"
+          type="number"
+          class="dp-input"
+          v-model.number="flexModal.amount"
+          placeholder="Faktiskt belopp (kr)"
+          inputmode="numeric"
+          step="1"
+          @focus="$event.target.select()"
+          @keyup.enter="saveFlexModal"
+        >
+        <div class="dp-actions">
+          <button class="btn-cancel" @click="closeFlexModal">Avbryt</button>
+          <button v-if="flexModal.confirmed" class="btn-reset" @click="resetFlexModal">Återställ</button>
+          <button class="btn-save" @click="saveFlexModal" :disabled="flexModal.amount === null || flexModal.amount < 0">Spara</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- Savings deposit modal -->
   <Teleport to="body">
     <div v-if="savingsDepositModal.open" class="dp-overlay" @click.self="closeSavingsModal">
@@ -325,6 +338,12 @@
           v-model="savingsDepositModal.note"
           placeholder="Anteckning (valfritt)"
           @keyup.enter="saveSavingsDeposit"
+        >
+        <input
+          type="date"
+          class="dp-input dp-input--date"
+          v-model="savingsDepositModal.date"
+          :max="todayISO()"
         >
         <div class="dp-actions">
           <button class="btn-cancel" @click="closeSavingsModal">Avbryt</button>
@@ -364,6 +383,12 @@
           v-model="debtPaymentModal.note"
           placeholder="Anteckning (valfritt)"
           @keyup.enter="saveDebtPayment"
+        >
+        <input
+          type="date"
+          class="dp-input dp-input--date"
+          v-model="debtPaymentModal.date"
+          :max="todayISO()"
         >
         <div class="dp-actions">
           <button class="btn-cancel" @click="closeDebtModal">Avbryt</button>
@@ -480,13 +505,16 @@ function reversedDeposits(goal) {
 
 // ══ SAVINGS DEPOSIT MODAL ═════════════════════════════════════════════════════
 const savingsModalAmountRef = ref(null)
-const savingsDepositModal = reactive({ open: false, goalId: null, goalName: '', amount: null, note: '' })
+const savingsDepositModal = reactive({ open: false, goalId: null, goalName: '', amount: null, note: '', date: '' })
+
+function todayISO() { return new Date().toISOString().split('T')[0] }
 
 function openSavingsDepositModal(goal) {
   savingsDepositModal.goalId = goal.id
   savingsDepositModal.goalName = goal.name
   savingsDepositModal.amount = null
   savingsDepositModal.note = ''
+  savingsDepositModal.date = ''
   savingsDepositModal.open = true
   nextTick(() => savingsModalAmountRef.value?.focus())
 }
@@ -499,19 +527,20 @@ function saveSavingsDeposit() {
   if (!savingsDepositModal.amount || savingsDepositModal.amount <= 0) return
   const idx = store.savings.findIndex(s => s.id === savingsDepositModal.goalId)
   if (idx === -1) return
-  store.addSavingsDeposit(idx, savingsDepositModal.amount, savingsDepositModal.note || '')
+  store.addSavingsDeposit(idx, savingsDepositModal.amount, savingsDepositModal.note || '', savingsDepositModal.date || null)
   closeSavingsModal()
 }
 
 // ══ DEBT PAYMENT MODAL ════════════════════════════════════════════════════════
 const debtModalAmountRef = ref(null)
-const debtPaymentModal = reactive({ open: false, debtId: null, debtName: '', amount: null, note: '' })
+const debtPaymentModal = reactive({ open: false, debtId: null, debtName: '', amount: null, note: '', date: '' })
 
 function openDebtPaymentModal(debt) {
   debtPaymentModal.debtId = debt.id
   debtPaymentModal.debtName = debt.name
   debtPaymentModal.amount = null
   debtPaymentModal.note = ''
+  debtPaymentModal.date = ''
   debtPaymentModal.open = true
   nextTick(() => debtModalAmountRef.value?.focus())
 }
@@ -524,11 +553,14 @@ function saveDebtPayment() {
   if (!debtPaymentModal.amount || debtPaymentModal.amount <= 0) return
   const idx = store.debts.findIndex(d => d.id === debtPaymentModal.debtId)
   if (idx === -1) return
-  store.addDebtPayment(idx, debtPaymentModal.amount, debtPaymentModal.note || '')
+  store.addDebtPayment(idx, debtPaymentModal.amount, debtPaymentModal.note || '', debtPaymentModal.date || null)
   closeDebtModal()
 }
 
-watch(() => debtPaymentModal.open || savingsDepositModal.open, (isOpen) => {
+const flexModalAmountRef = ref(null)
+const flexModal = reactive({ open: false, name: '', amount: null, confirmed: false })
+
+watch(() => debtPaymentModal.open || savingsDepositModal.open || flexModal.open, (isOpen) => {
   document.body.style.overflow = isOpen ? 'hidden' : ''
 })
 
@@ -558,9 +590,7 @@ function stepMonth(dir) {
   flexMonthOffset.value = next
 }
 
-const variableExpenses = computed(() =>
-  store.expenses.filter((e) => e.variable)
-)
+const variableExpenses = computed(() => store.flex || [])
 
 function hasFlexActual(name) {
   return store.variableActuals?.[flexMonthKey.value]?.[name] !== undefined
@@ -588,28 +618,30 @@ function flexBarClass(expense) {
   return ''
 }
 
-const editingFlex = ref(null)
-const flexEditValue = ref(null)
-
-function openFlexEdit(expense) {
-  editingFlex.value = expense.name
-  flexEditValue.value = variableAmount(expense)
+function openFlexModal(expense) {
+  flexModal.name = expense.name
+  flexModal.confirmed = hasFlexActual(expense.name)
+  flexModal.amount = variableAmount(expense)
+  flexModal.open = true
+  nextTick(() => flexModalAmountRef.value?.focus())
 }
 
-function saveFlexActual(name) {
-  const val = flexEditValue.value
-  if (val !== null && val >= 0) {
-    const mk = flexMonthKey.value
-    if (!store.variableActuals[mk]) store.variableActuals[mk] = {}
-    store.variableActuals[mk][name] = parseInt(val)
-  }
-  editingFlex.value = null
+function closeFlexModal() {
+  flexModal.open = false
 }
 
-function resetFlexActual(name) {
+function saveFlexModal() {
+  if (flexModal.amount === null || flexModal.amount < 0) return
   const mk = flexMonthKey.value
-  if (store.variableActuals[mk]) delete store.variableActuals[mk][name]
-  editingFlex.value = null
+  if (!store.variableActuals[mk]) store.variableActuals[mk] = {}
+  store.variableActuals[mk][flexModal.name] = parseInt(flexModal.amount)
+  closeFlexModal()
+}
+
+function resetFlexModal() {
+  const mk = flexMonthKey.value
+  if (store.variableActuals[mk]) delete store.variableActuals[mk][flexModal.name]
+  closeFlexModal()
 }
 
 </script>
@@ -1491,6 +1523,13 @@ function resetFlexActual(name) {
   margin: -8px 0 2px;
 }
 
+.dp-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  margin: 0 0 4px;
+}
+
 .dp-close {
   background: var(--system-gray5);
   border: none;
@@ -1526,6 +1565,12 @@ function resetFlexActual(name) {
 .dp-input:focus {
   border-color: var(--system-blue);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.dp-input--date {
+  -webkit-appearance: auto;
+  appearance: auto;
+  color-scheme: light dark;
 }
 
 .dp-actions {

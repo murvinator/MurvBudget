@@ -695,21 +695,21 @@
           </CollapseTransition>
           <div
             v-for="expense in flexExpenses"
-            :key="expense.globalIndex"
+            :key="expense.flexIndex"
             class="expense-item-wrapper"
           >
-            <SwipeToDelete @delete="deleteExpense(expense.globalIndex)">
+            <SwipeToDelete @delete="deleteFlexExpense(expense.flexIndex)">
               <template #fixed>
                 <div
                   class="expense-name"
-                  :class="{ editing: editingExpense === expense.globalIndex }"
-                  @click="toggleEditExpense(expense.globalIndex)"
+                  :class="{ editing: editingExpense === 'flex-' + expense.flexIndex }"
+                  @click="() => { editingExpense = editingExpense === 'flex-' + expense.flexIndex ? null : 'flex-' + expense.flexIndex; editForm.name = expense.name; editForm.amount = expense.amount }"
                 >{{ expense.name }}</div>
               </template>
-              <span class="expense-amount" style="cursor: pointer" @click="toggleEditExpense(expense.globalIndex)"><span class="variable-tilde">~</span>{{ fmt(expense.amount) }} kr</span>
+              <span class="expense-amount" style="cursor: pointer" @click="() => { editingExpense = editingExpense === 'flex-' + expense.flexIndex ? null : 'flex-' + expense.flexIndex; editForm.name = expense.name; editForm.amount = expense.amount }"><span class="variable-tilde">~</span>{{ fmt(expense.amount) }} kr</span>
             </SwipeToDelete>
             <CollapseTransition>
-              <div v-if="editingExpense === expense.globalIndex" class="expense-edit-form">
+              <div v-if="editingExpense === 'flex-' + expense.flexIndex" class="expense-edit-form">
                 <div class="edit-form-content">
                   <div class="edit-input-group">
                     <label>Namn</label>
@@ -720,9 +720,9 @@
                     <input type="number" v-model.number="editForm.amount" step="1" inputmode="numeric" @focus="$event.target.select()">
                   </div>
                   <div class="edit-actions">
-                    <button class="save-edit-btn" @click="saveExpenseEdit(expense.globalIndex)">Spara</button>
+                    <button class="save-edit-btn" @click="saveFlexEdit(expense.flexIndex)">Spara</button>
                     <button class="cancel-edit-btn" @click="editingExpense = null">Avbryt</button>
-                    <button class="delete-edit-btn" @click="deleteExpenseFromEdit(expense.globalIndex)">Radera</button>
+                    <button class="delete-edit-btn" @click="deleteFlexFromEdit(expense.flexIndex)">Radera</button>
                   </div>
                 </div>
               </div>
@@ -1244,7 +1244,7 @@ const localDataTs = inject('localDataTs')
 const hasLocalData = computed(() =>
   store.income.length > 0 || store.expenses.length > 0 ||
   store.categories.length > 0 || store.debts.length > 0 ||
-  store.variableExpenses.length > 0
+  (store.flex || []).length > 0
 )
 
 const localDataDate = computed(() => {
@@ -1747,9 +1747,7 @@ const uncategorizedExpenses = computed(() =>
 )
 
 const flexExpenses = computed(() =>
-  store.expenses
-    .map((e, i) => ({ ...e, globalIndex: i }))
-    .filter((e) => e.variable)
+  (store.flex || []).map((e, i) => ({ ...e, flexIndex: i }))
 )
 
 function toggleEditExpense(globalIndex) {
@@ -1839,11 +1837,33 @@ function addFlexExpense() {
   if (!name) formErrors.flex_name = 'Obligatoriskt'
   if (!amount || amount <= 0) formErrors.flex_amount = 'Ange ett giltigt belopp'
   if (formErrors.flex_name || formErrors.flex_amount) return
-  store.addExpense(name, amount, null, null, true)
+  store.addFlex(name, amount)
   newFlexName.value = ''
   newFlexAmount.value = null
   showAddFeedback('flex')
   setTimeout(() => { showAddFlex.value = false }, 1200)
+}
+
+async function deleteFlexExpense(idx) {
+  const ok = await confirm('Ta bort flex-utgiften?', { description: 'Åtgärden kan inte ångras.' })
+  if (ok) store.deleteFlex(idx)
+}
+
+async function deleteFlexFromEdit(idx) {
+  const ok = await confirm('Ta bort flex-utgiften?', { description: 'Åtgärden kan inte ångras.' })
+  if (ok) {
+    store.deleteFlex(idx)
+    editingExpense.value = null
+  }
+}
+
+async function saveFlexEdit(idx) {
+  if (!editForm.name || !editForm.amount || editForm.amount <= 0) {
+    await confirm('Ogiltigt värde', { label: 'OK', style: 'primary', description: 'Vänligen fyll i giltigt namn och belopp.' })
+    return
+  }
+  store.saveEditFlex(idx, editForm.name, editForm.amount)
+  editingExpense.value = null
 }
 
 async function deleteIncome(idx) {

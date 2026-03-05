@@ -76,8 +76,7 @@ const showBars    = computed(() => store.overviewSettings.widgetSettings?.flex?.
 const items = computed(() => {
   const mk = store.currentMonthKey
   const actuals = store.variableActuals?.[mk] || {}
-  return store.expenses
-    .filter(e => e.variable)
+  return (store.flex || [])
     .map(e => {
       const hasActual = actuals[e.name] !== undefined
       const actual = hasActual ? actuals[e.name] : e.amount

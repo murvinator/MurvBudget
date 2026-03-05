@@ -237,7 +237,7 @@ provide('pendingSettingsSection', pendingSettingsSection)
 function hasStoreData() {
   return store.income.length > 0 || store.expenses.length > 0 ||
     store.categories.length > 0 || store.debts.length > 0 ||
-    store.variableExpenses.length > 0
+    (store.flex || []).length > 0
 }
 
 onMounted(() => {
