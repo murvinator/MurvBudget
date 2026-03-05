@@ -287,7 +287,7 @@
         <CollapseTransition><div v-if="!collapsedSections['ekonomi']" class="settings-content">
           <div ref="ekonomiListRef">
             <div
-              v-for="(sectionId, idx) in store.finansOrder"
+              v-for="(sectionId, idx) in store.economyOrder"
               :key="sectionId"
               class="cat-order-row"
               :class="{ 'widget-dragging': ekonomiDragIdx === idx }"
@@ -309,7 +309,7 @@
                       <circle cx="7" cy="13" r="1.5"/>
                     </svg>
                   </div>
-                  <span class="widget-order-label">{{ FINANS_SECTION_LABELS[sectionId] }}</span>
+                  <span class="widget-order-label">{{ ECONOMY_SECTION_LABELS[sectionId] }}</span>
                 </div>
               </div>
             </div>
@@ -317,11 +317,11 @@
           <div class="widget-sub-settings">
             <div class="chart-type-section chart-type-section--toggle">
               <div class="chart-type-label">Flex: Visa staplar</div>
-              <input type="checkbox" class="ios-toggle" :checked="store.finansViewSettings?.flexShowBars !== false" @change="store.setFinansViewSetting('flexShowBars', $event.target.checked)">
+              <input type="checkbox" class="ios-toggle" :checked="store.economyViewSettings?.flexShowBars !== false" @change="store.setEconomyViewSetting('flexShowBars', $event.target.checked)">
             </div>
             <div class="chart-type-section chart-type-section--last chart-type-section--toggle">
               <div class="chart-type-label">Skulder: Visa progress direkt</div>
-              <input type="checkbox" class="ios-toggle" :checked="store.finansViewSettings?.debtsShowProgress !== false" @change="store.setFinansViewSetting('debtsShowProgress', $event.target.checked)">
+              <input type="checkbox" class="ios-toggle" :checked="store.economyViewSettings?.debtsShowProgress !== false" @change="store.setEconomyViewSetting('debtsShowProgress', $event.target.checked)">
             </div>
           </div>
         </div></CollapseTransition>
@@ -1432,8 +1432,8 @@ function onChecklistCatDragEnd() {
   document.removeEventListener('pointercancel', onChecklistCatDragEnd)
 }
 
-// Ekonomi section — drag to reorder finansOrder
-const FINANS_SECTION_LABELS = { debts: 'Skulder och lån', savings: 'Sparande', flex: 'Flex-utgifter' }
+// Ekonomi section — drag to reorder economyOrder
+const ECONOMY_SECTION_LABELS = { debts: 'Skulder och lån', savings: 'Sparande', flex: 'Flex-utgifter' }
 
 const checklistSortOptions = [
   { value: 'manual', label: 'Manuell' },
@@ -1469,10 +1469,10 @@ function onEkonomiDragMove(event) {
     if (y < rect.top + rect.height / 2) { newIdx = i; break }
   }
   if (newIdx !== ekonomiDragIdx.value) {
-    const order = [...store.finansOrder]
+    const order = [...store.economyOrder]
     const [item] = order.splice(ekonomiDragIdx.value, 1)
     order.splice(newIdx, 0, item)
-    store.setFinansOrder(order)
+    store.setEconomyOrder(order)
     ekonomiDragIdx.value = newIdx
   }
 }

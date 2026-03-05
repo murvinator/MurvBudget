@@ -56,7 +56,7 @@ import SplashScreen from './components/SplashScreen.vue'
 import OnboardingScreen from './components/OnboardingScreen.vue'
 import OverviewView from './views/OverviewView.vue'
 import MonthlyView from './views/MonthlyView.vue'
-import FinansView from './views/FinansView.vue'
+import EconomyView from './views/EconomyView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 const store = useBudgetStore()
@@ -96,7 +96,7 @@ const currentViewComponent = computed(() => {
   switch (currentView.value) {
     case 'overview': return OverviewView
     case 'monthly': return MonthlyView
-    case 'finans': return FinansView
+    case 'economy': return EconomyView
     case 'settings': return SettingsView
     default: return OverviewView
   }
@@ -106,7 +106,7 @@ const viewTitle = computed(() => {
   switch (currentView.value) {
     case 'overview': return 'Budget'
     case 'monthly': return 'Checklista'
-    case 'finans': return 'Ekonomi'
+    case 'economy': return 'Ekonomi'
     default: return 'MurvBudget'
   }
 })
@@ -122,7 +122,7 @@ function showView(name) {
   if (view === currentView.value) {
     if (view === 'settings' && section) {
       pendingSettingsSection.value = section
-    } else if (view === 'settings' || view === 'finans' || view === 'monthly') {
+    } else if (view === 'settings' || view === 'economy' || view === 'monthly') {
       activeViewRef.value?.toggleAllSections?.()
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' })

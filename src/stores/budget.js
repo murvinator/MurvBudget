@@ -30,7 +30,7 @@ export const useBudgetStore = defineStore('budget', {
     savings: [],
     savingsDeposits: {},
     monthlyChecklistTracking: {},
-    finansOrder: ['debts', 'savings', 'flex'],
+    economyOrder: ['debts', 'savings', 'flex'],
     checklistSettings: {
       showAmounts: true,
       showDates: true,
@@ -38,7 +38,7 @@ export const useBudgetStore = defineStore('budget', {
       showSummary: true,
       sortOrder: 'manual',
     },
-    finansViewSettings: {
+    economyViewSettings: {
       flexShowBars: true,
       flexShowEstimates: true,
       debtsShowProgress: true,
@@ -225,16 +225,16 @@ export const useBudgetStore = defineStore('budget', {
     reorderCategories(newOrder) {
       this.categories = newOrder
     },
-    setFinansOrder(newOrder) {
-      this.finansOrder = newOrder
+    setEconomyOrder(newOrder) {
+      this.economyOrder = newOrder
     },
     setChecklistSetting(key, value) {
       if (!this.checklistSettings) this.checklistSettings = {}
       this.checklistSettings[key] = value
     },
-    setFinansViewSetting(key, value) {
-      if (!this.finansViewSettings) this.finansViewSettings = {}
-      this.finansViewSettings[key] = value
+    setEconomyViewSetting(key, value) {
+      if (!this.economyViewSettings) this.economyViewSettings = {}
+      this.economyViewSettings[key] = value
     },
     saveEditCategory(index, newName) {
       const oldName = this.categories[index]
@@ -586,16 +586,16 @@ export const useBudgetStore = defineStore('budget', {
       if (!this.savings) this.savings = []
       if (!this.savingsDeposits) this.savingsDeposits = {}
       if (!this.monthlyChecklistTracking) this.monthlyChecklistTracking = {}
-      if (!this.finansOrder) {
-        this.finansOrder = ['debts', 'savings', 'flex']
-      } else if (!this.finansOrder.includes('flex')) {
-        this.finansOrder = [...this.finansOrder, 'flex']
+      if (!this.economyOrder) {
+        this.economyOrder = ['debts', 'savings', 'flex']
+      } else if (!this.economyOrder.includes('flex')) {
+        this.economyOrder = [...this.economyOrder, 'flex']
       }
       if (!this.checklistSettings) {
         this.checklistSettings = { showAmounts: true, showDates: true, autoCollapseCompleted: false, showSummary: true, sortOrder: 'manual' }
       }
-      if (!this.finansViewSettings) {
-        this.finansViewSettings = { flexShowBars: true, flexShowEstimates: true, debtsShowProgress: true, savingsShowPct: true, savingsShowRate: false }
+      if (!this.economyViewSettings) {
+        this.economyViewSettings = { flexShowBars: true, flexShowEstimates: true, debtsShowProgress: true, savingsShowPct: true, savingsShowRate: false }
       }
       this.savings.forEach(g => { if (!this.savingsDeposits[g.id]) this.savingsDeposits[g.id] = [] })
       // LEGACY migrations (kept for reference, no longer active):

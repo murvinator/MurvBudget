@@ -25,8 +25,8 @@
         </button>
         <button
           class="desktop-nav-tab"
-          :class="{ active: currentView === 'finans' }"
-          @click="emit('navigate', 'finans')"
+          :class="{ active: currentView === 'economy' }"
+          @click="emit('navigate', 'economy')"
         >
           <svg class="dnt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h2"/><path d="M10 15h4"/>

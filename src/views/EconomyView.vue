@@ -1,30 +1,30 @@
 <template>
-  <div class="finans-view">
+  <div class="economy-view">
 
-    <template v-for="sectionId in store.finansOrder" :key="sectionId">
+    <template v-for="sectionId in store.economyOrder" :key="sectionId">
 
     <!-- Skulder & Lån -->
-    <div v-if="sectionId === 'debts'" class="finans-section">
-      <div class="finans-section-header" @click="toggleSection('debts')">
-        <div class="finans-section-title-group">
-          <svg class="finans-section-icon finans-section-icon--debt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div v-if="sectionId === 'debts'" class="economy-section">
+      <div class="economy-section-header" @click="toggleSection('debts')">
+        <div class="economy-section-title-group">
+          <svg class="economy-section-icon economy-section-icon--debt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
-          <span class="finans-section-title">Skulder och lån</span>
-          <span class="finans-section-badge" v-if="store.debts.length > 0">{{ fmt(totalDebt) }} kr</span>
+          <span class="economy-section-title">Skulder och lån</span>
+          <span class="economy-section-badge" v-if="store.debts.length > 0">{{ fmt(totalDebt) }} kr</span>
         </div>
-        <svg class="finans-chevron" :class="{ collapsed: collapsed.debts }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="economy-chevron" :class="{ collapsed: collapsed.debts }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </div>
 
       <CollapseTransition>
-      <div v-if="!collapsed.debts" class="finans-section-body">
+      <div v-if="!collapsed.debts" class="economy-section-body">
 
           <!-- Debt list -->
-          <div v-if="store.debts.length === 0" class="finans-empty">
+          <div v-if="store.debts.length === 0" class="economy-empty">
             Inga skulder inlagda.
-            <button class="finans-empty-link" @click="emit('navigate', 'settings:debts')">Lägg till under Inställningar →</button>
+            <button class="economy-empty-link" @click="emit('navigate', 'settings:debts')">Lägg till under Inställningar →</button>
           </div>
 
           <div v-for="debt in sortedDebts" :key="debt.id" class="debt-card">
@@ -44,7 +44,7 @@
             </div>
 
             <!-- Progress bar (only if there are payments and setting is on) -->
-            <div v-if="store.finansViewSettings?.debtsShowProgress !== false && debtHasPayments(debt)" class="debt-progress-wrap">
+            <div v-if="store.economyViewSettings?.debtsShowProgress !== false && debtHasPayments(debt)" class="debt-progress-wrap">
               <div class="debt-progress-track">
                 <div class="debt-progress-fill" :style="{ width: debtPaidPct(debt) + '%' }"></div>
               </div>
@@ -91,7 +91,7 @@
           </div>
 
           <!-- Total -->
-          <div v-if="store.debts.length > 0" class="finans-total-row">
+          <div v-if="store.debts.length > 0" class="economy-total-row">
             <span>Totalt kvar</span>
             <span>{{ fmt(totalDebt) }} kr</span>
           </div>
@@ -101,26 +101,26 @@
     </div>
 
     <!-- Sparande -->
-    <div v-else-if="sectionId === 'savings'" class="finans-section">
-      <div class="finans-section-header" @click="toggleSection('savings')">
-        <div class="finans-section-title-group">
-          <svg class="finans-section-icon finans-section-icon--savings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div v-else-if="sectionId === 'savings'" class="economy-section">
+      <div class="economy-section-header" @click="toggleSection('savings')">
+        <div class="economy-section-title-group">
+          <svg class="economy-section-icon economy-section-icon--savings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
-          <span class="finans-section-title">Sparande</span>
-          <span class="finans-section-badge" v-if="store.savings.length > 0">{{ store.savings.length }} mål</span>
+          <span class="economy-section-title">Sparande</span>
+          <span class="economy-section-badge" v-if="store.savings.length > 0">{{ store.savings.length }} mål</span>
         </div>
-        <svg class="finans-chevron" :class="{ collapsed: collapsed.savings }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="economy-chevron" :class="{ collapsed: collapsed.savings }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </div>
 
       <CollapseTransition>
-      <div v-if="!collapsed.savings" class="finans-section-body">
+      <div v-if="!collapsed.savings" class="economy-section-body">
 
-          <div v-if="store.savings.length === 0" class="finans-empty">
+          <div v-if="store.savings.length === 0" class="economy-empty">
             Inga sparmål inlagda.
-            <button class="finans-empty-link" @click="emit('navigate', 'settings:savings')">Lägg till under Inställningar →</button>
+            <button class="economy-empty-link" @click="emit('navigate', 'settings:savings')">Lägg till under Inställningar →</button>
           </div>
 
           <div v-for="goal in sortedSavings" :key="goal.id" class="savings-card">
@@ -187,7 +187,7 @@
           </div>
 
           <!-- Total -->
-          <div v-if="store.savings.length > 0" class="finans-total-row">
+          <div v-if="store.savings.length > 0" class="economy-total-row">
             <span>Totalt sparande</span>
             <span>{{ fmt(totalSavings) }} kr</span>
           </div>
@@ -197,25 +197,25 @@
     </div>
 
     <!-- Flex-utgifter -->
-    <div v-else-if="sectionId === 'flex'" class="finans-section">
-      <div class="finans-section-header" @click="toggleSection('flex')">
-        <div class="finans-section-title-group">
-          <svg class="finans-section-icon finans-section-icon--flex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div v-else-if="sectionId === 'flex'" class="economy-section">
+      <div class="economy-section-header" @click="toggleSection('flex')">
+        <div class="economy-section-title-group">
+          <svg class="economy-section-icon economy-section-icon--flex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
-          <span class="finans-section-title">Flex-utgifter</span>
-          <span class="finans-section-badge" v-if="variableExpenses.length > 0">{{ variableExpenses.length }} poster</span>
+          <span class="economy-section-title">Flex-utgifter</span>
+          <span class="economy-section-badge" v-if="variableExpenses.length > 0">{{ variableExpenses.length }} poster</span>
         </div>
-        <svg class="finans-chevron" :class="{ collapsed: collapsed.flex }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="economy-chevron" :class="{ collapsed: collapsed.flex }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </div>
 
       <CollapseTransition>
-        <div v-if="!collapsed.flex" class="finans-section-body">
-          <div v-if="variableExpenses.length === 0" class="finans-empty">
+        <div v-if="!collapsed.flex" class="economy-section-body">
+          <div v-if="variableExpenses.length === 0" class="economy-empty">
             <p>Inga flex-utgifter inlagda.</p>
-            <button class="finans-empty-link" @click="emit('navigate', 'settings:flex')">Lägg till under Inställningar →</button>
+            <button class="economy-empty-link" @click="emit('navigate', 'settings:flex')">Lägg till under Inställningar →</button>
           </div>
           <!-- Month navigator -->
           <div v-if="variableExpenses.length > 0" class="month-nav">
@@ -247,7 +247,7 @@
                 <span v-if="hasFlexActual(expense.name)" class="flex-item-budget">/ {{ fmt(expense.amount) }} kr</span>
               </div>
             </div>
-            <div v-if="store.finansViewSettings?.flexShowBars !== false" class="flex-item-bar-track">
+            <div v-if="store.economyViewSettings?.flexShowBars !== false" class="flex-item-bar-track">
               <div
                 class="flex-item-bar-fill"
                 :class="flexBarClass(expense)"
@@ -256,7 +256,7 @@
             </div>
           </div>
 
-          <div v-if="variableExpenses.length > 0" class="finans-total-row">
+          <div v-if="variableExpenses.length > 0" class="economy-total-row">
             <span>Totalt Flex ({{ flexMonthName }})</span>
             <span>{{ fmt(variableTotal) }} kr</span>
           </div>
@@ -406,7 +406,7 @@ const store = useBudgetStore()
 const emit = defineEmits(['navigate'])
 
 // ── Section collapse ──────────────────────────────────────────────────────────
-const COLLAPSED_KEY = 'murvbudget-finans-collapsed'
+const COLLAPSED_KEY = 'murvbudget-economy-collapsed'
 const SECTION_KEYS = ['debts', 'savings', 'flex']
 
 function loadCollapsed() {
@@ -645,7 +645,7 @@ function resetFlexModal() {
 </script>
 
 <style scoped>
-.finans-view {
+economy-view {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -653,18 +653,18 @@ function resetFlexModal() {
 }
 
 /* ── Section shell ─────────────────────────────────────────── */
-.finans-section {
+economy-section {
   background: var(--card-bg);
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.finans-section--last {
+.economy-section--last {
   margin-bottom: 0;
 }
 
-.finans-section-header {
+.economy-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -674,11 +674,11 @@ function resetFlexModal() {
   user-select: none;
 }
 
-.finans-section-header:active {
+.economy-section-header:active {
   opacity: 0.7;
 }
 
-.finans-section-title-group {
+.economy-section-title-group {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -686,23 +686,23 @@ function resetFlexModal() {
   min-width: 0;
 }
 
-.finans-section-icon {
+.economy-section-icon {
   width: 20px;
   height: 20px;
   color: var(--system-blue);
   flex-shrink: 0;
 }
 
-.finans-section-icon--debt { color: var(--system-orange); }
-.finans-section-icon--savings { color: var(--system-green); }
+.economy-section-icon--debt { color: var(--system-orange); }
+.economy-section-icon--savings { color: var(--system-green); }
 
-.finans-section-title {
+.economy-section-title {
   font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.finans-section-badge {
+.economy-section-badge {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-tertiary);
@@ -712,7 +712,7 @@ function resetFlexModal() {
   flex-shrink: 0;
 }
 
-.finans-chevron {
+.economy-chevron {
   width: 20px;
   height: 20px;
   color: var(--text-tertiary);
@@ -720,16 +720,16 @@ function resetFlexModal() {
   flex-shrink: 0;
 }
 
-.finans-chevron.collapsed {
+.economy-chevron.collapsed {
   transform: rotate(-90deg);
 }
 
-.finans-section-body {
+.economy-section-body {
   border-top: 0.5px solid var(--separator);
   padding: 0 0 8px;
 }
 
-.finans-empty {
+.economy-empty {
   padding: 20px;
   font-size: 14px;
   color: var(--text-tertiary);
@@ -740,7 +740,7 @@ function resetFlexModal() {
   gap: 10px;
 }
 
-.finans-empty-link {
+.economy-empty-link {
   background: transparent;
   border: none;
   color: var(--system-blue);
@@ -752,10 +752,10 @@ function resetFlexModal() {
   -webkit-tap-highlight-color: transparent;
 }
 
-.finans-empty-link:active { opacity: 0.6; }
+.economy-empty-link:active { opacity: 0.6; }
 
 /* ── Total row ─────────────────────────────────────────────── */
-.finans-total-row {
+.economy-total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -767,13 +767,13 @@ function resetFlexModal() {
 }
 
 /* ── Add section ───────────────────────────────────────────── */
-.finans-add-section {
+economy-add-section {
   padding: 16px 20px 8px;
   border-top: 0.5px solid var(--separator);
   margin-top: 8px;
 }
 
-.finans-add-label {
+.economy-add-label {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -782,13 +782,13 @@ function resetFlexModal() {
   margin-bottom: 10px;
 }
 
-.finans-add-row {
+.economy-add-row {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.finans-add-input {
+.economy-add-input {
   flex: 1;
   min-width: 120px;
   padding: 10px 12px;
@@ -803,17 +803,17 @@ function resetFlexModal() {
   appearance: none;
 }
 
-.finans-add-input:focus {
+.economy-add-input:focus {
   border-color: var(--system-blue);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
-.finans-add-input--narrow {
+.economy-add-input--narrow {
   min-width: 90px;
   max-width: 120px;
 }
 
-.finans-add-btn {
+.economy-add-btn {
   padding: 10px 18px;
   background: var(--system-blue);
   color: #fff;
@@ -828,8 +828,8 @@ function resetFlexModal() {
   -webkit-tap-highlight-color: transparent;
 }
 
-.finans-add-btn:active { opacity: 0.7; }
-.finans-add-btn--done { background: var(--system-green); }
+.economy-add-btn:active { opacity: 0.7; }
+.economy-add-btn--done { background: var(--system-green); }
 
 /* ══ DEBT CARDS ═══════════════════════════════════════════════ */
 .debt-card {
@@ -1275,7 +1275,7 @@ function resetFlexModal() {
 }
 
 /* ══ FLEX ICON ════════════════════════════════════════════════ */
-.finans-section-icon--flex { color: var(--system-blue); }
+economy-section-icon--flex { color: var(--system-blue); }
 
 /* ══ MONTH NAVIGATOR ══════════════════════════════════════════ */
 .month-nav {
