@@ -3,7 +3,7 @@ import supabase from '../lib/supabase'
 import { encryptData, decryptData } from '../utils/crypto'
 
 export const DATA_SCHEMA_VERSION = 1       // integer; bump when JSON structure changes
-export const APP_VERSION = '1.0.0'         // semver; bump for any release
+export const APP_VERSION = '1.0.1'         // semver; bump for any release
 
 function genId(prefix = 'd') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`

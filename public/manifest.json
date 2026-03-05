@@ -1,7 +1,7 @@
 {
   "name": "Budget",
   "short_name": "Budget",
-  "description": "Personlig budgethantering – enkel och lokal",
+  "description": "Personlig budgethantering – enkel och säker",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
