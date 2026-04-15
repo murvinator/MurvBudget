@@ -1797,6 +1797,27 @@ body {
     margin-right: 4px;
 }
 
+.settings-content .expense-amount-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-right: 4px;
+}
+
+.settings-content .edit-icon {
+    opacity: 0.4;
+    flex-shrink: 0;
+}
+
+.settings-date-input {
+    -webkit-appearance: none;
+    appearance: none;
+    color-scheme: light dark;
+}
+
 .settings-content .delete-btn,
 .settings-content .expense-item .delete-btn,
 .settings-content .category-item .delete-btn {
@@ -1841,6 +1862,31 @@ body {
     color: var(--text-tertiary);
     font-size: 14px;
 }
+
+.onboarding-restart-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 24px 20px 0;
+}
+
+.onboarding-restart-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 14px;
+    border: 1.5px solid var(--separator);
+    background: var(--card-bg);
+    color: var(--system-blue);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.12s;
+}
+
+.onboarding-restart-btn:active { opacity: 0.6; }
 
 .settings-footer {
     text-align: center;

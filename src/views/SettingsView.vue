@@ -831,7 +831,10 @@
               <template #fixed>
                 <div class="expense-name" @click="toggleEditDebt(debt.storeIdx)">{{ debt.name }}</div>
               </template>
-              <div class="expense-amount" style="cursor: pointer" @click="toggleEditDebt(debt.storeIdx)">{{ fmt(debt.amount) }} kr</div>
+              <div class="expense-amount-row" style="cursor: pointer" @click="toggleEditDebt(debt.storeIdx)">
+                <span>{{ fmt(debt.amount) }} kr</span>
+                <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </div>
             </SwipeToDelete>
             <CollapseTransition>
               <div v-if="editingDebt === debt.storeIdx" class="expense-edit-form">
@@ -873,6 +876,10 @@
                       <div class="edit-input-group">
                         <label>Anteckning (valfritt)</label>
                         <input type="text" v-model="settingsPaymentNote" placeholder="" @keyup.enter="saveSettingsDebtPayment(debt.storeIdx)">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Datum</label>
+                        <input type="date" class="settings-date-input" v-model="settingsPaymentDate" :max="todayISO()">
                       </div>
                       <div class="edit-actions">
                         <button class="save-edit-btn" @click="saveSettingsDebtPayment(debt.storeIdx)" :disabled="!settingsPaymentAmount || settingsPaymentAmount <= 0">Spara</button>
@@ -957,7 +964,10 @@
               <template #fixed>
                 <div class="expense-name" @click="toggleEditSaving(goal.storeIdx)">{{ goal.name }}</div>
               </template>
-              <div class="expense-amount" style="cursor: pointer" @click="toggleEditSaving(goal.storeIdx)">{{ fmt(goal.current) }} / {{ fmt(goal.target) }} kr</div>
+              <div class="expense-amount-row" style="cursor: pointer" @click="toggleEditSaving(goal.storeIdx)">
+                <span>{{ fmt(goal.current) }} / {{ fmt(goal.target) }} kr</span>
+                <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </div>
             </SwipeToDelete>
             <CollapseTransition>
               <div v-if="editingSaving === goal.storeIdx" class="expense-edit-form">
@@ -999,6 +1009,10 @@
                       <div class="edit-input-group">
                         <label>Anteckning (valfritt)</label>
                         <input type="text" v-model="settingsDepositNote" placeholder="" @keyup.enter="saveSettingsSavingsDeposit(goal.storeIdx)">
+                      </div>
+                      <div class="edit-input-group">
+                        <label>Datum</label>
+                        <input type="date" class="settings-date-input" v-model="settingsDepositDate" :max="todayISO()">
                       </div>
                       <div class="edit-actions">
                         <button class="save-edit-btn" @click="saveSettingsSavingsDeposit(goal.storeIdx)" :disabled="!settingsDepositAmount || settingsDepositAmount <= 0">Spara</button>
@@ -1167,6 +1181,15 @@
         </div></CollapseTransition>
       </div>
 
+      <div class="onboarding-restart-wrap">
+        <button class="onboarding-restart-btn" @click="startOnboarding">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/>
+          </svg>
+          Starta installationsguiden
+        </button>
+      </div>
+
       <div class="settings-footer">
         <a href="about.html" target="_blank" rel="noopener noreferrer">Om MurvBudget<br>
         © Jonathan Belloni 2026</a>
@@ -1221,6 +1244,7 @@ const store = useBudgetStore()
 const authStore = useAuthStore()
 const confirm = inject('confirm')
 const showSalarySheet = inject('showSalarySheet', () => {})
+const startOnboarding = inject('startOnboarding', () => {})
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
 const SECTIONS = ['overview', 'checklist', 'ekonomi', 'utseende', 'income', 'expenses', 'flex', 'categories', 'debts', 'savings', 'salary', 'account']
@@ -1937,6 +1961,9 @@ const editDebtMonthlyPayment = ref(null)
 const addingPaymentForDebt = ref(null)
 const settingsPaymentAmount = ref(null)
 const settingsPaymentNote = ref('')
+const settingsPaymentDate = ref('')
+
+function todayISO() { return new Date().toISOString().split('T')[0] }
 
 function toggleEditDebt(idx) {
   if (editingDebt.value === idx) { editingDebt.value = null; addingPaymentForDebt.value = null; return }
@@ -1952,12 +1979,13 @@ function openSettingsDebtPayment(idx) {
   if (addingPaymentForDebt.value === idx) { addingPaymentForDebt.value = null; return }
   settingsPaymentAmount.value = null
   settingsPaymentNote.value = ''
+  settingsPaymentDate.value = todayISO()
   addingPaymentForDebt.value = idx
 }
 
 function saveSettingsDebtPayment(idx) {
   if (!settingsPaymentAmount.value || settingsPaymentAmount.value <= 0) return
-  store.addDebtPayment(idx, settingsPaymentAmount.value, settingsPaymentNote.value || '')
+  store.addDebtPayment(idx, settingsPaymentAmount.value, settingsPaymentNote.value || '', settingsPaymentDate.value || null)
   editDebtAmount.value = store.debts[idx].amount
   addingPaymentForDebt.value = null
 }
@@ -2026,17 +2054,22 @@ const editSavingMonthlyPayment = ref(null)
 const addingDepositForSaving = ref(null)
 const settingsDepositAmount = ref(null)
 const settingsDepositNote = ref('')
+const settingsDepositDate = ref('')
+
+watch(settingsPaymentDate, (val) => { if (!val) settingsPaymentDate.value = todayISO() })
+watch(settingsDepositDate, (val) => { if (!val) settingsDepositDate.value = todayISO() })
 
 function openSettingsSavingsDeposit(idx) {
   if (addingDepositForSaving.value === idx) { addingDepositForSaving.value = null; return }
   settingsDepositAmount.value = null
   settingsDepositNote.value = ''
+  settingsDepositDate.value = todayISO()
   addingDepositForSaving.value = idx
 }
 
 function saveSettingsSavingsDeposit(idx) {
   if (!settingsDepositAmount.value || settingsDepositAmount.value <= 0) return
-  store.addSavingsDeposit(idx, settingsDepositAmount.value, settingsDepositNote.value || '')
+  store.addSavingsDeposit(idx, settingsDepositAmount.value, settingsDepositNote.value || '', settingsDepositDate.value || null)
   addingDepositForSaving.value = null
 }
 
@@ -2123,7 +2156,7 @@ function importFile(event) {
 }
 
 async function loadTestData() {
-  const ok = await confirm('Ladda testdata?', { description: 'All nuvarande data ersätts med exempeldata.' })
+  const ok = await confirm('Ladda testdata?', { description: 'All nuvarande data ersätts med exempeldata. Exportera befintlig data med exportera-knappen om du är osäker.' })
   if (!ok) return
   const result = await store.loadTestData()
   if (result) {

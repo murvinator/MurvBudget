@@ -1,7 +1,7 @@
 <template>
   <div>
     <SplashScreen v-if="!splashDone" @done="splashDone = true" />
-    <OnboardingScreen v-if="splashDone && showOnboarding" @done="showOnboarding = false" />
+    <OnboardingScreen v-if="splashDone && showOnboarding" :is-restart="onboardingIsRestart" @done="onOnboardingDone" @start-wizard="onStartWizard" />
 
     <!-- Liquid Glass SVG filter (hidden) -->
     <svg style="display:none">
@@ -27,7 +27,7 @@
     <div v-show="!showOnboarding" class="container" @click="dismissKeyboard">
       <div class="content">
         <!-- Large title: scrolls with content on mobile; sticky on desktop (settings only) -->
-        <h1 v-if="!showDesktopNav || currentView === 'settings'" class="page-large-title" :class="{ 'settings-title': currentView === 'settings' }">{{ viewTitle }}</h1>
+        <h1 v-if="!showDesktopNav || currentView === 'settings' || currentView === 'wizard'" class="page-large-title" :class="{ 'settings-title': currentView === 'settings' }">{{ viewTitle }}</h1>
         <component :is="currentViewComponent" ref="activeViewRef" @navigate="showView" />
       </div>
     </div>
@@ -58,6 +58,7 @@ import OverviewView from './views/OverviewView.vue'
 import MonthlyView from './views/MonthlyView.vue'
 import EconomyView from './views/EconomyView.vue'
 import SettingsView from './views/SettingsView.vue'
+import WizardView from './views/WizardView.vue'
 
 const store = useBudgetStore()
 const authStore = useAuthStore()
@@ -98,6 +99,7 @@ const currentViewComponent = computed(() => {
     case 'monthly': return MonthlyView
     case 'economy': return EconomyView
     case 'settings': return SettingsView
+    case 'wizard': return WizardView
     default: return OverviewView
   }
 })
@@ -108,6 +110,7 @@ const viewTitle = computed(() => {
     case 'monthly': return 'Checklista'
     case 'economy': return 'Ekonomi'
     case 'settings': return 'Inställningar'
+    case 'wizard': return 'Budget'
     default: return 'MurvBudget'
   }
 })
@@ -205,6 +208,7 @@ function goBack() {
 }
 
 const localDataTs = ref(localStorage.getItem('murvbudget-local-updated-at'))
+const suppressOnboardingClose = ref(false)
 
 const ONBOARDING_KEY = 'murvbudget-onboarding'
 
@@ -228,12 +232,31 @@ function computeShowOnboarding() {
 
 // Computed synchronously at setup time — prevents any flicker
 const showOnboarding = ref(computeShowOnboarding())
+const onboardingIsRestart = ref(false)
+
+function onOnboardingDone() {
+  showOnboarding.value = false
+  onboardingIsRestart.value = false
+}
+
+function onStartWizard() {
+  showOnboarding.value = false
+  onboardingIsRestart.value = false
+  currentView.value = 'wizard'
+}
+
+function startOnboarding() {
+  onboardingIsRestart.value = true
+  showOnboarding.value = true
+}
 
 provide('goBack', goBack)
 provide('confirm', (msg, opts) => confirmSheetRef.value?.show(msg, opts))
 provide('localDataTs', localDataTs)
 provide('showSalarySheet', showSalaryDayManually)
 provide('pendingSettingsSection', pendingSettingsSection)
+provide('startOnboarding', startOnboarding)
+provide('suppressOnboardingClose', suppressOnboardingClose)
 
 function hasStoreData() {
   return store.income.length > 0 || store.expenses.length > 0 ||
@@ -246,9 +269,15 @@ onMounted(() => {
   store.migrateData()
   authStore.init()
 
-  // Also hide if auth resolves to logged-in asynchronously (Supabase session restore)
-  watch(() => authStore.isLoggedIn, (loggedIn) => {
-    if (loggedIn) showOnboarding.value = false
+  // Hide onboarding on login (session restore or interactive); show it again on logout
+  watch(() => authStore.isLoggedIn, (loggedIn, prevLoggedIn) => {
+    if (loggedIn && !suppressOnboardingClose.value) {
+      showOnboarding.value = false
+    } else if (!loggedIn && prevLoggedIn === true) {
+      // User just logged out — show the onboarding/storage-choice screen again
+      if (currentView.value === 'wizard') currentView.value = 'overview'
+      showOnboarding.value = true
+    }
   })
 
   // Seed timestamp if we have existing data but no key yet (first run after this feature)

@@ -337,12 +337,14 @@
           placeholder="Anteckning (valfritt)"
           @keyup.enter="saveSavingsDeposit"
         >
-        <input
-          type="date"
-          class="dp-input dp-input--date"
-          v-model="savingsDepositModal.date"
-          :max="todayISO()"
-        >
+        <div class="dp-date-wrap">
+          <input
+            type="date"
+            class="dp-input dp-input--date"
+            v-model="savingsDepositModal.date"
+            :max="todayISO()"
+          >
+        </div>
         <div class="dp-actions">
           <button class="btn-cancel" @click="closeSavingsModal">Avbryt</button>
           <button class="btn-save" @click="saveSavingsDeposit" :disabled="!savingsDepositModal.amount || savingsDepositModal.amount <= 0">Spara</button>
@@ -382,12 +384,14 @@
           placeholder="Anteckning (valfritt)"
           @keyup.enter="saveDebtPayment"
         >
-        <input
-          type="date"
-          class="dp-input dp-input--date"
-          v-model="debtPaymentModal.date"
-          :max="todayISO()"
-        >
+        <div class="dp-date-wrap">
+          <input
+            type="date"
+            class="dp-input dp-input--date"
+            v-model="debtPaymentModal.date"
+            :max="todayISO()"
+          >
+        </div>
         <div class="dp-actions">
           <button class="btn-cancel" @click="closeDebtModal">Avbryt</button>
           <button class="btn-save" @click="saveDebtPayment" :disabled="!debtPaymentModal.amount || debtPaymentModal.amount <= 0">Spara</button>
@@ -512,7 +516,7 @@ function openSavingsDepositModal(goal) {
   savingsDepositModal.goalName = goal.name
   savingsDepositModal.amount = null
   savingsDepositModal.note = ''
-  savingsDepositModal.date = ''
+  savingsDepositModal.date = todayISO()
   savingsDepositModal.open = true
   nextTick(() => savingsModalAmountRef.value?.focus())
 }
@@ -538,7 +542,7 @@ function openDebtPaymentModal(debt) {
   debtPaymentModal.debtName = debt.name
   debtPaymentModal.amount = null
   debtPaymentModal.note = ''
-  debtPaymentModal.date = ''
+  debtPaymentModal.date = todayISO()
   debtPaymentModal.open = true
   nextTick(() => debtModalAmountRef.value?.focus())
 }
@@ -560,6 +564,13 @@ const flexModal = reactive({ open: false, name: '', amount: null, confirmed: fal
 
 watch(() => debtPaymentModal.open || savingsDepositModal.open || flexModal.open, (isOpen) => {
   document.body.style.overflow = isOpen ? 'hidden' : ''
+})
+
+watch(() => savingsDepositModal.date, (val) => {
+  if (!val) savingsDepositModal.date = todayISO()
+})
+watch(() => debtPaymentModal.date, (val) => {
+  if (!val) debtPaymentModal.date = todayISO()
 })
 
 // ══ FLEX EXPENSES ═════════════════════════════════════════════════════════════
@@ -1478,9 +1489,10 @@ function resetFlexModal() {
   background: rgba(0, 0, 0, 0.38);
   z-index: 9999;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: max(80px, 12vh) 24px 24px;
+  padding: 24px;
+  overflow-y: auto;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -1565,9 +1577,11 @@ function resetFlexModal() {
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
+.dp-date-wrap {
+  width: 100%;
+}
+
 .dp-input--date {
-  -webkit-appearance: auto;
-  appearance: auto;
   color-scheme: light dark;
 }
 

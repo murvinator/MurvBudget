@@ -172,7 +172,7 @@ function show() {
 
 function dismiss() {
   visible.value = false
-  resolveFn?.(false)
+  resolveFn?.(null)
 }
 
 async function submit() {
@@ -199,16 +199,16 @@ async function submit() {
 
     if (!user) return
 
-    const isRegister = mode.value === 'register'
+    const isNewUser = mode.value === 'register'
     await handleCloudSync()
 
-    successMessage.value = isRegister ? 'Konto skapat!' : 'Inloggad!'
+    successMessage.value = isNewUser ? 'Konto skapat!' : 'Inloggad!'
     successMode.value = true
 
     setTimeout(() => {
       visible.value = false
       successMode.value = false
-      resolveFn?.(true)
+      resolveFn?.({ success: true, isNewUser })
     }, 1200)
   } finally {
     submitting.value = false
