@@ -1178,16 +1178,22 @@
             </div>
           </CollapseTransition>
 
-        </div></CollapseTransition>
-      </div>
+          <div class="onboarding-restart-wrap">
+            <button class="onboarding-restart-btn" @click="startWizard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/>
+              </svg>
+              Starta installationsguiden
+            </button>
+            <button class="onboarding-restart-btn" @click="startOnboarding">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Visa startskärm
+            </button>
+          </div>
 
-      <div class="onboarding-restart-wrap">
-        <button class="onboarding-restart-btn" @click="startOnboarding">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/>
-          </svg>
-          Starta installationsguiden
-        </button>
+        </div></CollapseTransition>
       </div>
 
       <div class="settings-footer">
@@ -1245,6 +1251,7 @@ const authStore = useAuthStore()
 const confirm = inject('confirm')
 const showSalarySheet = inject('showSalarySheet', () => {})
 const startOnboarding = inject('startOnboarding', () => {})
+const startWizard = inject('startWizard', () => {})
 
 const COLLAPSED_KEY = 'murvbudget-settings-collapsed'
 const SECTIONS = ['overview', 'checklist', 'ekonomi', 'utseende', 'income', 'expenses', 'flex', 'categories', 'debts', 'savings', 'salary', 'account']
@@ -2854,7 +2861,7 @@ function fmt(n) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 11px 16px;
+  padding: 20px 29px;
   border-top: 0.5px solid var(--separator);
   cursor: pointer;
   user-select: none;

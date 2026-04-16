@@ -1,13 +1,6 @@
 <template>
   <Transition name="onboarding">
     <div v-if="visible" class="onboarding-root">
-      <!-- Close button -->
-      <button class="close-btn" @click="closeScreen" aria-label="Stäng">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-
       <!-- Centered content -->
       <div class="onboarding-scroll">
         <div class="onboarding-content">
@@ -117,27 +110,6 @@ function pickLocal() {
 @media (prefers-color-scheme: dark) {
   .onboarding-root { background: #000; }
 }
-
-/* ── Close button ──────────────────────────────────────────────────────────── */
-.close-btn {
-  position: absolute;
-  top: calc(env(safe-area-inset-top, 20px) + 10px);
-  right: 16px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: none;
-  background: var(--system-gray4, #E5E5EA);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--text-secondary);
-  -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.12s;
-  z-index: 10;
-}
-.close-btn:active { opacity: 0.6; }
 
 /* ── Centered scroll area ──────────────────────────────────────────────────── */
 .onboarding-scroll {

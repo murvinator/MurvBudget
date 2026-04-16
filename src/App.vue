@@ -117,7 +117,7 @@ const viewTitle = computed(() => {
 
 const pendingSettingsSection = ref(null)
 
-function showView(name) {
+async function showView(name) {
   let view = name
   let section = null
   if (name.includes(':')) {
@@ -132,6 +132,15 @@ function showView(name) {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
     return
+  }
+  // Intercept navigation away from wizard — show close confirmation
+  if (currentView.value === 'wizard') {
+    const ok = await confirmSheetRef.value?.show('Stäng installationsguiden?', {
+      label: 'Stäng guiden',
+      style: 'destructive',
+      description: 'Du kan alltid starta guiden igen från Inställningar.',
+    })
+    if (!ok) return
   }
   if (currentView.value !== 'settings') {
     lastView.value = currentView.value
@@ -256,6 +265,12 @@ provide('localDataTs', localDataTs)
 provide('showSalarySheet', showSalaryDayManually)
 provide('pendingSettingsSection', pendingSettingsSection)
 provide('startOnboarding', startOnboarding)
+provide('startWizard', onStartWizard)
+provide('completeWizard', () => {
+  currentView.value = 'overview'
+  lastView.value = 'overview'
+  window.scrollTo(0, 0)
+})
 provide('suppressOnboardingClose', suppressOnboardingClose)
 
 function hasStoreData() {
